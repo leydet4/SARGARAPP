@@ -62,7 +62,7 @@ exports.handler = async function () {
 try {
 
 // ======================
-// TIDES (36hr from today)
+// TIDES
 // ======================
 const beginDate = todayYYYYMMDD();
 
@@ -97,32 +97,74 @@ const utcDate = new Date(Date.UTC(
 const easternObservation = formatEastern(utcDate);
 
 // ======================
-// WEATHER KORF
+// WEATHER KORF (PRIMARY)
 // ======================
-const weatherData = await getJSON(
+const latestWeather = await getJSON(
 "https://api.weather.gov/stations/KORF/observations/latest"
 );
 
-const props = weatherData.properties;
+const weatherProps = latestWeather.properties;
 
-const airTempF = props.temperature?.value !== null
-  ? cToF(props.temperature.value)
+const airTempF = weatherProps.temperature?.value !== null
+  ? cToF(weatherProps.temperature.value)
   : "N/A";
+
+// ======================
+// WIND FALLBACK LOGIC
+// ======================
 
 let windSpeedKnots = null;
 let windDirDeg = null;
 let windSource = null;
 
-if (rawWindSpeed !== "MM" && rawWindDir !== "MM") {
-  windSpeedKnots = mpsToKnots(rawWindSpeed);
-  windDirDeg = rawWindDir;
-  windSource = "NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)";
+function validWind(speed) {
+  return speed !== null && !isNaN(speed) && speed > 1;
 }
 
-if (!windSpeedKnots && props.windSpeed?.value !== null) {
-  windSpeedKnots = mpsToKnots(props.windSpeed.value);
-  windDirDeg = props.windDirection?.value?.toString() || "N/A";
-  windSource = "NOAA Weather Station KORF — Norfolk Airport";
+// 1️⃣ Buoy
+if (rawWindSpeed !== "MM" && rawWindDir !== "MM") {
+  const buoyKnots = parseFloat(mpsToKnots(rawWindSpeed));
+  if (validWind(buoyKnots)) {
+    windSpeedKnots = buoyKnots.toFixed(1);
+    windDirDeg = rawWindDir;
+    windSource = "NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)";
+  }
+}
+
+// 2️⃣ KORF latest
+if (!windSpeedKnots && weatherProps.windSpeed?.value !== null) {
+  const korfKnots = parseFloat(mpsToKnots(weatherProps.windSpeed.value));
+  if (validWind(korfKnots)) {
+    windSpeedKnots = korfKnots.toFixed(1);
+    windDirDeg = weatherProps.windDirection?.value?.toString() || "N/A";
+    windSource = "NOAA Weather Station KORF — Norfolk Airport";
+  }
+}
+
+// 3️⃣ KORF recent observations (backup sweep)
+if (!windSpeedKnots) {
+  const recent = await getJSON(
+    "https://api.weather.gov/stations/KORF/observations?limit=5"
+  );
+
+  for (let obs of recent.features) {
+    const props = obs.properties;
+    if (props.windSpeed?.value !== null) {
+      const knots = parseFloat(mpsToKnots(props.windSpeed.value));
+      if (validWind(knots)) {
+        windSpeedKnots = knots.toFixed(1);
+        windDirDeg = props.windDirection?.value?.toString() || "N/A";
+        windSource = "NOAA Weather Station KORF — Recent Observation";
+        break;
+      }
+    }
+  }
+}
+
+if (!windSpeedKnots) {
+  windSpeedKnots = "Calm / Unavailable";
+  windDirDeg = "N/A";
+  windSource = "NOAA Data Unavailable";
 }
 
 const buoyData = {
@@ -130,9 +172,9 @@ const buoyData = {
   dominantPeriodSec: rawPeriod !== "MM" ? rawPeriod : "N/A",
   waterTempF: rawWaterTemp !== "MM" ? cToF(rawWaterTemp) : "N/A",
   airTempF,
-  windSpeedKnots: windSpeedKnots || "N/A",
-  windDirDeg: windDirDeg || "N/A",
-  windSource: windSource || "Unavailable",
+  windSpeedKnots,
+  windDirDeg,
+  windSource,
   buoyObservationTimeEST: easternObservation
 };
 
