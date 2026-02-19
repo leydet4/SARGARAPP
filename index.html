@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>POV SAR GAR App – Dashboard</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>POV SAR GAR App</title>
 
   <!-- PWA Essentials -->
   <link rel="manifest" href="/manifest.json">
@@ -15,60 +15,102 @@
   <meta name="apple-mobile-web-app-title" content="SAR GAR">
   <link rel="apple-touch-icon" href="/assets/icon-192.png">
 
+  <!-- CSS -->
   <link rel="stylesheet" href="/css/app.css">
+
+  <style>
+    .logo { display:block; margin:0 auto 1rem; max-width:160px; height:auto; }
+    .section { margin:2rem 0; text-align:center; }
+    .section h2 { margin-bottom:1rem; font-size:1.3rem; color:#ffcc00; }
+    .button-row { display:flex; flex-wrap:wrap; justify-content:center; gap:0.75rem; }
+    .button-row .btn { min-width:200px; }
+    .topbar { display:flex; justify-content:center; gap:.5rem; margin-bottom:.75rem; }
+    #installBtn { display:none; }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <header style="text-align:center; margin-bottom:1.25rem;">
+      <h1>POV SAR GAR App</h1>
+      <p style="color:#aaa; font-size:.9rem;">
+        Todd Dooley Search & Rescue Forum
+      </p>
 
-<header>
-  <h1>POV SAR GAR App</h1>
-  <nav>
-    <a href="/index.html" class="active">Dashboard</a>
-    <a href="/gar.html">GAR Submissions</a>
-    <a href="/resources.html">SAR Resources</a>
-    <a href="/install.html">Install</a>
-  </nav>
-</header>
+      <div class="topbar">
+        <button id="installBtn" class="btn">➕ Install App</button>
+        <a class="btn btn-secondary" href="/install.html">📲 Install Help</a>
+      </div>
+    </header>
 
-<main class="grid">
-  <div class="card">
-    <h2>HRBT Conditions</h2>
-    <div id="waterLevel">Loading...</div>
+    <!-- Live Conditions -->
+    <div class="section">
+      <h2>Live HRBT Conditions</h2>
+      <div class="button-row">
+        <a class="btn" href="/pages/dashboard.html">📊 HRBT Tides & Weather</a>
+        <a class="btn" href="/pages/waves.html">🌊 Wave Data</a>
+      </div>
+    </div>
+
+    <!-- GAR Submissions -->
+    <div class="section">
+      <h2>GAR Submissions</h2>
+      <div class="button-row">
+        <a class="btn" href="/pages/gar-tf1.html">🚤 Task Force 1</a>
+        <a class="btn" href="/pages/gar-tf2.html">🚤 Task Force 2</a>
+        <a class="btn" href="/pages/gar-tf3.html">🚤 Task Force 3</a>
+        <a class="btn" href="/pages/gar-tf4.html">🚤 Task Force 4</a>
+        <a class="btn" href="/pages/gar-admin.html">🧾 Admin GAR</a>
+      </div>
+    </div>
+
+    <!-- SAR Resources -->
+    <div class="section">
+      <h2>SAR Resources</h2>
+      <div class="button-row">
+        <a class="btn" href="/pages/resources.html">📁 Forum Resources</a>
+      </div>
+    </div>
+
+    <footer style="text-align:center; margin-top:2rem; font-size:.8rem; color:#777;">
+      POV SAR GAR App • 2026
+    </footer>
   </div>
 
-  <div class="card">
-    <h2>Tide Predictions</h2>
-    <div id="tidePredictions">Loading...</div>
-  </div>
+  <!-- Service Worker Registration -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js")
+          .then(reg => console.log("SW registered:", reg.scope))
+          .catch(err => console.error("SW registration failed:", err));
+      });
+    }
+  </script>
 
-  <div class="card">
-    <h2>Wind</h2>
-    <div id="windData">Loading...</div>
-  </div>
+  <!-- Android Install Button -->
+  <script>
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('installBtn');
 
-  <div class="card">
-    <h2>Waves</h2>
-    <div id="waveData">Loading...</div>
-  </div>
-
-  <div class="card">
-    <h2>Marine Forecast</h2>
-    <div id="forecast">Loading...</div>
-  </div>
-</main>
-
-<script src="/js/config.js"></script>
-<script src="/js/app.js"></script>
-
-<!-- Service Worker Registration (ROOT SCOPE) -->
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/service-worker.js", { scope: "/" })
-        .then(reg => console.log("SW registered:", reg.scope))
-        .catch(err => console.error("SW registration failed:", err));
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'inline-flex';
     });
-  }
-</script>
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      installBtn.disabled = true;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.style.display = 'none';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installBtn.style.display = 'none';
+    });
+  </script>
 
 </body>
 </html>
