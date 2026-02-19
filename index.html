@@ -54,6 +54,13 @@ font-size:36px;
 .rising { color:#22c55e; }
 .falling { color:#38bdf8; }
 
+.countdown {
+font-size:18px;
+font-weight:700;
+margin-top:8px;
+color:#facc15;
+}
+
 </style>
 </head>
 
@@ -81,9 +88,7 @@ Last Updated (Eastern): <span id="lastUpdated">--</span>
 <!-- WIND -->
 <div class="card text-center">
 <div class="section-title">Wind</div>
-<div id="windSource" class="source">
-Loading source...
-</div>
+<div id="windSource" class="source">Loading...</div>
 <div id="windText" class="primary-value">--</div>
 <div id="windCardinal" class="secondary-value"></div>
 </div>
@@ -126,6 +131,8 @@ NOAA CO-OPS Sewells Point — Near HRBT
 
 <div id="tideTrend" class="tide-trend"></div>
 
+<div id="tideCountdown" class="countdown"></div>
+
 <div class="grid md:grid-cols-2 gap-6 mt-3">
 <div>
 <div class="text-sm font-semibold mb-1">Last</div>
@@ -146,10 +153,32 @@ Buoy Observation (Eastern): <span id="buoyTime">--</span>
 
 <script>
 
+let nextTideTime = null;
+let nextTideType = null;
+
 function degreesToCardinal(deg) {
 if (!deg || deg === "N/A") return "";
 const dirs = ["N","NE","E","SE","S","SW","W","NW"];
 return dirs[Math.round(deg / 45) % 8];
+}
+
+function updateCountdown() {
+if (!nextTideTime) return;
+
+const now = new Date();
+const diff = nextTideTime - now;
+
+if (diff <= 0) {
+document.getElementById("tideCountdown").innerText =
+"Tide change occurring now";
+return;
+}
+
+const hours = Math.floor(diff / (1000 * 60 * 60));
+const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+document.getElementById("tideCountdown").innerText =
+`${hours}h ${minutes}m until ${nextTideType} tide (${nextTideTime.toLocaleTimeString()})`;
 }
 
 async function loadMarineData() {
@@ -170,24 +199,19 @@ data.buoyData.windSpeedKnots + " kts";
 document.getElementById("windCardinal").innerText =
 degreesToCardinal(deg) + " (" + deg + "°)";
 
-// Dynamic wind source display
 document.getElementById("windSource").innerText =
 data.buoyData.windSource;
 
-// Waves
 document.getElementById("waveHeight").innerText =
 data.buoyData.waveHeightFt + " ft @ " +
 data.buoyData.dominantPeriodSec + "s";
 
-// Water temp
 document.getElementById("waterTemp").innerText =
 data.buoyData.waterTempF + " °F";
 
-// Air temp
 document.getElementById("airTemp").innerText =
 data.buoyData.airTempF + " °F";
 
-// Buoy observation time
 document.getElementById("buoyTime").innerText =
 data.buoyData.buoyObservationTimeEST;
 }
@@ -201,12 +225,16 @@ const lastTwo = tides.filter(t => new Date(t.t) < now).slice(-2);
 const nextTwo = tides.filter(t => new Date(t.t) > now).slice(0,2);
 
 document.getElementById("lastTides").innerHTML =
-lastTwo.map(t => `${t.type === "H" ? "H" : "L"} - ${t.t}`).join("<br>");
+lastTwo.map(t => `${t.type === "H" ? "High" : "Low"} - ${t.t}`).join("<br>");
 
 document.getElementById("nextTides").innerHTML =
-nextTwo.map(t => `${t.type === "H" ? "H" : "L"} - ${t.t}`).join("<br>");
+nextTwo.map(t => `${t.type === "H" ? "High" : "Low"} - ${t.t}`).join("<br>");
 
 if (nextTwo.length > 0) {
+
+nextTideTime = new Date(nextTwo[0].t);
+nextTideType = nextTwo[0].type === "H" ? "High" : "Low";
+
 if (nextTwo[0].type === "H") {
 document.getElementById("tideTrend").innerHTML =
 `<span class="rising tide-arrow">↑</span> <span class="rising">Rising</span>`;
@@ -214,6 +242,8 @@ document.getElementById("tideTrend").innerHTML =
 document.getElementById("tideTrend").innerHTML =
 `<span class="falling tide-arrow">↓</span> <span class="falling">Falling</span>`;
 }
+
+updateCountdown();
 }
 
 }
@@ -222,6 +252,7 @@ document.getElementById("tideTrend").innerHTML =
 
 loadMarineData();
 setInterval(loadMarineData, 300000);
+setInterval(updateCountdown, 30000);
 
 </script>
 
