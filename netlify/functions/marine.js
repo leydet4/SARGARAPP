@@ -1,85 +1,81 @@
+const https = require("https");
+
+function getJSON(url) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, {
+      headers: {
+        "User-Agent": "POV-SAR-Forum-2026"
+      }
+    }, (res) => {
+      let data = "";
+
+      res.on("data", chunk => data += chunk);
+      res.on("end", () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (err) {
+          reject("Invalid JSON from " + url);
+        }
+      });
+    });
+
+    req.on("error", reject);
+    req.end();
+  });
+}
+
 exports.handler = async function () {
 
-try {
+  try {
 
-const headers = {
-"User-Agent": "POV-SAR-Forum-2026"
-};
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
 
-// ===== Generate Today + Tomorrow =====
-const today = new Date();
-const tomorrow = new Date();
-tomorrow.setDate(today.getDate() + 1);
+    const formatDate = (d) =>
+      d.getFullYear().toString() +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      String(d.getDate()).padStart(2, "0");
 
-const formatDate = (d) =>
-d.getFullYear().toString() +
-String(d.getMonth() + 1).padStart(2, "0") +
-String(d.getDate()).padStart(2, "0");
+    const beginDate = formatDate(today);
+    const endDate = formatDate(tomorrow);
 
-const beginDate = formatDate(today);
-const endDate = formatDate(tomorrow);
+    const tideUrl =
+      `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=POV_SAR&begin_date=${beginDate}&end_date=${endDate}&datum=MLLW&station=8638610&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
 
-// ===== Tide Predictions =====
-const tideUrl =
-`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=POV_SAR&begin_date=${beginDate}&end_date=${endDate}&datum=MLLW&station=8638610&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+    const levelUrl =
+      `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&application=POV_SAR&date=latest&station=8638610&time_zone=lst_ldt&units=english&format=json`;
 
-const tideResponse = await fetch(tideUrl, { headers });
+    const weatherUrl =
+      "https://api.weather.gov/stations/KORF/observations/latest";
 
-if (!tideResponse.ok) {
-throw new Error(`Tide API failed: ${tideResponse.status}`);
-}
+    const tideData = await getJSON(tideUrl);
+    const levelData = await getJSON(levelUrl);
+    const weatherData = await getJSON(weatherUrl);
 
-const tideData = await tideResponse.json();
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        tideData,
+        levelData,
+        weatherData
+      })
+    };
 
-// ===== Water Level =====
-const levelUrl =
-`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&application=POV_SAR&date=latest&station=8638610&time_zone=lst_ldt&units=english&format=json`;
+  } catch (error) {
 
-const levelResponse = await fetch(levelUrl, { headers });
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        error: error.toString()
+      })
+    };
 
-if (!levelResponse.ok) {
-throw new Error(`Water Level API failed: ${levelResponse.status}`);
-}
-
-const levelData = await levelResponse.json();
-
-// ===== Weather (Norfolk Intl Airport) =====
-const weatherResponse = await fetch(
-"https://api.weather.gov/stations/KORF/observations/latest",
-{ headers }
-);
-
-if (!weatherResponse.ok) {
-throw new Error(`Weather API failed: ${weatherResponse.status}`);
-}
-
-const weatherData = await weatherResponse.json();
-
-return {
-statusCode: 200,
-headers: {
-"Access-Control-Allow-Origin": "*",
-"Content-Type": "application/json"
-},
-body: JSON.stringify({
-tideData,
-levelData,
-weatherData
-})
-};
-
-} catch (error) {
-
-return {
-statusCode: 500,
-headers: {
-"Content-Type": "application/json"
-},
-body: JSON.stringify({
-error: error.message
-})
-};
-
-}
+  }
 
 };
