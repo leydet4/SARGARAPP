@@ -9,112 +9,141 @@
 <meta name="theme-color" content="#0f172a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="icon" href="povsargarapp-qr.png">
-<link rel="apple-touch-icon" href="povsargarapp-qr.png">
+<link rel="icon" href="SAR.png">
+<link rel="apple-touch-icon" href="SAR.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
-.card { background:#1e293b; border-radius:12px; padding:14px; }
-.section-title { font-size:14px; font-weight:700; }
+.card { background:#1e293b; border-radius:14px; padding:16px; box-shadow:0 0 20px rgba(0,0,0,0.3); }
+.section-title { font-size:15px; font-weight:700; letter-spacing:.5px; }
 .source { color:#64748b; font-size:11px; margin-top:2px; }
-.primary-value { font-size:20px; font-weight:800; margin-top:4px; }
-.secondary-value { font-size:13px; color:#94a3b8; }
-.tide-trend { font-size:28px; font-weight:900; display:flex; align-items:center; gap:10px; margin-top:8px; }
-.tide-arrow { font-size:36px; }
+.primary-value { font-size:22px; font-weight:900; margin-top:6px; }
+.secondary-value { font-size:14px; color:#94a3b8; }
+.tide-trend { font-size:30px; font-weight:900; display:flex; align-items:center; gap:12px; margin-top:8px; }
+.tide-arrow { font-size:42px; }
 .rising { color:#22c55e; }
 .falling { color:#38bdf8; }
-.countdown { font-size:18px; font-weight:700; margin-top:6px; color:#facc15; }
-.install-box { background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; font-size:13px; }
+.countdown { font-size:20px; font-weight:800; margin-top:8px; color:#facc15; }
+.install-box { background:#0f172a; border:1px solid #334155; border-radius:12px; padding:14px; font-size:14px; }
+.big-btn {
+  padding:10px 18px;
+  border-radius:10px;
+  font-weight:800;
+  letter-spacing:.5px;
+  transition:.2s;
+}
+.big-btn:hover { transform:scale(1.05); }
+.header-title {
+  font-size:24px;
+  font-weight:900;
+  letter-spacing:1px;
+}
+.subtitle {
+  font-size:13px;
+  color:#94a3b8;
+}
 </style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<header class="bg-slate-800 px-4 py-3 flex justify-between items-center">
-<h1 class="text-lg font-bold">POV SAR Forum 2026 (All Times Eastern)</h1>
-<div class="flex gap-2">
-<a href="gar.html" class="bg-blue-600 px-3 py-1 rounded text-sm font-semibold">GAR</a>
+<header class="bg-slate-800 py-5 shadow-lg">
+
+<div class="text-center">
+<img src="SAR.png" alt="SAR Logo" class="mx-auto h-20 mb-3">
+<div class="header-title">Port of Virginia Todd Dooley</div>
+<div class="header-title">Search and Rescue Forum 2026</div>
+<div class="subtitle mt-1">HRBT Marine Operations Dashboard (All Times Eastern)</div>
+</div>
+
+<div class="flex justify-center gap-4 mt-4">
+
+<a href="gar.html"
+class="big-btn bg-blue-600 hover:bg-blue-700 text-white">
+GAR SUBMISSIONS
+</a>
 
 <button id="installBtn"
-class="bg-green-600 px-3 py-1 rounded text-sm font-semibold hidden">
-Install App
+class="big-btn bg-green-600 hover:bg-green-700 text-white hidden">
+INSTALL APP
 </button>
 
 <button onclick="loadMarineData()"
-class="bg-orange-500 px-3 py-1 rounded text-sm font-semibold">
-Refresh
+class="big-btn bg-orange-500 hover:bg-orange-600 text-white">
+REFRESH DATA
 </button>
+
 </div>
+
 </header>
 
-<section class="p-4 space-y-4">
+<section class="p-6 space-y-5">
 
-<div id="installInstructions" class="install-box">
-<div class="font-semibold mb-1">Install This App:</div>
-<div><strong>Android (Chrome):</strong> Tap the green <em>Install App</em> button above or open browser menu ⋮ → “Install App”.</div>
-<div class="mt-1"><strong>iPhone (Safari only):</strong> Tap Share button → “Add to Home Screen”.</div>
+<div id="installInstructions" class="install-box text-center">
+<div class="font-semibold mb-2">Install This App</div>
+<div><strong>Android (Chrome):</strong> Tap INSTALL APP or use browser menu → “Install App”.</div>
+<div class="mt-1"><strong>iPhone (Safari):</strong> Tap Share → “Add to Home Screen”.</div>
 <button onclick="document.getElementById('installInstructions').style.display='none'"
-class="mt-2 text-xs text-slate-400 underline">
+class="mt-2 text-sm text-slate-400 underline">
 Dismiss
 </button>
 </div>
 
-<div class="text-xs text-slate-400">
+<div class="text-center text-sm text-slate-400">
 Last Updated (Eastern): <span id="lastUpdated">--</span>
 </div>
 
-<div class="grid md:grid-cols-4 gap-4">
+<div class="grid md:grid-cols-4 gap-5">
 
 <div class="card text-center">
-<div class="section-title">Wind</div>
+<div class="section-title">WIND</div>
 <div id="windSource" class="source">Loading...</div>
 <div id="windText" class="primary-value">--</div>
 <div id="windCardinal" class="secondary-value"></div>
 </div>
 
 <div class="card text-center">
-<div class="section-title">Wave Height</div>
+<div class="section-title">WAVE HEIGHT</div>
 <div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)</div>
 <div id="waveHeight" class="primary-value">--</div>
 </div>
 
 <div class="card text-center">
-<div class="section-title">Water Temperature</div>
+<div class="section-title">WATER TEMP</div>
 <div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)</div>
 <div id="waterTemp" class="primary-value">--</div>
 </div>
 
 <div class="card text-center">
-<div class="section-title">Air Temperature</div>
+<div class="section-title">AIR TEMP</div>
 <div class="source">NOAA Weather Station KORF — Norfolk International Airport</div>
 <div id="airTemp" class="primary-value">--</div>
 </div>
 
 </div>
 
-<div class="card">
-<div class="section-title">Tides</div>
-<div class="source">NOAA CO-OPS Sewells Point — Near HRBT</div>
+<div class="card text-center">
+<div class="section-title">TIDES — Sewells Point (Near HRBT)</div>
 
-<div id="tideTrend" class="tide-trend"></div>
+<div id="tideTrend" class="tide-trend justify-center"></div>
 <div id="tideCountdown" class="countdown"></div>
 
-<div class="grid md:grid-cols-2 gap-6 mt-3">
+<div class="grid md:grid-cols-2 gap-6 mt-4 text-sm">
 <div>
-<div class="text-sm font-semibold mb-1">Last</div>
-<div id="lastTides" class="text-sm"></div>
+<div class="font-semibold mb-1">Last 2</div>
+<div id="lastTides"></div>
 </div>
 <div>
-<div class="text-sm font-semibold mb-1">Next</div>
-<div id="nextTides" class="text-sm"></div>
-</div>
+<div class="font-semibold mb-1">Next 2</div>
+<div id="nextTides"></div>
 </div>
 </div>
 
-<div class="text-xs text-slate-500">
+</div>
+
+<div class="text-center text-xs text-slate-500">
 Buoy Observation (Eastern): <span id="buoyTime">--</span>
 </div>
 
@@ -122,7 +151,7 @@ Buoy Observation (Eastern): <span id="buoyTime">--</span>
 
 <script>
 
-// ================= INSTALL LOGIC =================
+// INSTALL
 let deferredPrompt;
 const installBtn = document.getElementById("installBtn");
 
@@ -140,13 +169,11 @@ installBtn.addEventListener("click", async () => {
   installBtn.classList.add("hidden");
 });
 
-// Register service worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/service-worker.js');
 }
 
-// ================= DATA LOGIC =================
-
+// DATA
 function parseEastern(str) {
   const [date, time] = str.split(" ");
   const [y,m,d] = date.split("-");
@@ -186,9 +213,7 @@ async function loadMarineData() {
 
   const b = data.buoyData;
 
-  document.getElementById("windText").innerText =
-    b.windSpeedKnots;
-
+  document.getElementById("windText").innerText = b.windSpeedKnots;
   document.getElementById("windCardinal").innerText =
     b.windDirDeg !== "N/A"
     ? degreesToCardinal(parseInt(b.windDirDeg)) + ` (${b.windDirDeg}°)`
