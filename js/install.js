@@ -1,11 +1,21 @@
-// install.js — shows install button when available + prints diagnostics + reset button
-
 let deferredPrompt = null;
 
 function $(id) { return document.getElementById(id); }
 
 function isStandalone() {
   return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+async function checkManifest() {
+  try {
+    const res = await fetch("/manifest.json", { cache: "no-store" });
+    const ok = res.ok;
+    const ct = res.headers.get("content-type") || "";
+    const text = await res.text();
+    return { ok, contentType: ct, bytes: text.length };
+  } catch (e) {
+    return { ok: false, contentType: "", bytes: 0, error: String(e) };
+  }
 }
 
 async function getSwInfo() {
@@ -20,7 +30,6 @@ async function getSwInfo() {
   if (!info.supported) return info;
 
   try {
-    // Try to find existing registration at root scope
     const reg = await navigator.serviceWorker.getRegistration("/");
     if (reg) {
       info.scope = reg.scope;
@@ -36,26 +45,8 @@ async function getSwInfo() {
   return info;
 }
 
-async function checkManifest() {
-  try {
-    const res = await fetch("/manifest.json", { cache: "no-store" });
-    const ok = res.ok;
-    const ct = res.headers.get("content-type") || "";
-    let text = "";
-    try { text = await res.text(); } catch {}
-    return {
-      ok,
-      contentType: ct,
-      bytes: text.length
-    };
-  } catch (e) {
-    return { ok: false, contentType: "", bytes: 0, error: String(e) };
-  }
-}
-
 async function registerRootSw() {
   if (!("serviceWorker" in navigator)) return { ok: false, error: "no serviceWorker support" };
-
   try {
     const reg = await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
     return { ok: true, scope: reg.scope };
@@ -67,6 +58,30 @@ async function registerRootSw() {
 function printDebug(lines) {
   const out = $("debugOut");
   if (out) out.textContent = lines.join("\n");
+}
+
+async function forceSwControlOnce() {
+  // If not controlled yet, ask SW to claim and reload once.
+  if (!("serviceWorker" in navigator)) return;
+
+  const alreadyTried = sessionStorage.getItem("forceSwControlTried") === "1";
+  const controlled = !!navigator.serviceWorker.controller;
+
+  if (controlled || alreadyTried) return;
+
+  sessionStorage.setItem("forceSwControlTried", "1");
+
+  // Message active SW to claim clients
+  try {
+    const reg = await navigator.serviceWorker.getRegistration("/");
+    if (reg && reg.active) {
+      reg.active.postMessage({ type: "CLAIM_CLIENTS" });
+      reg.active.postMessage({ type: "SKIP_WAITING" });
+    }
+  } catch {}
+
+  // Reload after a brief tick
+  setTimeout(() => location.reload(), 500);
 }
 
 async function runDiagnostics() {
@@ -82,7 +97,6 @@ async function runDiagnostics() {
   lines.push(`User Agent: ${ua}`);
   lines.push("");
 
-  // Manifest
   const mf = await checkManifest();
   lines.push("Manifest (/manifest.json):");
   lines.push(`- Fetch OK: ${mf.ok}`);
@@ -91,7 +105,6 @@ async function runDiagnostics() {
   if (mf.error) lines.push(`- Error: ${mf.error}`);
   lines.push("");
 
-  // Service worker
   const swBefore = await getSwInfo();
   lines.push("Service Worker:");
   lines.push(`- Supported: ${swBefore.supported}`);
@@ -101,7 +114,6 @@ async function runDiagnostics() {
   if (swBefore.error) lines.push(`- Error: ${swBefore.error}`);
   lines.push("");
 
-  // Try registering root SW (this often fixes installability)
   const regAttempt = await registerRootSw();
   lines.push("Register /service-worker.js:");
   lines.push(`- OK: ${regAttempt.ok}`);
@@ -118,8 +130,8 @@ async function runDiagnostics() {
 
   lines.push("Install Prompt:");
   lines.push("- If 'Install App' button never appears, Chrome did NOT fire beforeinstallprompt.");
-  lines.push("- Common causes: page not controlled by SW, manifest invalid/unreachable, or Chrome suppressed prompt.");
-  lines.push("- Try Chrome menu (⋮) → Install app / Add to Home screen.");
+  lines.push("- This typically requires Controller=true (page controlled by SW) on Android.");
+  lines.push("- If prompt is suppressed, Chrome menu (⋮) may still show Install.");
   lines.push("");
 
   printDebug(lines);
@@ -150,7 +162,7 @@ function wireInstallButton() {
 }
 
 async function resetPwa() {
-  // Unregister all service workers + clear caches
+  // Clear caches + unregister SW
   try {
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -165,8 +177,8 @@ async function resetPwa() {
     }
   } catch {}
 
-  // Hard reload
-  location.reload(true);
+  sessionStorage.removeItem("forceSwControlTried");
+  location.reload();
 }
 
 function wireResetButton() {
@@ -178,5 +190,10 @@ function wireResetButton() {
 window.addEventListener("load", async () => {
   wireInstallButton();
   wireResetButton();
+
+  // Force SW to take control (once) if needed
+  await forceSwControlOnce();
+
+  // Then run diagnostics
   await runDiagnostics();
 });
