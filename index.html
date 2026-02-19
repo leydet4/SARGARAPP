@@ -11,14 +11,37 @@
 
 <style>
 body { font-family: system-ui, sans-serif; }
-.card { background:#1e293b; border-radius:12px; padding:14px; }
-.section-title { font-size:14px; font-weight:700; }
-.source { color:#64748b; font-size:11px; }
-.primary-value { font-size:20px; font-weight:800; margin-top:4px; }
-.secondary-value { font-size:13px; color:#94a3b8; }
+
+.card {
+background:#1e293b;
+border-radius:12px;
+padding:14px;
+}
+
+.section-title {
+font-size:14px;
+font-weight:700;
+}
+
+.source {
+color:#64748b;
+font-size:11px;
+}
+
+.primary-value {
+font-size:20px;
+font-weight:800;
+margin-top:4px;
+}
+
+.secondary-value {
+font-size:13px;
+color:#94a3b8;
+}
 
 .compass {
-width:100px; height:100px;
+width:100px;
+height:100px;
 border:2px solid #475569;
 border-radius:50%;
 position:relative;
@@ -26,22 +49,44 @@ margin:8px auto;
 }
 
 .arrow {
-width:5px; height:40px;
+width:5px;
+height:40px;
 background:#f97316;
 position:absolute;
-top:10px; left:50%;
+top:10px;
+left:50%;
 transform-origin:bottom center;
 border-radius:3px;
 }
 
 .center-dot {
-width:8px; height:8px;
+width:8px;
+height:8px;
 background:white;
 border-radius:50%;
 position:absolute;
-top:50%; left:50%;
+top:50%;
+left:50%;
 transform:translate(-50%, -50%);
 }
+
+.tide-trend {
+font-size:28px;
+font-weight:900;
+display:flex;
+align-items:center;
+gap:10px;
+margin-top:8px;
+}
+
+.tide-arrow {
+font-size:36px;
+line-height:1;
+}
+
+.rising { color:#22c55e; }
+.falling { color:#38bdf8; }
+
 </style>
 </head>
 
@@ -103,9 +148,11 @@ Last Updated: <span id="lastUpdated">--</span>
 
 </div>
 
+<!-- TIDES -->
 <div class="card">
 <div class="section-title">Tides (Sewells Point - HRBT Area)</div>
-<div id="tideTrend" class="primary-value mt-2"></div>
+
+<div id="tideTrend" class="tide-trend"></div>
 
 <div class="grid md:grid-cols-2 gap-6 mt-3">
 <div>
@@ -187,8 +234,16 @@ lastTwo.map(t => `${t.type === "H" ? "H" : "L"} - ${t.t.substring(5)}`).join("<b
 document.getElementById("nextTides").innerHTML =
 nextTwo.map(t => `${t.type === "H" ? "H" : "L"} - ${t.t.substring(5)}`).join("<br>");
 
-document.getElementById("tideTrend").innerText =
-nextTwo[0].type === "H" ? "Rising ↑" : "Falling ↓";
+if (nextTwo.length > 0) {
+if (nextTwo[0].type === "H") {
+document.getElementById("tideTrend").innerHTML =
+`<span class="rising tide-arrow">↑</span> <span class="rising">Rising</span>`;
+} else {
+document.getElementById("tideTrend").innerHTML =
+`<span class="falling tide-arrow">↓</span> <span class="falling">Falling</span>`;
+}
+}
+
 }
 
 } catch (err) {
