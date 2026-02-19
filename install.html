@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>POV SAR GAR App – Install</title>
 
+  <!-- PWA Essentials -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#121212">
 
+  <!-- iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SAR GAR">
@@ -18,6 +20,7 @@
   <style>
     .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
     .topbar { display:flex; justify-content:center; flex-wrap:wrap; gap:.75rem; margin: 1rem 0 0; }
+
     .section { margin: 1.5rem 0; text-align:center; }
     .section h2 { margin-bottom: .75rem; font-size: 1.25rem; color:#ffcc00; }
 
@@ -32,21 +35,47 @@
       color:#d6d6d6;
       line-height: 1.45;
     }
-
     .infoBox strong { color:#ffcc00; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(20,20,20,0.95);
+      border: 1px solid #2a2a2a;
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      max-width: 92vw;
+      width: 520px;
+      display: none;
+      z-index: 9999;
+    }
+    .toast b { color:#ffcc00; }
+    .toast .row { display:flex; justify-content:space-between; gap: 10px; align-items:flex-start; }
+    .toast button {
+      background:#ffcc00;
+      border:none;
+      border-radius:8px;
+      padding: 6px 10px;
+      font-weight: bold;
+      cursor: pointer;
+      color:#000;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
 
-  <header style="text-align:center; margin-bottom:1.5rem;">
+  <header style="text-align:center; margin-bottom:1.25rem;">
     <h1>POV SAR GAR App</h1>
     <p class="muted">Todd Dooley Search & Rescue Forum</p>
 
     <div class="topbar">
       <button id="installBtn" class="button">➕ Install App</button>
-      <button id="resetPwaBtn" class="button admin">🧹 Reset PWA Cache</button>
       <a class="button" href="/index.html">⬅ Back to Dashboard</a>
     </div>
 
@@ -54,7 +83,7 @@
       <strong>Install options:</strong><br>
       • <b>Android (Chrome):</b> tap the <b>⋮ menu</b> → <b>Install app</b> / <b>Add to Home screen</b><br>
       • <b>iPhone/iPad:</b> open in <b>Safari</b> → <b>Share</b> → <b>Add to Home Screen</b><br>
-      • <b>Desktop Chrome:</b> look for the <b>Install icon</b> in the address bar or use <b>⋮</b> → <b>Install</b>
+      • <b>Desktop Chrome:</b> address bar <b>Install icon</b> or <b>⋮</b> → <b>Install</b>
     </div>
   </header>
 
@@ -70,6 +99,14 @@
     </p>
   </div>
 
+</div>
+
+<!-- Toast (for Android prompt suppressed cases) -->
+<div id="toast" class="toast" role="status" aria-live="polite">
+  <div class="row">
+    <div id="toastMsg"></div>
+    <button id="toastClose" type="button">OK</button>
+  </div>
 </div>
 
 <script src="/js/install.js"></script>
