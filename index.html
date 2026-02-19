@@ -3,42 +3,45 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Port of Virginia SAR Forum 2026 - Operations Dashboard</title>
+<title>POV SAR Forum 2026 - Operations Dashboard</title>
 
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#0f172a" />
-<link rel="icon" href="povsargarapp-qr.png">
-
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
-.card { background:#1e293b; border-radius:12px; padding:16px; }
-.section-title { font-size:15px; font-weight:700; }
+.card { background:#1e293b; border-radius:12px; padding:14px; }
+.section-title { font-size:14px; font-weight:700; }
 .source { color:#64748b; font-size:11px; }
-.primary-value { font-size:20px; font-weight:800; margin-top:6px; }
-.secondary-value { font-size:14px; color:#94a3b8; }
+.primary-value { font-size:20px; font-weight:800; margin-top:4px; }
+.secondary-value { font-size:13px; color:#94a3b8; }
+
 .compass {
-width:110px; height:110px; border:2px solid #475569;
-border-radius:50%; position:relative; margin:10px auto;
+width:100px; height:100px;
+border:2px solid #475569;
+border-radius:50%;
+position:relative;
+margin:8px auto;
 }
+
 .arrow {
-width:5px; height:45px; background:#f97316;
-position:absolute; top:10px; left:50%;
-transform-origin:bottom center; border-radius:3px;
+width:5px; height:40px;
+background:#f97316;
+position:absolute;
+top:10px; left:50%;
+transform-origin:bottom center;
+border-radius:3px;
 }
+
 .center-dot {
-width:8px; height:8px; background:white;
-border-radius:50%; position:absolute;
-top:50%; left:50%; transform:translate(-50%, -50%);
+width:8px; height:8px;
+background:white;
+border-radius:50%;
+position:absolute;
+top:50%; left:50%;
+transform:translate(-50%, -50%);
 }
-.direction-label {
-position:absolute; font-size:11px; font-weight:600; color:#cbd5e1;
-}
-.n { top:4px; left:50%; transform:translateX(-50%); }
-.s { bottom:4px; left:50%; transform:translateX(-50%); }
-.e { right:4px; top:50%; transform:translateY(-50%); }
-.w { left:4px; top:50%; transform:translateY(-50%); }
 </style>
 </head>
 
@@ -57,11 +60,11 @@ Refresh
 
 <section class="p-4 space-y-4">
 
-<div class="text-sm text-slate-400">
+<div class="text-xs text-slate-400">
 Last Updated: <span id="lastUpdated">--</span>
 </div>
 
-<div class="grid md:grid-cols-3 gap-4">
+<div class="grid md:grid-cols-4 gap-4">
 
 <!-- WIND -->
 <div class="card text-center">
@@ -69,10 +72,6 @@ Last Updated: <span id="lastUpdated">--</span>
 <div id="windSource" class="source"></div>
 
 <div class="compass">
-<div class="direction-label n">N</div>
-<div class="direction-label s">S</div>
-<div class="direction-label e">E</div>
-<div class="direction-label w">W</div>
 <div id="windArrow" class="arrow"></div>
 <div class="center-dot"></div>
 </div>
@@ -83,7 +82,7 @@ Last Updated: <span id="lastUpdated">--</span>
 
 <!-- WAVES -->
 <div class="card text-center">
-<div class="section-title">Wave Height</div>
+<div class="section-title">Waves</div>
 <div class="source">Chesapeake Bay Entrance (Near HRBT)</div>
 <div id="waveHeight" class="primary-value">--</div>
 </div>
@@ -91,16 +90,21 @@ Last Updated: <span id="lastUpdated">--</span>
 <!-- WATER TEMP -->
 <div class="card text-center">
 <div class="section-title">Water Temp</div>
-<div class="source">Chesapeake Bay Entrance (Near HRBT)</div>
+<div class="source">Buoy 44099</div>
 <div id="waterTemp" class="primary-value">--</div>
+</div>
+
+<!-- AIR TEMP -->
+<div class="card text-center">
+<div class="section-title">Air Temp</div>
+<div class="source">KORF (Norfolk Airport)</div>
+<div id="airTemp" class="primary-value">--</div>
 </div>
 
 </div>
 
 <div class="card">
-<div class="section-title">Tides</div>
-<div class="source">Sewells Point (Near HRBT)</div>
-
+<div class="section-title">Tides (Sewells Point - HRBT Area)</div>
 <div id="tideTrend" class="primary-value mt-2"></div>
 
 <div class="grid md:grid-cols-2 gap-6 mt-3">
@@ -116,7 +120,7 @@ Last Updated: <span id="lastUpdated">--</span>
 </div>
 
 <div class="text-xs text-slate-500">
-Buoy Observation Time (UTC): <span id="buoyTime">--</span>
+Buoy Observation (UTC): <span id="buoyTime">--</span>
 </div>
 
 </section>
@@ -153,7 +157,7 @@ document.getElementById("windArrow").style.transform =
 `translateX(-50%) rotate(${deg}deg)`;
 
 document.getElementById("windSource").innerText =
-"Source: " + data.buoyData.windSource;
+data.buoyData.windSource;
 
 document.getElementById("waveHeight").innerText =
 data.buoyData.waveHeightFt + " ft @ " +
@@ -161,6 +165,9 @@ data.buoyData.dominantPeriodSec + "s";
 
 document.getElementById("waterTemp").innerText =
 data.buoyData.waterTempF + " °F";
+
+document.getElementById("airTemp").innerText =
+data.buoyData.airTempF + " °F";
 
 document.getElementById("buoyTime").innerText =
 data.buoyData.buoyObservationTime;
