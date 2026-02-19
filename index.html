@@ -1,3 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>POV SAR Forum 2026 - Ops Dashboard</title>
+
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0f172a" />
+<link rel="icon" href="povsargarapp-qr.png">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+body { font-family: system-ui, sans-serif; }
+.card { background:#1e293b; border-radius:12px; padding:20px; }
+.label { color:#94a3b8; font-size:13px; }
+.value { font-size:18px; font-weight:600; }
+#map { height: 350px; border-radius:12px; }
+
+.compass {
+width:120px;
+height:120px;
+border:3px solid #64748b;
+border-radius:50%;
+position:relative;
+margin:auto;
+}
+.arrow {
+width:4px;
+height:50px;
+background:#f97316;
+position:absolute;
+top:15px;
+left:50%;
+transform-origin:bottom;
+}
+</style>
+</head>
+
+<body class="bg-slate-900 text-white">
+
+<header class="bg-slate-800 p-4 flex justify-between">
+<h1 class="font-bold text-lg">POV SAR Forum 2026 - Ops Dashboard</h1>
+</header>
+
+<section class="p-6 space-y-6">
+
+<div id="statusMessage" class="text-yellow-400 font-semibold">
+Connecting to Marine Data...
+</div>
+
+<div class="grid md:grid-cols-3 gap-6">
+
+<div class="card text-center">
+<div class="label">Wind</div>
+<div class="compass mt-4">
+<div id="windArrow" class="arrow"></div>
+</div>
+<div id="windText" class="value mt-4">Loading...</div>
+</div>
+
+<div class="card">
+<div class="label">Current Water Level (ft)</div>
+<div id="waterLevel" class="value">Loading...</div>
+</div>
+
+<div class="card">
+<div class="label">Next Tide</div>
+<div id="nextTide" class="value">Loading...</div>
+</div>
+
+</div>
+
+<div class="card">
+<div class="label mb-4">24 Hour Water Level Curve</div>
+<canvas id="tideChart"></canvas>
+</div>
+
+<div class="card">
+<div class="label mb-4">HRBT Operational Map</div>
+<div id="map"></div>
+</div>
+
+</section>
+
 <script>
 
 let tideChart;
@@ -12,14 +101,14 @@ if (!response.ok) throw new Error("Function returned " + response.status);
 const data = await response.json();
 console.log("Marine Data:", data);
 
-// ===== WATER LEVEL =====
-if (data.levelData && data.levelData.data && data.levelData.data.length > 0) {
+// ===== CURRENT WATER LEVEL =====
+if (data.levelData?.data?.length > 0) {
 document.getElementById("waterLevel").innerText =
-data.levelData.data[0].v + " ft";
+data.levelData.data[0].v;
 }
 
 // ===== NEXT TIDE =====
-if (data.tideData && data.tideData.predictions) {
+if (data.tideData?.predictions?.length > 0) {
 const predictions = data.tideData.predictions;
 const now = new Date();
 const next = predictions.find(p => new Date(p.t) > now);
@@ -31,7 +120,8 @@ document.getElementById("nextTide").innerText =
 }
 
 // ===== WEATHER =====
-if (data.weatherData && data.weatherData.properties) {
+if (data.weatherData?.properties) {
+
 const w = data.weatherData.properties;
 
 const windSpeed = w.windSpeed?.value
@@ -47,8 +137,8 @@ document.getElementById("windArrow").style.transform =
 `translateX(-50%) rotate(${windDir}deg)`;
 }
 
-// ===== TIDE CHART =====
-if (data.tideData && data.tideData.predictions) {
+// ===== 24-HOUR WATER LEVEL CHART =====
+if (data.tideData?.predictions?.length > 0) {
 
 const labels = data.tideData.predictions.map(p => p.t.substring(11,16));
 const values = data.tideData.predictions.map((_, i) => i);
@@ -99,4 +189,20 @@ document.getElementById("statusMessage").classList.add("text-red-500");
 loadMarineData();
 setInterval(loadMarineData, 300000);
 
+// ===== MAP =====
+const map = L.map('map').setView([36.98, -76.31], 10);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+attribution: '© OpenStreetMap'
+}).addTo(map);
+
+L.marker([36.95, -76.33]).addTo(map)
+.bindPopup("Sewells Point Tide Station 8638610");
+
+L.marker([36.94, -75.72]).addTo(map)
+.bindPopup("Buoy 44099 - Chesapeake Bay Entrance");
+
 </script>
+
+</body>
+</html>
