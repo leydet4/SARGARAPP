@@ -9,7 +9,9 @@
 <meta name="theme-color" content="#0f172a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" href="povsargarapp-qr.png">
+<link rel="apple-touch-icon" href="povsargarapp-qr.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -35,11 +37,30 @@ body { font-family: system-ui, sans-serif; }
 <h1 class="text-lg font-bold">POV SAR Forum 2026 (All Times Eastern)</h1>
 <div class="flex gap-2">
 <a href="gar.html" class="bg-blue-600 px-3 py-1 rounded text-sm font-semibold">GAR</a>
-<button onclick="loadMarineData()" class="bg-orange-500 px-3 py-1 rounded text-sm font-semibold">Refresh</button>
+
+<button id="installBtn"
+class="bg-green-600 px-3 py-1 rounded text-sm font-semibold hidden">
+Install App
+</button>
+
+<button onclick="loadMarineData()"
+class="bg-orange-500 px-3 py-1 rounded text-sm font-semibold">
+Refresh
+</button>
 </div>
 </header>
 
 <section class="p-4 space-y-4">
+
+<div id="installInstructions" class="install-box">
+<div class="font-semibold mb-1">Install This App:</div>
+<div><strong>Android (Chrome):</strong> Tap the green <em>Install App</em> button above or open browser menu ⋮ → “Install App”.</div>
+<div class="mt-1"><strong>iPhone (Safari only):</strong> Tap Share button → “Add to Home Screen”.</div>
+<button onclick="document.getElementById('installInstructions').style.display='none'"
+class="mt-2 text-xs text-slate-400 underline">
+Dismiss
+</button>
+</div>
 
 <div class="text-xs text-slate-400">
 Last Updated (Eastern): <span id="lastUpdated">--</span>
@@ -101,6 +122,31 @@ Buoy Observation (Eastern): <span id="buoyTime">--</span>
 
 <script>
 
+// ================= INSTALL LOGIC =================
+let deferredPrompt;
+const installBtn = document.getElementById("installBtn");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.classList.remove("hidden");
+});
+
+installBtn.addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBtn.classList.add("hidden");
+});
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js');
+}
+
+// ================= DATA LOGIC =================
+
 function parseEastern(str) {
   const [date, time] = str.split(" ");
   const [y,m,d] = date.split("-");
@@ -141,11 +187,12 @@ async function loadMarineData() {
   const b = data.buoyData;
 
   document.getElementById("windText").innerText =
-    b.windSpeedKnots !== "N/A" ? b.windSpeedKnots + " kts" : "N/A";
+    b.windSpeedKnots;
 
   document.getElementById("windCardinal").innerText =
-    degreesToCardinal(parseInt(b.windDirDeg)) +
-    (b.windDirDeg !== "N/A" ? ` (${b.windDirDeg}°)` : "");
+    b.windDirDeg !== "N/A"
+    ? degreesToCardinal(parseInt(b.windDirDeg)) + ` (${b.windDirDeg}°)`
+    : "";
 
   document.getElementById("windSource").innerText = b.windSource;
   document.getElementById("waveHeight").innerText = `${b.waveHeightFt} ft @ ${b.dominantPeriodSec}s`;
