@@ -2,56 +2,76 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SAR Forum – GAR Submissions</title>
-  <link rel="stylesheet" href="css/app.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POV SAR GAR App – GAR</title>
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#121212">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SAR GAR">
+  <link rel="apple-touch-icon" href="/assets/icon-192.png">
+
+  <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
 
 <header>
-  <h1>SAR Forum – GAR Submissions</h1>
+  <h1>GAR Submissions</h1>
   <nav>
-    <a href="index.html">Dashboard</a>
-    <a href="gar.html">GAR Submissions</a>
-    <a href="resources.html">SAR Resources</a>
+    <a href="/index.html">Dashboard</a>
+    <a href="/gar.html" class="active">GAR Submissions</a>
+    <a href="/resources.html">SAR Resources</a>
+    <a href="/install.html">Install</a>
   </nav>
 </header>
 
 <main class="grid">
-
   <div class="card">
     <h2>Task Force 1</h2>
-    <a class="button" href="#" id="tf1">Open GAR</a>
+    <a class="button" id="tf1Link" href="#" target="_blank" rel="noopener">Open Form</a>
   </div>
 
   <div class="card">
     <h2>Task Force 2</h2>
-    <a class="button" href="#" id="tf2">Open GAR</a>
+    <a class="button" id="tf2Link" href="#" target="_blank" rel="noopener">Open Form</a>
   </div>
 
   <div class="card">
     <h2>Task Force 3</h2>
-    <a class="button" href="#" id="tf3">Open GAR</a>
+    <a class="button" id="tf3Link" href="#" target="_blank" rel="noopener">Open Form</a>
   </div>
 
   <div class="card">
     <h2>Task Force 4</h2>
-    <a class="button" href="#" id="tf4">Open GAR</a>
+    <a class="button" id="tf4Link" href="#" target="_blank" rel="noopener">Open Form</a>
   </div>
 
   <div class="card">
     <h2>Admin</h2>
-    <a class="button admin" href="#" id="admin">Open GAR</a>
+    <a class="button admin" id="adminLink" href="#" target="_blank" rel="noopener">Open Form</a>
   </div>
-
 </main>
 
-<script src="js/config.js"></script>
+<script src="/js/config.js"></script>
 <script>
-  document.getElementById("tf1").href = config.forms.tf1;
-  document.getElementById("tf2").href = config.forms.tf2;
-  document.getElementById("tf3").href = config.forms.tf3;
-  document.getElementById("tf4").href = config.forms.tf4;
-  document.getElementById("admin").href = config.forms.admin;
+  // Wire form placeholders from config.js
+  document.getElementById("tf1Link").href = config.forms.tf1 || "#";
+  document.getElementById("tf2Link").href = config.forms.tf2 || "#";
+  document.getElementById("tf3Link").href = config.forms.tf3 || "#";
+  document.getElementById("tf4Link").href = config.forms.tf4 || "#";
+  document.getElementById("adminLink").href = config.forms.admin || "#";
 </script>
+
+<!-- Service Worker Registration -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js", { scope: "/" }).catch(() => {});
+    });
+  }
+</script>
+
 </body>
 </html>
