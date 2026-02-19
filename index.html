@@ -3,28 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SAR Forum – HRBT Conditions</title>
+  <title>POV SAR GAR App – Dashboard</title>
 
-  <link rel="stylesheet" href="css/app.css">
-  <link rel="manifest" href="manifest.json">
+  <!-- PWA Essentials -->
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#121212">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SAR GAR">
+  <link rel="apple-touch-icon" href="/assets/icon-192.png">
+
+  <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
 
 <header>
-  <h1>SAR Forum – HRBT Conditions</h1>
+  <h1>POV SAR GAR App</h1>
   <nav>
-    <a href="index.html" class="active">Dashboard</a>
-    <a href="gar.html">GAR Submissions</a>
-    <a href="resources.html">SAR Resources</a>
-    <a href="install.html">Install</a>
+    <a href="/index.html" class="active">Dashboard</a>
+    <a href="/gar.html">GAR Submissions</a>
+    <a href="/resources.html">SAR Resources</a>
+    <a href="/install.html">Install</a>
   </nav>
 </header>
 
 <main class="grid">
-
   <div class="card">
-    <h2>Water Level (HRBT)</h2>
+    <h2>HRBT Conditions</h2>
     <div id="waterLevel">Loading...</div>
   </div>
 
@@ -47,10 +54,21 @@
     <h2>Marine Forecast</h2>
     <div id="forecast">Loading...</div>
   </div>
-
 </main>
 
-<script src="js/config.js"></script>
-<script src="js/app.js"></script>
+<script src="/js/config.js"></script>
+<script src="/js/app.js"></script>
+
+<!-- Service Worker Registration (ROOT SCOPE) -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js", { scope: "/" })
+        .then(reg => console.log("SW registered:", reg.scope))
+        .catch(err => console.error("SW registration failed:", err));
+    });
+  }
+</script>
+
 </body>
 </html>
