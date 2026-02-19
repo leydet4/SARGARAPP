@@ -3,100 +3,110 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>GAR Submissions - POV SAR Forum 2026</title>
+<title>GAR Submissions - POV SAR 2026</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<link rel="icon" href="SAR.png">
+<link rel="apple-touch-icon" href="SAR.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
+
 .card {
-background:#1e293b;
-border-radius:12px;
-padding:16px;
+  background:#1e293b;
+  border-radius:16px;
+  padding:22px;
+  box-shadow:0 0 25px rgba(0,0,0,.4);
 }
-iframe {
-width:100%;
-height:800px;
-border:none;
-border-radius:8px;
+
+.gar-btn {
+  display:block;
+  width:100%;
+  padding:20px;
+  font-size:18px;
+  font-weight:900;
+  border-radius:14px;
+  text-align:center;
+  transition:.2s;
+  letter-spacing:.5px;
+}
+
+.gar-btn:hover {
+  transform:scale(1.04);
+}
+
+.subtitle {
+  font-size:13px;
+  color:#94a3b8;
 }
 </style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<header class="bg-slate-800 px-4 py-3 flex justify-between items-center">
-<h1 class="text-lg font-bold">
-GAR Submissions – Todd Dooley SAR Forum 2026
+<header class="bg-slate-800 py-6 shadow-lg text-center">
+
+<img src="SAR.png" alt="SAR Logo" class="mx-auto h-16 mb-3">
+
+<h1 class="text-2xl font-black tracking-wide">
+GAR Submissions
 </h1>
 
-<a href="index.html" 
-class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm font-semibold">
-Back to Dashboard
+<p class="subtitle mt-1">
+Port of Virginia Todd Dooley Search and Rescue Forum 2026
+</p>
+
+<a href="index.html"
+class="inline-block mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
+← Back to Marine Dashboard
 </a>
+
 </header>
 
-<section class="p-4 space-y-6">
+<section class="p-6 max-w-xl mx-auto">
 
-<div class="card">
-<div class="text-lg font-bold mb-3">Select GAR Submission Form</div>
+<div class="card space-y-5">
 
-<select id="formSelector" 
-class="w-full p-2 rounded text-black"
-onchange="loadForm()">
+<a href="https://docs.google.com/forms/d/e/1FAIpQLSdvr9y86OxSIddhaGCwE_Vfm5c29QJYmZr6zBeUiMwErN7OQw/viewform?usp=pp_url&entry.743951328=Task+Force+1"
+target="_blank"
+class="gar-btn bg-blue-600 hover:bg-blue-700">
+TASK FORCE 1 GAR
+</a>
 
-<option value="">-- Select Task Force --</option>
+<a href="https://docs.google.com/forms/d/e/1FAIpQLSdvr9y86OxSIddhaGCwE_Vfm5c29QJYmZr6zBeUiMwErN7OQw/viewform?usp=pp_url&entry.743951328=Task+Force+2"
+target="_blank"
+class="gar-btn bg-indigo-600 hover:bg-indigo-700">
+TASK FORCE 2 GAR
+</a>
 
-<option value="TF1">Task Force 1</option>
-<option value="TF2">Task Force 2</option>
-<option value="TF3">Task Force 3</option>
-<option value="TF4">Task Force 4</option>
-<option value="ADMIN">Admin</option>
+<a href="https://docs.google.com/forms/d/e/1FAIpQLSdvr9y86OxSIddhaGCwE_Vfm5c29QJYmZr6zBeUiMwErN7OQw/viewform?usp=pp_url&entry.743951328=Task+Force+3"
+target="_blank"
+class="gar-btn bg-purple-600 hover:bg-purple-700">
+TASK FORCE 3 GAR
+</a>
 
-</select>
+<a href="https://docs.google.com/forms/d/e/1FAIpQLSdvr9y86OxSIddhaGCwE_Vfm5c29QJYmZr6zBeUiMwErN7OQw/viewform?usp=pp_url&entry.743951328=Task+Force+4"
+target="_blank"
+class="gar-btn bg-emerald-600 hover:bg-emerald-700">
+TASK FORCE 4 GAR
+</a>
+
+<a href="https://docs.google.com/forms/d/e/1FAIpQLSdvr9y86OxSIddhaGCwE_Vfm5c29QJYmZr6zBeUiMwErN7OQw/viewform?usp=pp_url&entry.743951328=Other"
+target="_blank"
+class="gar-btn bg-orange-600 hover:bg-orange-700">
+OTHER GAR SUBMISSION
+</a>
 
 </div>
 
-<div class="card">
-<div id="formContainer" class="text-center text-slate-400">
-Select a Task Force to load the GAR Form.
-</div>
+<div class="text-center text-xs text-slate-500 mt-6">
+Each link opens a prefilled GAR form with the selected Task Force.
 </div>
 
 </section>
-
-<script>
-
-// ==========================
-// INSERT YOUR GOOGLE FORM LINKS BELOW
-// Replace each URL with your real Google Form embed link
-// ==========================
-
-const forms = {
-TF1: "https://docs.google.com/forms/d/e/YOUR_TF1_FORM_ID/viewform?embedded=true",
-TF2: "https://docs.google.com/forms/d/e/YOUR_TF2_FORM_ID/viewform?embedded=true",
-TF3: "https://docs.google.com/forms/d/e/YOUR_TF3_FORM_ID/viewform?embedded=true",
-TF4: "https://docs.google.com/forms/d/e/YOUR_TF4_FORM_ID/viewform?embedded=true",
-ADMIN: "https://docs.google.com/forms/d/e/YOUR_ADMIN_FORM_ID/viewform?embedded=true"
-};
-
-function loadForm() {
-
-const selected = document.getElementById("formSelector").value;
-const container = document.getElementById("formContainer");
-
-if (!selected || !forms[selected]) {
-container.innerHTML = "Select a Task Force to load the GAR Form.";
-return;
-}
-
-container.innerHTML = `
-<iframe src="${forms[selected]}" loading="lazy"></iframe>
-`;
-
-}
-
-</script>
 
 </body>
 </html>
