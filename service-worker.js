@@ -1,11 +1,10 @@
-const CACHE_NAME = "pov-sar-gar-v2";
+const CACHE_NAME = "pov-sar-gar-v3";
 
-// Keep this list minimal and GUARANTEED to exist.
-// Missing files = SW install fails = no Active + no Controller.
 const ASSETS = [
   "/",
   "/index.html",
   "/gar.html",
+  "/resources.html",
   "/install.html",
   "/manifest.json",
   "/css/app.css",
@@ -21,37 +20,49 @@ self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
 
-    // Add assets safely so a single missing file doesn't break the install.
-    const results = await Promise.allSettled(
-      ASSETS.map((url) => cache.add(url))
-    );
+    // Safe caching: a missing file won't break install
+    await Promise.allSettled(ASSETS.map((url) => cache.add(url)));
 
-    // Optional: log failures (viewable in DevTools > Application > Service Workers)
-    results.forEach((r, i) => {
-      if (r.status === "rejected") {
-        // eslint-disable-next-line no-console
-        console.warn("SW cache add failed:", ASSETS[i], r.reason);
-      }
-    });
-
-    self.skipWaiting();
+    // Become ready immediately
+    await self.skipWaiting();
   })());
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
+    // Cleanup old caches
     const keys = await caches.keys();
-    await Promise.all(
-      keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve()))
-    );
-    self.clients.claim();
+    await Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve())));
+
+    // Take control immediately
+    await self.clients.claim();
   })());
+});
+
+// Allow the page to force SW to take control + refresh
+self.addEventListener("message", (event) => {
+  if (!event.data) return;
+
+  if (event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+
+  if (event.data.type === "CLAIM_CLIENTS") {
+    self.clients.claim();
+  }
+
+  if (event.data.type === "CLEAR_CACHES") {
+    event.waitUntil((async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    })());
+  }
 });
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
-  // Network-first for API requests (always prefer latest live data)
+  // Network-first for live APIs
   if (
     req.url.includes("tidesandcurrents.noaa.gov") ||
     req.url.includes("api.weather.gov") ||
@@ -63,7 +74,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for site assets
+  // Cache-first for app assets
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req))
   );
