@@ -13,27 +13,82 @@
 
 <style>
 body { font-family: system-ui, sans-serif; }
-.card { background:#1e293b; border-radius:12px; padding:20px; }
-.label { color:#94a3b8; font-size:14px; font-weight:600; }
-.source { color:#64748b; font-size:12px; margin-top:4px; }
-.value { font-size:18px; font-weight:600; margin-top:8px; }
+
+.card {
+background:#1e293b;
+border-radius:14px;
+padding:24px;
+}
+
+.section-title {
+font-size:18px;
+font-weight:700;
+margin-bottom:4px;
+}
+
+.source {
+color:#64748b;
+font-size:12px;
+}
+
+.primary-value {
+font-size:28px;
+font-weight:800;
+margin-top:12px;
+}
+
+.secondary-value {
+font-size:16px;
+font-weight:600;
+}
 
 .compass {
-width:120px;
-height:120px;
-border:3px solid #64748b;
+width:160px;
+height:160px;
+border:3px solid #475569;
 border-radius:50%;
 position:relative;
-margin:auto;
+margin:20px auto;
 }
+
 .arrow {
-width:4px;
-height:50px;
+width:6px;
+height:70px;
 background:#f97316;
 position:absolute;
-top:15px;
+top:10px;
 left:50%;
-transform-origin:bottom;
+transform-origin:bottom center;
+border-radius:3px;
+}
+
+.center-dot {
+width:10px;
+height:10px;
+background:white;
+border-radius:50%;
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%, -50%);
+}
+
+.direction-label {
+position:absolute;
+font-size:14px;
+font-weight:600;
+color:#cbd5e1;
+}
+
+.n { top:6px; left:50%; transform:translateX(-50%); }
+.s { bottom:6px; left:50%; transform:translateX(-50%); }
+.e { right:6px; top:50%; transform:translateY(-50%); }
+.w { left:6px; top:50%; transform:translateY(-50%); }
+
+.tide-big {
+font-size:26px;
+font-weight:800;
+margin-top:12px;
 }
 </style>
 </head>
@@ -41,70 +96,91 @@ transform-origin:bottom;
 <body class="bg-slate-900 text-white">
 
 <header class="bg-slate-800 p-4">
-<h1 class="font-bold text-lg">
+<h1 class="text-xl font-bold">
 Port of Virginia Todd Dooley Search and Rescue Forum 2026
 </h1>
 </header>
 
-<section class="p-6 space-y-6">
+<section class="p-6 space-y-8">
 
-<div id="statusMessage" class="text-yellow-400 font-semibold">
-Connecting to Marine Data...
+<div id="statusMessage" class="text-green-400 font-semibold text-lg">
+Marine Data Connected
 </div>
 
-<div class="grid md:grid-cols-3 gap-6">
+<div class="grid md:grid-cols-3 gap-8">
 
 <!-- WIND -->
 <div class="card text-center">
-<div class="label">Wind</div>
+
+<div class="section-title">Wind</div>
 <div id="windSource" class="source"></div>
 
-<div class="compass mt-4">
+<div class="compass">
+
+<div class="direction-label n">N</div>
+<div class="direction-label s">S</div>
+<div class="direction-label e">E</div>
+<div class="direction-label w">W</div>
+
 <div id="windArrow" class="arrow"></div>
+<div class="center-dot"></div>
+
 </div>
 
-<div id="windText" class="value">Loading...</div>
+<div id="windText" class="primary-value">--</div>
+<div id="windCardinal" class="secondary-value text-slate-400"></div>
+
 </div>
 
 <!-- WAVES -->
-<div class="card">
-<div class="label">Wave Height</div>
+<div class="card text-center">
+<div class="section-title">Wave Height</div>
 <div class="source">NOAA NDBC Buoy 44099</div>
-<div id="waveHeight" class="value">Loading...</div>
+<div id="waveHeight" class="primary-value">--</div>
 </div>
 
 <!-- WATER TEMP -->
-<div class="card">
-<div class="label">Water Temperature</div>
+<div class="card text-center">
+<div class="section-title">Water Temperature</div>
 <div class="source">NOAA NDBC Buoy 44099</div>
-<div id="waterTemp" class="value">Loading...</div>
+<div id="waterTemp" class="primary-value">--</div>
 </div>
 
 </div>
 
 <!-- TIDES -->
 <div class="card">
-<div class="label">Tide Information</div>
+
+<div class="section-title">Tide Information</div>
 <div class="source">NOAA CO-OPS Station 8638610 (Sewells Point)</div>
 
-<div id="tideTrend" class="value mt-4">Loading...</div>
+<div id="tideTrend" class="tide-big"></div>
 
-<div class="grid md:grid-cols-2 gap-6 mt-4">
-<div>
-<div class="label text-sm">Last 2 Tides</div>
-<div id="lastTides" class="value text-sm mt-2"></div>
-</div>
+<div class="grid md:grid-cols-2 gap-10 mt-6">
 
 <div>
-<div class="label text-sm">Next 2 Tides</div>
-<div id="nextTides" class="value text-sm mt-2"></div>
+<div class="text-lg font-bold mb-2">Last 2 Tides</div>
+<div id="lastTides" class="text-lg"></div>
 </div>
+
+<div>
+<div class="text-lg font-bold mb-2">Next 2 Tides</div>
+<div id="nextTides" class="text-lg"></div>
 </div>
+
+</div>
+
 </div>
 
 </section>
 
 <script>
+
+function degreesToCardinal(deg) {
+if (deg === "N/A") return "";
+const directions = ["N","NE","E","SE","S","SW","W","NW"];
+return directions[Math.round(deg / 45) % 8];
+}
 
 async function loadMarineData() {
 
@@ -114,17 +190,20 @@ const response = await fetch("/.netlify/functions/marine");
 if (!response.ok) throw new Error("Function returned " + response.status);
 
 const data = await response.json();
-console.log(data);
 
 // WIND
 if (data.buoyData) {
 
+const deg = parseInt(data.buoyData.windDirDeg);
+
 document.getElementById("windText").innerText =
-data.buoyData.windSpeedKnots + " kts " +
-data.buoyData.windDirDeg + "°";
+data.buoyData.windSpeedKnots + " kts";
+
+document.getElementById("windCardinal").innerText =
+degreesToCardinal(deg) + " (" + deg + "°)";
 
 document.getElementById("windArrow").style.transform =
-`translateX(-50%) rotate(${data.buoyData.windDirDeg}deg)`;
+`translateX(-50%) rotate(${deg}deg)`;
 
 document.getElementById("windSource").innerText =
 "Source: " + data.buoyData.windSource;
@@ -147,31 +226,22 @@ const lastTwo = tides.filter(t => new Date(t.t) < now).slice(-2);
 const nextTwo = tides.filter(t => new Date(t.t) > now).slice(0,2);
 
 document.getElementById("lastTides").innerHTML =
-lastTwo.map(t => `${t.type === "H" ? "High" : "Low"} - ${t.t}`).join("<br>");
+lastTwo.map(t => `<div>${t.type === "H" ? "High" : "Low"} - ${t.t}</div>`).join("");
 
 document.getElementById("nextTides").innerHTML =
-nextTwo.map(t => `${t.type === "H" ? "High" : "Low"} - ${t.t}`).join("<br>");
+nextTwo.map(t => `<div>${t.type === "H" ? "High" : "Low"} - ${t.t}</div>`).join("");
 
 if (nextTwo.length > 0) {
 document.getElementById("tideTrend").innerText =
 nextTwo[0].type === "H" ? "Rising ↑" : "Falling ↓";
 }
+
 }
 
-document.getElementById("statusMessage").innerText =
-"Marine Data Connected";
-document.getElementById("statusMessage")
-.classList.replace("text-yellow-400","text-green-400");
-
 } catch (error) {
-
+document.getElementById("statusMessage").innerText = "Marine Data Failed";
+document.getElementById("statusMessage").classList.replace("text-green-400","text-red-500");
 console.error(error);
-
-document.getElementById("statusMessage").innerText =
-"Marine Data Failed";
-document.getElementById("statusMessage")
-.classList.replace("text-yellow-400","text-red-500");
-
 }
 
 }
