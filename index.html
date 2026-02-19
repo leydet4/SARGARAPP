@@ -10,7 +10,6 @@
 <link rel="icon" href="povsargarapp-qr.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
@@ -43,7 +42,7 @@ transform-origin:bottom;
 
 <body class="bg-slate-900 text-white">
 
-<header class="bg-slate-800 p-4 flex justify-between">
+<header class="bg-slate-800 p-4">
 <h1 class="font-bold text-lg">POV SAR Forum 2026 - Ops Dashboard</h1>
 </header>
 
@@ -55,6 +54,7 @@ Connecting to Marine Data...
 
 <div class="grid md:grid-cols-3 gap-6">
 
+<!-- Wind -->
 <div class="card text-center">
 <div class="label">Wind</div>
 <div class="compass mt-4">
@@ -63,21 +63,38 @@ Connecting to Marine Data...
 <div id="windText" class="value mt-4">Loading...</div>
 </div>
 
+<!-- Waves -->
 <div class="card">
-<div class="label">Current Water Level (ft)</div>
-<div id="waterLevel" class="value">Loading...</div>
+<div class="label">Wave Height</div>
+<div id="waveHeight" class="value">Loading...</div>
 </div>
 
+<!-- Water Temp -->
 <div class="card">
-<div class="label">Next Tide</div>
-<div id="nextTide" class="value">Loading...</div>
+<div class="label">Water Temperature</div>
+<div id="waterTemp" class="value">Loading...</div>
 </div>
 
 </div>
 
+<!-- Tide Section -->
 <div class="card">
-<div class="label mb-4">24 Hour Water Level Curve</div>
-<canvas id="tideChart"></canvas>
+<div class="label mb-2">Tide Trend</div>
+<div id="tideTrend" class="value mb-4">Loading...</div>
+
+<div class="grid md:grid-cols-2 gap-6">
+
+<div>
+<div class="label">Last 2 Tides</div>
+<div id="lastTides" class="value text-sm mt-2"></div>
+</div>
+
+<div>
+<div class="label">Next 2 Tides</div>
+<div id="nextTides" class="value text-sm mt-2"></div>
+</div>
+
+</div>
 </div>
 
 <div class="card">
@@ -89,8 +106,6 @@ Connecting to Marine Data...
 
 <script>
 
-let tideChart;
-
 async function loadMarineData() {
 
 try {
@@ -99,88 +114,60 @@ const response = await fetch("/.netlify/functions/marine");
 if (!response.ok) throw new Error("Function returned " + response.status);
 
 const data = await response.json();
-console.log("Marine Data:", data);
+console.log(data);
 
-// ===== CURRENT WATER LEVEL =====
-if (data.levelData?.data?.length > 0) {
-document.getElementById("waterLevel").innerText =
-data.levelData.data[0].v;
-}
+// ===== BUOY =====
+if (data.buoyData?.data?.length > 0) {
 
-// ===== NEXT TIDE =====
-if (data.tideData?.predictions?.length > 0) {
-const predictions = data.tideData.predictions;
-const now = new Date();
-const next = predictions.find(p => new Date(p.t) > now);
+const b = data.buoyData.data[0];
 
-if (next) {
-document.getElementById("nextTide").innerText =
-(next.type === "H" ? "High" : "Low") + " at " + next.t;
-}
-}
+document.getElementById("waveHeight").innerText =
+b.wave_height + " ft @ " + b.dominant_wave_period + "s";
 
-// ===== WEATHER =====
-if (data.weatherData?.properties) {
-
-const w = data.weatherData.properties;
-
-const windSpeed = w.windSpeed?.value
-? (w.windSpeed.value * 2.237).toFixed(1)
-: "N/A";
-
-const windDir = w.windDirection?.value || 0;
+document.getElementById("waterTemp").innerText =
+b.water_temperature + " °F";
 
 document.getElementById("windText").innerText =
-windSpeed + " mph " + windDir + "°";
+b.wind_speed + " kts " + b.wind_direction + "°";
 
 document.getElementById("windArrow").style.transform =
-`translateX(-50%) rotate(${windDir}deg)`;
+`translateX(-50%) rotate(${b.wind_direction}deg)`;
+
 }
 
-// ===== 24-HOUR WATER LEVEL CHART =====
+// ===== TIDES =====
 if (data.tideData?.predictions?.length > 0) {
 
-const labels = data.tideData.predictions.map(p => p.t.substring(11,16));
-const values = data.tideData.predictions.map((_, i) => i);
+const tides = data.tideData.predictions;
+const now = new Date();
 
-if (tideChart) tideChart.destroy();
+const lastTwo = tides.filter(t => new Date(t.t) < now).slice(-2);
+const nextTwo = tides.filter(t => new Date(t.t) > now).slice(0,2);
 
-tideChart = new Chart(document.getElementById("tideChart"), {
-type: "line",
-data: {
-labels: labels,
-datasets: [{
-label: "Tide Cycle",
-data: values,
-borderColor: "#f97316",
-backgroundColor: "rgba(249,115,22,0.2)",
-fill: true,
-tension: 0.4
-}]
-},
-options: {
-plugins: { legend: { labels:{ color:"white"} } },
-scales: {
-x: { ticks:{ color:"white"} },
-y: { ticks:{ color:"white"} }
+document.getElementById("lastTides").innerHTML =
+lastTwo.map(t => `${t.type === "H" ? "High" : "Low"} - ${t.t}`).join("<br>");
+
+document.getElementById("nextTides").innerHTML =
+nextTwo.map(t => `${t.type === "H" ? "High" : "Low"} - ${t.t}`).join("<br>");
+
+if (nextTwo.length > 0) {
+const rising = nextTwo[0].type === "H";
+document.getElementById("tideTrend").innerText =
+rising ? "Rising ↑" : "Falling ↓";
 }
-}
-});
+
 }
 
 document.getElementById("statusMessage").innerText = "Marine Data Connected";
-document.getElementById("statusMessage").classList.remove("text-yellow-400");
-document.getElementById("statusMessage").classList.add("text-green-400");
+document.getElementById("statusMessage").classList.replace("text-yellow-400","text-green-400");
 
 } catch (error) {
 
-console.error("Marine Load Error:", error);
-
 document.getElementById("statusMessage").innerText =
-"Marine Data Failed: " + error.message;
+"Marine Data Failed";
+document.getElementById("statusMessage").classList.replace("text-yellow-400","text-red-500");
 
-document.getElementById("statusMessage").classList.remove("text-yellow-400");
-document.getElementById("statusMessage").classList.add("text-red-500");
+console.error(error);
 
 }
 
@@ -189,18 +176,11 @@ document.getElementById("statusMessage").classList.add("text-red-500");
 loadMarineData();
 setInterval(loadMarineData, 300000);
 
-// ===== MAP =====
+// Map
 const map = L.map('map').setView([36.98, -76.31], 10);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-attribution: '© OpenStreetMap'
-}).addTo(map);
-
-L.marker([36.95, -76.33]).addTo(map)
-.bindPopup("Sewells Point Tide Station 8638610");
-
-L.marker([36.94, -75.72]).addTo(map)
-.bindPopup("Buoy 44099 - Chesapeake Bay Entrance");
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.marker([36.95, -76.33]).addTo(map).bindPopup("Sewells Point Tide Station");
+L.marker([36.94, -75.72]).addTo(map).bindPopup("Buoy 44099");
 
 </script>
 
