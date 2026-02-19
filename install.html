@@ -18,29 +18,22 @@
   <style>
     .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
     .topbar { display:flex; justify-content:center; flex-wrap:wrap; gap:.75rem; margin: 1rem 0 0; }
-    #installBtn { display:none; }
     .section { margin: 1.5rem 0; text-align:center; }
     .section h2 { margin-bottom: .75rem; font-size: 1.25rem; color:#ffcc00; }
-    .debug {
-      text-align:left;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: .85rem;
-      white-space: pre-wrap;
+
+    .infoBox {
+      max-width: 900px;
+      margin: 0.75rem auto 0;
+      text-align: left;
       background:#141414;
       border:1px solid #2a2a2a;
       border-radius:10px;
       padding:12px;
-      max-width: 900px;
-      margin: 0 auto;
       color:#d6d6d6;
+      line-height: 1.45;
     }
-    .hint {
-      max-width: 900px;
-      margin: 0 auto;
-      text-align:left;
-      color:#bdbdbd;
-      line-height: 1.5;
-    }
+
+    .infoBox strong { color:#ffcc00; }
   </style>
 </head>
 <body>
@@ -57,9 +50,12 @@
       <a class="button" href="/index.html">⬅ Back to Dashboard</a>
     </div>
 
-    <p class="muted" style="margin-top:10px;">
-      If the install button doesn’t show on Android, Chrome may show install under the <b>⋮ menu</b>.
-    </p>
+    <div id="installHelp" class="infoBox">
+      <strong>Install options:</strong><br>
+      • <b>Android (Chrome):</b> tap the <b>⋮ menu</b> → <b>Install app</b> / <b>Add to Home screen</b><br>
+      • <b>iPhone/iPad:</b> open in <b>Safari</b> → <b>Share</b> → <b>Add to Home Screen</b><br>
+      • <b>Desktop Chrome:</b> look for the <b>Install icon</b> in the address bar or use <b>⋮</b> → <b>Install</b>
+    </div>
   </header>
 
   <div class="section">
@@ -74,30 +70,8 @@
     </p>
   </div>
 
-  <div class="section">
-    <h2>Manual Install Instructions</h2>
-    <div class="hint">
-      <b>Android (Chrome):</b> open the <b>⋮ menu</b> → <b>Install app</b> / <b>Add to Home screen</b>.<br/>
-      If you don’t see it, the app is not currently “installable.” The diagnostics below will say why.
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>PWA Diagnostics</h2>
-    <div id="debugOut" class="debug">Loading diagnostics…</div>
-  </div>
-
 </div>
 
 <script src="/js/install.js"></script>
-
-<!-- Force correct URL (avoid /install rewrite weirdness) -->
-<script>
-  // If user is on /install (rewritten), push them to /install.html for consistency
-  if (location.pathname === "/install") {
-    location.replace("/install.html");
-  }
-</script>
-
 </body>
 </html>
