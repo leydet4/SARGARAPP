@@ -1,80 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SAR Forum – Install</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>POV SAR GAR App – Install</title>
 
-  <link rel="stylesheet" href="css/app.css">
+  <!-- PWA Essentials -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#121212">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SAR GAR">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+
+  <link rel="stylesheet" href="css/app.css">
+
+  <style>
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .logo { display:block; margin:0 auto 1rem; max-width:140px; height:auto; }
+    .section { margin: 1.5rem 0; text-align:center; }
+    .section h2 { margin-bottom: .75rem; font-size: 1.25rem; color:#ffcc00; }
+    .button-row { display:flex; flex-wrap:wrap; justify-content:center; gap:.75rem; }
+    .button-row .button { min-width: 200px; }
+    .topbar { display:flex; justify-content:center; gap:.75rem; margin-bottom:1rem; }
+    #installBtn { display:none; }
+  </style>
 </head>
 <body>
 
-<header>
-  <h1>SAR Forum – Install</h1>
-  <nav>
-    <a href="index.html">Dashboard</a>
-    <a href="gar.html">GAR Submissions</a>
-    <a href="resources.html">SAR Resources</a>
-    <a href="install.html" class="active">Install</a>
-  </nav>
-</header>
+<div class="container">
 
-<main class="grid">
+  <header style="text-align:center; margin-bottom:1.5rem;">
+    <h1>POV SAR GAR App</h1>
+    <p class="muted">Todd Dooley Search & Rescue Forum</p>
 
-  <div class="card">
-    <h2>Install the SAR Forum App</h2>
-    <p class="muted">
-      Install this site as an app on your device for quick access during the SAR event.
-    </p>
+    <div class="topbar">
+      <button id="installBtn" class="button">➕ Install App</button>
+      <a class="button" href="index.html">⬅ Back to Dashboard</a>
+    </div>
+  </header>
 
-    <button id="installBtn" class="button" style="display:none;">
-      Install App
-    </button>
-
-    <div id="installStatus" class="muted" style="margin-top:10px;">
-      If you don’t see an install button, use the steps below.
+  <!-- iOS Install Hint -->
+  <div id="iosInstallHint" hidden style="margin-bottom:1rem;">
+    <div style="background:#1e1e1e; padding:15px; border-radius:8px;">
+      <strong>Install this app</strong><br>
+      On iPhone/iPad: open in <b>Safari</b>, tap the <b>Share</b> icon ⬆️, then <b>Add to Home Screen</b>.
+      <div style="margin-top:10px;">
+        <button id="iosInstallClose" class="button admin">Close</button>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <h2>iPhone / iPad (Safari)</h2>
-    <ol class="steps">
-      <li>Open this page in Safari.</li>
-      <li>Tap the Share button.</li>
-      <li>Select “Add to Home Screen.”</li>
-      <li>Tap Add.</li>
-    </ol>
-  </div>
-
-  <div class="card">
-    <h2>Android (Chrome)</h2>
-    <ol class="steps">
-      <li>Open this page in Chrome.</li>
-      <li>Tap the 3-dot menu.</li>
-      <li>Select “Install app” or “Add to Home screen.”</li>
-    </ol>
-  </div>
-
-  <div class="card">
+  <!-- QR Section -->
+  <div class="section">
     <h2>Scan to Open the App</h2>
-    <p class="muted">
-      Scan this QR code to open the SAR Forum App:
-    </p>
-
-    <div class="qr-wrap">
-      <img src="assets/povsargarapp-qr.png" alt="SAR Forum QR Code">
+    <div style="display:flex; justify-content:center;">
+      <img src="assets/povsargarapp-qr.png" 
+           alt="SAR GAR QR Code" 
+           style="width:260px; max-width:90%; background:white; padding:12px; border-radius:10px;">
     </div>
-
     <p class="muted" style="margin-top:10px;">
       https://povsargarapp.netlify.app/
     </p>
   </div>
 
-</main>
+  <!-- Manual Install Instructions -->
+  <div class="section">
+    <h2>Manual Install Instructions</h2>
+    <div class="button-row">
+      <div class="card" style="max-width:350px;">
+        <h3 style="color:#ffcc00;">iPhone / iPad</h3>
+        <ol style="text-align:left;">
+          <li>Open this page in Safari.</li>
+          <li>Tap the Share button.</li>
+          <li>Select “Add to Home Screen.”</li>
+          <li>Tap Add.</li>
+        </ol>
+      </div>
 
-<script src="js/config.js"></script>
-<script src="js/install.js"></script>
+      <div class="card" style="max-width:350px;">
+        <h3 style="color:#ffcc00;">Android (Chrome)</h3>
+        <ol style="text-align:left;">
+          <li>Open this page in Chrome.</li>
+          <li>Tap the 3-dot menu.</li>
+          <li>Select “Install app” or “Add to Home screen.”</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Service Worker -->
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js")
+      .then(reg => console.log("SW registered:", reg.scope))
+      .catch(err => console.error("SW registration failed:", err));
+  });
+}
+</script>
+
+<!-- Android Install Button -->
+<script>
+let deferredPrompt = null;
+const installBtn = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'inline-block';
+});
+
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  installBtn.disabled = true;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  installBtn.style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  installBtn.style.display = 'none';
+});
+</script>
+
+<!-- iOS Install Hint -->
+<script>
+(function(){
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const ua = navigator.userAgent || '';
+  const isIosDevice =
+    /iphone|ipad|ipod/i.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  const dismissed = localStorage.getItem('iosInstallHintDismissed') === '1';
+  if (!isStandalone && isIosDevice && !dismissed) {
+    const hint = document.getElementById('iosInstallHint');
+    const close = document.getElementById('iosInstallClose');
+    if (hint && close) {
+      hint.hidden = false;
+      close.addEventListener('click', () => {
+        hint.hidden = true;
+        localStorage.setItem('iosInstallHintDismissed', '1');
+      });
+    }
+  }
+})();
+</script>
+
 </body>
 </html>
