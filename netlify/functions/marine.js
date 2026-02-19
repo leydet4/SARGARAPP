@@ -50,9 +50,9 @@ exports.handler = async function () {
 
 try {
 
-// =========================
-// TIDE DATA (8638610)
-// =========================
+// ======================
+// TIDES (8638610)
+// ======================
 const today = new Date();
 const tomorrow = new Date();
 tomorrow.setDate(today.getDate() + 1);
@@ -70,18 +70,14 @@ const tideUrl =
 
 const tideData = await getJSON(tideUrl);
 
-// =========================
-// BUOY DATA (44099)
-// =========================
+// ======================
+// BUOY (44099)
+// ======================
 const buoyText = await getText(
 "https://www.ndbc.noaa.gov/data/realtime2/44099.txt"
 );
 
 const lines = buoyText.split("\n").filter(l => l.trim() !== "");
-
-// Line 0 = column headers
-// Line 1 = units
-// Line 2 = latest observation
 
 if (lines.length < 3) {
   throw new Error("Buoy data format unexpected");
@@ -98,17 +94,49 @@ const rawWaterTemp = latest[col("WTMP")];
 const rawWindSpeed = latest[col("WSPD")];
 const rawWindDir = latest[col("WDIR")];
 
+let windSpeedKnots = null;
+let windDirDeg = null;
+let windSource = null;
+
+// ======================
+// PRIMARY WIND (BUOY)
+// ======================
+if (rawWindSpeed !== "MM" && rawWindDir !== "MM") {
+  windSpeedKnots = mpsToKnots(rawWindSpeed);
+  windDirDeg = rawWindDir;
+  windSource = "NOAA NDBC Buoy 44099";
+}
+
+// ======================
+// FALLBACK WIND (KORF)
+// ======================
+if (!windSpeedKnots) {
+
+  const weatherData = await getJSON(
+    "https://api.weather.gov/stations/KORF/observations/latest"
+  );
+
+  const props = weatherData.properties;
+
+  if (props.windSpeed?.value !== null && props.windDirection?.value !== null) {
+    windSpeedKnots = mpsToKnots(props.windSpeed.value);
+    windDirDeg = props.windDirection.value.toString();
+    windSource = "NOAA Weather Station KORF (Norfolk)";
+  }
+}
+
+// ======================
+// BUILD RESPONSE
+// ======================
 const buoyData = {
 waveHeightFt: rawWave !== "MM" ? metersToFeet(rawWave) : "N/A",
 dominantPeriodSec: rawPeriod !== "MM" ? rawPeriod : "N/A",
 waterTempF: rawWaterTemp !== "MM" ? cToF(rawWaterTemp) : "N/A",
-windSpeedKnots: rawWindSpeed !== "MM" ? mpsToKnots(rawWindSpeed) : "N/A",
-windDirDeg: rawWindDir !== "MM" ? rawWindDir : "N/A"
+windSpeedKnots: windSpeedKnots || "N/A",
+windDirDeg: windDirDeg || "N/A",
+windSource: windSource || "Unavailable"
 };
 
-// =========================
-// RETURN RESPONSE
-// =========================
 return {
 statusCode: 200,
 headers: {

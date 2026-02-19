@@ -3,15 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Port of Virginia Todd Dooley SAR Forum 2026 - Operations Dashboard</title>
+<title>Port of Virginia SAR Forum 2026 - Operations Dashboard</title>
 
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#0f172a" />
 <link rel="icon" href="povsargarapp-qr.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
@@ -19,7 +17,6 @@ body { font-family: system-ui, sans-serif; }
 .label { color:#94a3b8; font-size:14px; font-weight:600; }
 .source { color:#64748b; font-size:12px; margin-top:4px; }
 .value { font-size:18px; font-weight:600; margin-top:8px; }
-#map { height: 350px; border-radius:12px; }
 
 .compass {
 width:120px;
@@ -60,7 +57,7 @@ Connecting to Marine Data...
 <!-- WIND -->
 <div class="card text-center">
 <div class="label">Wind</div>
-<div class="source">Source: NOAA NDBC Buoy 44099</div>
+<div id="windSource" class="source"></div>
 
 <div class="compass mt-4">
 <div id="windArrow" class="arrow"></div>
@@ -72,28 +69,27 @@ Connecting to Marine Data...
 <!-- WAVES -->
 <div class="card">
 <div class="label">Wave Height</div>
-<div class="source">Source: NOAA NDBC Buoy 44099</div>
+<div class="source">NOAA NDBC Buoy 44099</div>
 <div id="waveHeight" class="value">Loading...</div>
 </div>
 
 <!-- WATER TEMP -->
 <div class="card">
 <div class="label">Water Temperature</div>
-<div class="source">Source: NOAA NDBC Buoy 44099</div>
+<div class="source">NOAA NDBC Buoy 44099</div>
 <div id="waterTemp" class="value">Loading...</div>
 </div>
 
 </div>
 
-<!-- TIDE SECTION -->
+<!-- TIDES -->
 <div class="card">
 <div class="label">Tide Information</div>
-<div class="source">Source: NOAA CO-OPS Station 8638610 (Sewells Point, Norfolk)</div>
+<div class="source">NOAA CO-OPS Station 8638610 (Sewells Point)</div>
 
 <div id="tideTrend" class="value mt-4">Loading...</div>
 
 <div class="grid md:grid-cols-2 gap-6 mt-4">
-
 <div>
 <div class="label text-sm">Last 2 Tides</div>
 <div id="lastTides" class="value text-sm mt-2"></div>
@@ -103,15 +99,7 @@ Connecting to Marine Data...
 <div class="label text-sm">Next 2 Tides</div>
 <div id="nextTides" class="value text-sm mt-2"></div>
 </div>
-
 </div>
-</div>
-
-<!-- MAP -->
-<div class="card">
-<div class="label">HRBT Operational Area</div>
-<div class="source">Stations: Sewells Point 8638610 | Buoy 44099</div>
-<div id="map" class="mt-4"></div>
 </div>
 
 </section>
@@ -126,19 +114,10 @@ const response = await fetch("/.netlify/functions/marine");
 if (!response.ok) throw new Error("Function returned " + response.status);
 
 const data = await response.json();
-console.log("Marine Data:", data);
+console.log(data);
 
-// =====================
-// BUOY DATA
-// =====================
+// WIND
 if (data.buoyData) {
-
-document.getElementById("waveHeight").innerText =
-data.buoyData.waveHeightFt + " ft @ " +
-data.buoyData.dominantPeriodSec + "s";
-
-document.getElementById("waterTemp").innerText =
-data.buoyData.waterTempF + " °F";
 
 document.getElementById("windText").innerText =
 data.buoyData.windSpeedKnots + " kts " +
@@ -147,11 +126,18 @@ data.buoyData.windDirDeg + "°";
 document.getElementById("windArrow").style.transform =
 `translateX(-50%) rotate(${data.buoyData.windDirDeg}deg)`;
 
+document.getElementById("windSource").innerText =
+"Source: " + data.buoyData.windSource;
+
+document.getElementById("waveHeight").innerText =
+data.buoyData.waveHeightFt + " ft @ " +
+data.buoyData.dominantPeriodSec + "s";
+
+document.getElementById("waterTemp").innerText =
+data.buoyData.waterTempF + " °F";
 }
 
-// =====================
-// TIDE DATA
-// =====================
+// TIDES
 if (data.tideData?.predictions?.length > 0) {
 
 const tides = data.tideData.predictions;
@@ -161,39 +147,28 @@ const lastTwo = tides.filter(t => new Date(t.t) < now).slice(-2);
 const nextTwo = tides.filter(t => new Date(t.t) > now).slice(0,2);
 
 document.getElementById("lastTides").innerHTML =
-lastTwo.map(t =>
-`${t.type === "H" ? "High" : "Low"} - ${t.t}`
-).join("<br>");
+lastTwo.map(t => `${t.type === "H" ? "High" : "Low"} - ${t.t}`).join("<br>");
 
 document.getElementById("nextTides").innerHTML =
-nextTwo.map(t =>
-`${t.type === "H" ? "High" : "Low"} - ${t.t}`
-).join("<br>");
+nextTwo.map(t => `${t.type === "H" ? "High" : "Low"} - ${t.t}`).join("<br>");
 
 if (nextTwo.length > 0) {
-const rising = nextTwo[0].type === "H";
 document.getElementById("tideTrend").innerText =
-rising ? "Rising ↑" : "Falling ↓";
+nextTwo[0].type === "H" ? "Rising ↑" : "Falling ↓";
+}
 }
 
-}
-
-// =====================
-// STATUS
-// =====================
 document.getElementById("statusMessage").innerText =
 "Marine Data Connected";
-
 document.getElementById("statusMessage")
 .classList.replace("text-yellow-400","text-green-400");
 
 } catch (error) {
 
-console.error("Marine Load Error:", error);
+console.error(error);
 
 document.getElementById("statusMessage").innerText =
 "Marine Data Failed";
-
 document.getElementById("statusMessage")
 .classList.replace("text-yellow-400","text-red-500");
 
@@ -203,22 +178,6 @@ document.getElementById("statusMessage")
 
 loadMarineData();
 setInterval(loadMarineData, 300000);
-
-// =====================
-// MAP
-// =====================
-const map = L.map('map').setView([36.98, -76.31], 10);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
-.addTo(map);
-
-L.marker([36.95, -76.33])
-.addTo(map)
-.bindPopup("NOAA Station 8638610 - Sewells Point");
-
-L.marker([36.94, -75.72])
-.addTo(map)
-.bindPopup("NOAA Buoy 44099 - Chesapeake Bay Entrance");
 
 </script>
 
