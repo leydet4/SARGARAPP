@@ -1,24 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GAR Submissions</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GAR Submissions - POV SAR Forum 2026</title>
+
 <script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body { font-family: system-ui, sans-serif; }
+.card {
+background:#1e293b;
+border-radius:12px;
+padding:16px;
+}
+iframe {
+width:100%;
+height:800px;
+border:none;
+border-radius:8px;
+}
+</style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<header class="bg-slate-800 p-4 flex justify-between">
-<h1 class="font-bold">GAR Submission Portal</h1>
-<a href="index.html" class="text-orange-400">Back to Dashboard</a>
+<header class="bg-slate-800 px-4 py-3 flex justify-between items-center">
+<h1 class="text-lg font-bold">
+GAR Submissions – Todd Dooley SAR Forum 2026
+</h1>
+
+<a href="index.html" 
+class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm font-semibold">
+Back to Dashboard
+</a>
 </header>
 
-<section class="p-6">
-<div class="bg-slate-800 p-6 rounded">
-<p>Google Forms will be embedded here once URLs are provided.</p>
+<section class="p-4 space-y-6">
+
+<div class="card">
+<div class="text-lg font-bold mb-3">Select GAR Submission Form</div>
+
+<select id="formSelector" 
+class="w-full p-2 rounded text-black"
+onchange="loadForm()">
+
+<option value="">-- Select Task Force --</option>
+
+<option value="TF1">Task Force 1</option>
+<option value="TF2">Task Force 2</option>
+<option value="TF3">Task Force 3</option>
+<option value="TF4">Task Force 4</option>
+<option value="ADMIN">Admin</option>
+
+</select>
+
 </div>
+
+<div class="card">
+<div id="formContainer" class="text-center text-slate-400">
+Select a Task Force to load the GAR Form.
+</div>
+</div>
+
 </section>
+
+<script>
+
+// ==========================
+// INSERT YOUR GOOGLE FORM LINKS BELOW
+// Replace each URL with your real Google Form embed link
+// ==========================
+
+const forms = {
+TF1: "https://docs.google.com/forms/d/e/YOUR_TF1_FORM_ID/viewform?embedded=true",
+TF2: "https://docs.google.com/forms/d/e/YOUR_TF2_FORM_ID/viewform?embedded=true",
+TF3: "https://docs.google.com/forms/d/e/YOUR_TF3_FORM_ID/viewform?embedded=true",
+TF4: "https://docs.google.com/forms/d/e/YOUR_TF4_FORM_ID/viewform?embedded=true",
+ADMIN: "https://docs.google.com/forms/d/e/YOUR_ADMIN_FORM_ID/viewform?embedded=true"
+};
+
+function loadForm() {
+
+const selected = document.getElementById("formSelector").value;
+const container = document.getElementById("formContainer");
+
+if (!selected || !forms[selected]) {
+container.innerHTML = "Select a Task Force to load the GAR Form.";
+return;
+}
+
+container.innerHTML = `
+<iframe src="${forms[selected]}" loading="lazy"></iframe>
+`;
+
+}
+
+</script>
 
 </body>
 </html>
