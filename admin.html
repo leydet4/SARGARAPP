@@ -3,23 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin GAR Review - POV SAR 2026</title>
+<title>Admin Dashboard - POV SAR 2026</title>
 
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
+
 .card {
   background:#1e293b;
   border-radius:16px;
   padding:18px;
-  box-shadow:0 0 25px rgba(0,0,0,.4);
+  box-shadow:0 0 25px rgba(0,0,0,.35);
 }
+
 iframe {
-  border-radius:12px;
   width:100%;
-  height:420px;
+  height:400px;
+  border-radius:12px;
+}
+
+input, textarea {
+  background:#334155;
+  border-radius:10px;
+  padding:10px;
+  width:100%;
 }
 </style>
 </head>
@@ -33,14 +42,14 @@ iframe {
 
 <img src="SAR.png" class="mx-auto h-16">
 
-<h1 class="text-xl font-bold">GAR Admin Access</h1>
+<h1 class="text-xl font-bold">Admin Login</h1>
 
 <input type="password" id="passwordInput"
 placeholder="Enter Admin Password"
-class="w-full p-3 rounded bg-slate-700 text-white text-center text-lg">
+class="text-center text-lg">
 
 <button onclick="checkPassword()"
-class="w-full bg-red-700 hover:bg-red-800 p-3 rounded font-bold text-lg">
+class="w-full bg-red-700 hover:bg-red-800 p-3 rounded font-bold">
 LOGIN
 </button>
 
@@ -52,11 +61,11 @@ Back to Dashboard
 </div>
 </div>
 
-<!-- ADMIN DASHBOARD -->
+<!-- ADMIN CONTENT -->
 <div id="adminContent" class="hidden p-6 space-y-6">
 
 <div class="flex justify-between items-center">
-<h1 class="text-2xl font-black">GAR Review Dashboard</h1>
+<h1 class="text-2xl font-black">Admin Dashboard</h1>
 
 <button onclick="logout()"
 class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded font-bold">
@@ -64,6 +73,38 @@ LOGOUT
 </button>
 </div>
 
+<!-- UPLOAD SECTION -->
+<div class="card space-y-4">
+
+<h2 class="text-xl font-bold">Upload New Resource</h2>
+
+<form name="resourceUpload"
+method="POST"
+data-netlify="true"
+enctype="multipart/form-data">
+
+<input type="hidden" name="form-name" value="resourceUpload">
+
+<label class="text-sm">Resource Title</label>
+<input type="text" name="title" required>
+
+<label class="text-sm">Upload File (PDF or Image)</label>
+<input type="file" name="file" required>
+
+<button type="submit"
+class="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-bold mt-3">
+UPLOAD RESOURCE
+</button>
+
+</form>
+
+<p class="text-xs text-slate-400 mt-2">
+Uploaded files can be downloaded from Netlify → Forms → resourceUpload.
+</p>
+
+</div>
+
+<!-- GAR SHEETS SECTION -->
 <div class="grid md:grid-cols-2 gap-6">
 
 <div class="card">
@@ -87,7 +128,7 @@ LOGOUT
 </div>
 
 <div class="card md:col-span-2">
-<h2 class="font-bold mb-2">Other GAR Submissions</h2>
+<h2 class="font-bold mb-2">Other Submissions</h2>
 <iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=477824279&single=true&widget=true&headers=false"></iframe>
 </div>
 
