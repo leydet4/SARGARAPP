@@ -1,30 +1,29 @@
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open('pov-sar-v1').then((cache) =>
-      cache.addAll([
-        '/',               // IMPORTANT: cache root too
-        '/index.html',
-        '/install.html',
-        '/gar.html',
-        '/resources.html',
-        '/css/app.css',
-        '/manifest.json',
-        '/assets/povsargarapp-qr.png',
-        '/assets/icon-192.png',
-        '/assets/icon-512.png'
-      ])
-    )
+const CACHE = "pov-sar-v1";
+const CORE = [
+  "/",               // IMPORTANT
+  "/index.html",
+  "/manifest.json",
+  "/assets/icon-192.png",
+  "/assets/icon-512.png"
+];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => cache.addAll(CORE))
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(self.clients.claim());
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((k) => (k !== CACHE ? caches.delete(k) : null)))
+    ).then(() => self.clients.claim())
+  );
 });
 
-self.addEventListener('fetch', (e) => {
-  // cache-first
-  e.respondWith(
-    caches.match(e.request).then((resp) => resp || fetch(e.request))
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
 });
