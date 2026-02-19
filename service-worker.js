@@ -1,81 +1,58 @@
-const CACHE_NAME = "pov-sar-gar-v3";
+const APP_VERSION   = "pov-sar-v1";      // bump this when you deploy changes
+const CORE_CACHE    = `${APP_VERSION}-core`;
+const STATIC_CACHE  = `${APP_VERSION}-static`;
+const RUNTIME_CACHE = `${APP_VERSION}-runtime`;
+const HTML_TIMEOUT  = 1500;
 
-const ASSETS = [
-  "/",
-  "/index.html",
-  "/gar.html",
-  "/resources.html",
-  "/install.html",
-  "/manifest.json",
+const CORE_ASSETS = [
+  "/", "/index.html", "/install.html", "/gar.html", "/resources.html",
   "/css/app.css",
-  "/js/config.js",
-  "/js/app.js",
-  "/js/install.js",
+  "/js/config.js", "/js/app.js", "/js/install.js",
+  "/manifest.json",
   "/assets/povsargarapp-qr.png",
   "/assets/icon-192.png",
   "/assets/icon-512.png"
 ];
 
+// ---------- Helpers ----------
+const isHTML = (req) =>
+  req.mode === "navigate" ||
+  req.destination === "document" ||
+  (req.headers && typeof req.headers.get === "function" &&
+   req.headers.get("accept")?.includes("text/html"));
+
+const sameOrigin = (url) => {
+  try { return new URL(url).origin === self.location.origin; } catch { return false; }
+};
+
+const bg = (p) => { try { p && p.catch?.(()=>{}); } catch {} };
+
+// ---------- Install / Activate ----------
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
+    const c = await caches.open(CORE_CACHE);
 
-    // Safe caching: a missing file won't break install
-    await Promise.allSettled(ASSETS.map((url) => cache.add(url)));
-
-    // Become ready immediately
-    await self.skipWaiting();
+    // Safe add so one missing file doesn't kill install
+    await Promise.allSettled(CORE_ASSETS.map(u => c.add(u)));
   })());
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
-    // Cleanup old caches
     const keys = await caches.keys();
-    await Promise.all(keys.map((k) => (k !== CACHE_NAME ? caches.delete(k) : Promise.resolve())));
-
-    // Take control immediately
+    await Promise.all(keys
+      .filter(k => !k.startsWith(APP_VERSION))
+      .map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
 
-// Allow the page to force SW to take control + refresh
-self.addEventListener("message", (event) => {
-  if (!event.data) return;
+// ---------- Strategies ----------
+async function htmlNetworkFirstWithTimeout(request) {
+  const cache = await caches.open(CORE_CACHE);
+  const cached = await cache.match(request);
 
-  if (event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-
-  if (event.data.type === "CLAIM_CLIENTS") {
-    self.clients.claim();
-  }
-
-  if (event.data.type === "CLEAR_CACHES") {
-    event.waitUntil((async () => {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
-    })());
-  }
-});
-
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
-
-  // Network-first for live APIs
-  if (
-    req.url.includes("tidesandcurrents.noaa.gov") ||
-    req.url.includes("api.weather.gov") ||
-    req.url.includes("ndbc.noaa.gov")
-  ) {
-    event.respondWith(
-      fetch(req).catch(() => caches.match(req))
-    );
-    return;
-  }
-
-  // Cache-first for app assets
-  event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req))
-  );
-});
+  const net = (async () => {
+    const res = await fetch(request);
+    if (res && res.ok && res.type === "basic") {
