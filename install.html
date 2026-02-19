@@ -24,54 +24,44 @@
 <main class="grid">
 
   <div class="card">
-    <h2>Install the App</h2>
+    <h2>Install the SAR Forum App</h2>
     <p class="muted">
-      This site can be installed like an app (PWA) so it shows up as an icon on your phone/tablet and opens full screen.
+      Install this site as an app on your device for quick access during the SAR event.
     </p>
 
-    <button id="installBtn" class="button" style="display:none;">Install App</button>
-    <div id="installStatus" class="muted" style="margin-top:10px;">Loading install options...</div>
+    <button id="installBtn" class="button" style="display:none;">
+      Install App
+    </button>
 
-    <p class="muted" style="margin-top:12px;">
-      If you don’t see an install button, use the steps below for your device.
-    </p>
+    <div id="installStatus" class="muted" style="margin-top:10px;">
+      If you don’t see an install button, use the steps below.
+    </div>
   </div>
 
   <div class="card">
-    <h2>iPhone / iPad (Safari)</h2>
+    <h2>iPhone / iPad</h2>
     <ol class="steps">
-      <li>Open this site in <b>Safari</b> (not Chrome).</li>
-      <li>Tap <b>Share</b> (square with arrow up).</li>
-      <li>Tap <b>Add to Home Screen</b>.</li>
-      <li>Name it <b>SAR Forum</b> and tap <b>Add</b>.</li>
+      <li>Open this page in Safari.</li>
+      <li>Tap Share.</li>
+      <li>Select “Add to Home Screen.”</li>
+      <li>Tap Add.</li>
     </ol>
   </div>
 
   <div class="card">
-    <h2>Android (Chrome)</h2>
+    <h2>Android</h2>
     <ol class="steps">
-      <li>Open this site in <b>Chrome</b>.</li>
-      <li>Tap the <b>⋮</b> menu.</li>
-      <li>Tap <b>Install app</b> or <b>Add to Home screen</b>.</li>
-      <li>Confirm install.</li>
+      <li>Open this page in Chrome.</li>
+      <li>Tap the 3-dot menu.</li>
+      <li>Select “Install app” or “Add to Home screen.”</li>
     </ol>
   </div>
 
   <div class="card">
     <h2>Scan to Open</h2>
-    <p class="muted">Scan this QR code to open the site on your phone.</p>
-
     <div class="qr-wrap">
-      <img id="qrImage" src="assets/qr.png" alt="QR code to open the SAR Forum app" />
+      <img src="assets/qr.png" alt="QR Code">
     </div>
-
-    <div class="muted" style="margin-top:10px;">
-      Link: <span id="siteUrlText"></span>
-    </div>
-
-    <p class="muted" style="margin-top:10px;">
-      After opening from the QR code, come back to this page to install.
-    </p>
   </div>
 
 </main>
