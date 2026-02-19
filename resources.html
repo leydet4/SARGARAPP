@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resources - POV SAR 2026</title>
+
+<link rel="icon" href="SAR.png">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body { font-family: system-ui, sans-serif; }
+
+.card {
+  background:#1e293b;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 0 25px rgba(0,0,0,.35);
+}
+
+.resource-link {
+  display:block;
+  padding:14px;
+  border-radius:12px;
+  background:#334155;
+  font-weight:700;
+  transition:.2s;
+}
+
+.resource-link:hover {
+  background:#475569;
+  transform:scale(1.02);
+}
+</style>
+</head>
+
+<body class="bg-slate-900 text-white">
+
+<header class="bg-slate-800 py-6 shadow-lg text-center">
+
+<img src="SAR.png" class="mx-auto h-16 mb-3">
+
+<h1 class="text-2xl font-black tracking-wide">
+Training Resources
+</h1>
+
+<p class="text-sm text-slate-400">
+Port of Virginia SAR Forum 2026
+</p>
+
+<a href="index.html"
+class="inline-block mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
+← Back to Dashboard
+</a>
+
+</header>
+
+<section class="p-6 max-w-2xl mx-auto space-y-4">
+
+<div class="card space-y-3">
+
+<div class="text-lg font-bold mb-2">
+Available Downloads
+</div>
+
+<div id="resourceList" class="space-y-3">
+Loading resources...
+</div>
+
+</div>
+
+</section>
+
+<script>
+
+async function loadResources() {
+  try {
+    const response = await fetch("/resources/index.json");
+    const files = await response.json();
+
+    const container = document.getElementById("resourceList");
+    container.innerHTML = "";
+
+    files.forEach(file => {
+      const link = document.createElement("a");
+      link.href = "/resources/" + file.file;
+      link.target = "_blank";
+      link.className = "resource-link";
+      link.innerText = file.name;
+      container.appendChild(link);
+    });
+
+  } catch (err) {
+    document.getElementById("resourceList").innerText =
+      "No resources available.";
+  }
+}
+
+loadResources();
+
+</script>
+
+</body>
+</html>
