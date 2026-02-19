@@ -1,47 +1,199 @@
+/* ================================
+   GLOBAL
+================================ */
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: Arial, sans-serif;
   margin: 0;
   background: #121212;
   color: white;
+  -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3 {
+  margin-top: 0;
+}
+
+a {
+  color: #ffcc00;
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 0.85;
+}
+
+/* ================================
+   HEADER / NAV
+================================ */
 
 header {
   background: #1f1f1f;
-  padding: 15px;
+  padding: 15px 10px;
   text-align: center;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+nav {
+  margin-top: 10px;
 }
 
 nav a {
-  color: #ffcc00;
   margin: 0 10px;
-  text-decoration: none;
   font-weight: bold;
+  color: #ffcc00;
 }
+
+nav a.active {
+  text-decoration: underline;
+}
+
+/* ================================
+   GRID LAYOUT
+================================ */
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
   padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
+
+/* ================================
+   CARDS
+================================ */
 
 .card {
   background: #1e1e1e;
-  padding: 15px;
-  border-radius: 8px;
+  padding: 18px;
+  border-radius: 10px;
+  border: 1px solid #2a2a2a;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+}
+
+.card h2 {
+  margin-bottom: 10px;
+  color: #ffcc00;
+}
+
+/* ================================
+   BUTTONS
+================================ */
 
 .button {
   display: inline-block;
   background: #ffcc00;
-  color: black;
-  padding: 10px 15px;
-  text-decoration: none;
+  color: #000;
+  padding: 10px 16px;
   border-radius: 6px;
   font-weight: bold;
+  text-align: center;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.button:hover {
+  background: #e6b800;
+  transform: translateY(-2px);
 }
 
 .button.admin {
-  background: red;
-  color: white;
+  background: #d32f2f;
+  color: #fff;
+}
+
+.button.admin:hover {
+  background: #b71c1c;
+}
+
+/* ================================
+   MUTED TEXT
+================================ */
+
+.muted {
+  color: #bdbdbd;
+  font-size: 0.95rem;
+}
+
+/* ================================
+   INSTALL PAGE STYLES
+================================ */
+
+.steps {
+  margin: 10px 0 0 18px;
+  padding: 0;
+}
+
+.steps li {
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.qr-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.qr-wrap img {
+  width: 240px;
+  max-width: 85%;
+  height: auto;
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+/* ================================
+   DATA DISPLAY
+================================ */
+
+#waterLevel,
+#tidePredictions,
+#windData,
+#waveData,
+#forecast {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  margin-top: 5px;
+}
+
+/* ================================
+   RESPONSIVE IMPROVEMENTS
+================================ */
+
+@media (max-width: 600px) {
+
+  header h1 {
+    font-size: 1.3rem;
+  }
+
+  nav a {
+    display: inline-block;
+    margin: 6px 8px;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  .button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .qr-wrap img {
+    width: 200px;
+  }
 }
