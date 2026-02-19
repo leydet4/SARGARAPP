@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Port of Virginia SAR Forum 2026 - Operations Dashboard</title>
+<title>Port of Virginia Todd Dooley SAR Forum 2026 - Operations Dashboard</title>
 
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#0f172a" />
@@ -128,25 +128,30 @@ if (!response.ok) throw new Error("Function returned " + response.status);
 const data = await response.json();
 console.log("Marine Data:", data);
 
-// ===== BUOY DATA =====
+// =====================
+// BUOY DATA
+// =====================
 if (data.buoyData) {
 
 document.getElementById("waveHeight").innerText =
-data.buoyData.waveHeight + " ft @ " +
-data.buoyData.dominantPeriod + "s";
+data.buoyData.waveHeightFt + " ft @ " +
+data.buoyData.dominantPeriodSec + "s";
 
 document.getElementById("waterTemp").innerText =
-data.buoyData.waterTemp + " °C";
+data.buoyData.waterTempF + " °F";
 
 document.getElementById("windText").innerText =
-data.buoyData.windSpeed + " kts " +
-data.buoyData.windDir + "°";
+data.buoyData.windSpeedKnots + " kts " +
+data.buoyData.windDirDeg + "°";
 
 document.getElementById("windArrow").style.transform =
-`translateX(-50%) rotate(${data.buoyData.windDir}deg)`;
+`translateX(-50%) rotate(${data.buoyData.windDirDeg}deg)`;
+
 }
 
-// ===== TIDE DATA =====
+// =====================
+// TIDE DATA
+// =====================
 if (data.tideData?.predictions?.length > 0) {
 
 const tides = data.tideData.predictions;
@@ -156,12 +161,12 @@ const lastTwo = tides.filter(t => new Date(t.t) < now).slice(-2);
 const nextTwo = tides.filter(t => new Date(t.t) > now).slice(0,2);
 
 document.getElementById("lastTides").innerHTML =
-lastTwo.map(t => 
+lastTwo.map(t =>
 `${t.type === "H" ? "High" : "Low"} - ${t.t}`
 ).join("<br>");
 
 document.getElementById("nextTides").innerHTML =
-nextTwo.map(t => 
+nextTwo.map(t =>
 `${t.type === "H" ? "High" : "Low"} - ${t.t}`
 ).join("<br>");
 
@@ -170,9 +175,12 @@ const rising = nextTwo[0].type === "H";
 document.getElementById("tideTrend").innerText =
 rising ? "Rising ↑" : "Falling ↓";
 }
+
 }
 
-// ===== STATUS =====
+// =====================
+// STATUS
+// =====================
 document.getElementById("statusMessage").innerText =
 "Marine Data Connected";
 
@@ -196,7 +204,9 @@ document.getElementById("statusMessage")
 loadMarineData();
 setInterval(loadMarineData, 300000);
 
-// ===== MAP =====
+// =====================
+// MAP
+// =====================
 const map = L.map('map').setView([36.98, -76.31], 10);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
