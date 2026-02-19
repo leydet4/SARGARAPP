@@ -1,116 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>POV SAR GAR App</title>
 
-  <!-- PWA Essentials -->
+  <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#121212">
 
-  <!-- iOS PWA -->
+  <!-- iOS -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SAR GAR">
   <link rel="apple-touch-icon" href="/assets/icon-192.png">
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="/css/app.css">
-
   <style>
-    .logo { display:block; margin:0 auto 1rem; max-width:160px; height:auto; }
-    .section { margin:2rem 0; text-align:center; }
-    .section h2 { margin-bottom:1rem; font-size:1.3rem; color:#ffcc00; }
-    .button-row { display:flex; flex-wrap:wrap; justify-content:center; gap:0.75rem; }
-    .button-row .btn { min-width:200px; }
-    .topbar { display:flex; justify-content:center; gap:.5rem; margin-bottom:.75rem; }
+    body { margin:0; font-family: Arial, sans-serif; background:#121212; color:#fff; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 20px; text-align:center; }
+    .card { background:#1a1a1a; border:1px solid #2a2a2a; border-radius:12px; padding:16px; margin:12px 0; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 14px;
+           background:#ffcc00; color:#000; border:none; border-radius:10px; font-weight:bold; cursor:pointer; }
+    .btn:disabled { opacity:.6; cursor:not-allowed; }
     #installBtn { display:none; }
+    .muted { color:#bdbdbd; font-size:.95rem; }
+    a.link { color:#ffcc00; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header style="text-align:center; margin-bottom:1.25rem;">
-      <h1>POV SAR GAR App</h1>
-      <p style="color:#aaa; font-size:.9rem;">
-        Todd Dooley Search & Rescue Forum
+  <div class="wrap">
+    <h1>POV SAR GAR App</h1>
+    <p class="muted">Todd Dooley Search & Rescue Forum</p>
+
+    <div class="card">
+      <button id="installBtn" class="btn">➕ Install App</button>
+      <p id="installMsg" class="muted" style="margin-top:10px;">
+        If you don’t see the install button, use Chrome ⋮ menu → <b>Install app</b> / <b>Add to Home screen</b>.
       </p>
-
-      <div class="topbar">
-        <button id="installBtn" class="btn">➕ Install App</button>
-        <a class="btn btn-secondary" href="/install.html">📲 Install Help</a>
-      </div>
-    </header>
-
-    <!-- Live Conditions -->
-    <div class="section">
-      <h2>Live HRBT Conditions</h2>
-      <div class="button-row">
-        <a class="btn" href="/pages/dashboard.html">📊 HRBT Tides & Weather</a>
-        <a class="btn" href="/pages/waves.html">🌊 Wave Data</a>
-      </div>
     </div>
 
-    <!-- GAR Submissions -->
-    <div class="section">
-      <h2>GAR Submissions</h2>
-      <div class="button-row">
-        <a class="btn" href="/pages/gar-tf1.html">🚤 Task Force 1</a>
-        <a class="btn" href="/pages/gar-tf2.html">🚤 Task Force 2</a>
-        <a class="btn" href="/pages/gar-tf3.html">🚤 Task Force 3</a>
-        <a class="btn" href="/pages/gar-tf4.html">🚤 Task Force 4</a>
-        <a class="btn" href="/pages/gar-admin.html">🧾 Admin GAR</a>
-      </div>
+    <div class="card">
+      <p class="muted">
+        Install help: <a class="link" href="/install.html">/install.html</a>
+      </p>
     </div>
-
-    <!-- SAR Resources -->
-    <div class="section">
-      <h2>SAR Resources</h2>
-      <div class="button-row">
-        <a class="btn" href="/pages/resources.html">📁 Forum Resources</a>
-      </div>
-    </div>
-
-    <footer style="text-align:center; margin-top:2rem; font-size:.8rem; color:#777;">
-      POV SAR GAR App • 2026
-    </footer>
   </div>
 
-  <!-- Service Worker Registration -->
+  <!-- Register SW (must be on start_url page) -->
   <script>
     if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/service-worker.js")
-          .then(reg => console.log("SW registered:", reg.scope))
-          .catch(err => console.error("SW registration failed:", err));
+      window.addEventListener("load", async () => {
+        try {
+          await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
+        } catch (e) {
+          console.log("SW register failed", e);
+        }
       });
     }
   </script>
 
-  <!-- Android Install Button -->
+  <!-- Install button -->
   <script>
     let deferredPrompt = null;
-    const installBtn = document.getElementById('installBtn');
+    const installBtn = document.getElementById("installBtn");
+    const installMsg = document.getElementById("installMsg");
 
-    window.addEventListener('beforeinstallprompt', (e) => {
+    window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      installBtn.style.display = 'inline-flex';
+      installBtn.style.display = "inline-flex";
+      installMsg.innerHTML = "Tap <b>Install App</b> to install.";
     });
 
-    installBtn.addEventListener('click', async () => {
+    installBtn.addEventListener("click", async () => {
       if (!deferredPrompt) return;
       installBtn.disabled = true;
       deferredPrompt.prompt();
       await deferredPrompt.userChoice;
       deferredPrompt = null;
-      installBtn.style.display = 'none';
+      installBtn.style.display = "none";
+      installBtn.disabled = false;
+      installMsg.innerHTML = "If installed, launch it from your home screen.";
     });
 
-    window.addEventListener('appinstalled', () => {
-      installBtn.style.display = 'none';
+    window.addEventListener("appinstalled", () => {
+      installBtn.style.display = "none";
+      installMsg.innerHTML = "✅ Installed! Launch it from your home screen.";
     });
   </script>
-
 </body>
 </html>
