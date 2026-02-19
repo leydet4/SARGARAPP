@@ -9,11 +9,34 @@
 
 <style>
 body { font-family: system-ui, sans-serif; }
-.card { background:#1e293b; border-radius:12px; padding:14px; }
-.section-title { font-size:14px; font-weight:700; }
-.source { color:#64748b; font-size:11px; }
-.primary-value { font-size:20px; font-weight:800; margin-top:4px; }
-.secondary-value { font-size:13px; color:#94a3b8; }
+
+.card {
+background:#1e293b;
+border-radius:12px;
+padding:14px;
+}
+
+.section-title {
+font-size:14px;
+font-weight:700;
+}
+
+.source {
+color:#64748b;
+font-size:11px;
+margin-top:2px;
+}
+
+.primary-value {
+font-size:20px;
+font-weight:800;
+margin-top:4px;
+}
+
+.secondary-value {
+font-size:13px;
+color:#94a3b8;
+}
 
 .tide-trend {
 font-size:28px;
@@ -30,6 +53,7 @@ font-size:36px;
 
 .rising { color:#22c55e; }
 .falling { color:#38bdf8; }
+
 </style>
 </head>
 
@@ -54,32 +78,52 @@ Last Updated (Eastern): <span id="lastUpdated">--</span>
 
 <div class="grid md:grid-cols-4 gap-4">
 
+<!-- WIND -->
 <div class="card text-center">
 <div class="section-title">Wind</div>
-<div id="windSource" class="source"></div>
+<div id="windSource" class="source">
+Loading source...
+</div>
 <div id="windText" class="primary-value">--</div>
 <div id="windCardinal" class="secondary-value"></div>
 </div>
 
+<!-- WAVES -->
 <div class="card text-center">
-<div class="section-title">Waves</div>
+<div class="section-title">Wave Height</div>
+<div class="source">
+NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)
+</div>
 <div id="waveHeight" class="primary-value">--</div>
 </div>
 
+<!-- WATER TEMP -->
 <div class="card text-center">
-<div class="section-title">Water Temp</div>
+<div class="section-title">Water Temperature</div>
+<div class="source">
+NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)
+</div>
 <div id="waterTemp" class="primary-value">--</div>
 </div>
 
+<!-- AIR TEMP -->
 <div class="card text-center">
-<div class="section-title">Air Temp</div>
+<div class="section-title">Air Temperature</div>
+<div class="source">
+NOAA Weather Station KORF — Norfolk International Airport
+</div>
 <div id="airTemp" class="primary-value">--</div>
 </div>
 
 </div>
 
+<!-- TIDES -->
 <div class="card">
-<div class="section-title">Tides (Eastern Time)</div>
+<div class="section-title">Tides</div>
+<div class="source">
+NOAA CO-OPS Sewells Point — Near HRBT
+</div>
+
 <div id="tideTrend" class="tide-trend"></div>
 
 <div class="grid md:grid-cols-2 gap-6 mt-3">
@@ -126,19 +170,24 @@ data.buoyData.windSpeedKnots + " kts";
 document.getElementById("windCardinal").innerText =
 degreesToCardinal(deg) + " (" + deg + "°)";
 
+// Dynamic wind source display
 document.getElementById("windSource").innerText =
 data.buoyData.windSource;
 
+// Waves
 document.getElementById("waveHeight").innerText =
 data.buoyData.waveHeightFt + " ft @ " +
 data.buoyData.dominantPeriodSec + "s";
 
+// Water temp
 document.getElementById("waterTemp").innerText =
 data.buoyData.waterTempF + " °F";
 
+// Air temp
 document.getElementById("airTemp").innerText =
 data.buoyData.airTempF + " °F";
 
+// Buoy observation time
 document.getElementById("buoyTime").innerText =
 data.buoyData.buoyObservationTimeEST;
 }
