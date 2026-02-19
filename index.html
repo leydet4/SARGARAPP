@@ -10,6 +10,9 @@
 <link rel="icon" href="povsargarapp-qr.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
@@ -19,40 +22,51 @@ body { font-family: system-ui, sans-serif; }
 .good { color:#22c55e; }
 .caution { color:#f59e0b; }
 .danger { color:#ef4444; }
+#map { height: 400px; border-radius:12px; }
+.compass {
+width:150px;
+height:150px;
+border:4px solid #64748b;
+border-radius:50%;
+position:relative;
+margin:auto;
+}
+.arrow {
+width:4px;
+height:60px;
+background:#f97316;
+position:absolute;
+top:15px;
+left:50%;
+transform-origin:bottom;
+}
 </style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<header class="bg-slate-800 p-4 flex justify-between items-center">
-<h1 class="text-lg md:text-xl font-bold">Port of Virginia SAR Forum 2026</h1>
-<nav class="space-x-4 text-sm md:text-base">
+<header class="bg-slate-800 p-4 flex justify-between">
+<h1 class="text-lg md:text-xl font-bold">POV SAR Forum 2026 - Ops Dashboard</h1>
+<nav class="space-x-4">
 <a href="index.html" class="text-orange-400">Dashboard</a>
 <a href="gar.html">GAR</a>
 </nav>
 </header>
 
-<section class="p-6">
+<section class="p-6 space-y-8">
 
-<h2 class="text-2xl font-semibold mb-4">HRBT Marine Operations Dashboard</h2>
+<h2 class="text-2xl font-semibold">HRBT Operations Center</h2>
 
-<div id="riskLevel" class="mb-6 text-lg font-bold"></div>
+<div id="riskLevel" class="text-lg font-bold"></div>
 
 <div class="grid md:grid-cols-3 gap-6">
 
-<div class="card">
-<div class="label">Tide Trend</div>
-<div id="tideTrend" class="value">Loading...</div>
+<div class="card text-center">
+<div class="label">Wind Compass</div>
+<div class="compass mt-4">
+<div id="windArrow" class="arrow"></div>
 </div>
-
-<div class="card">
-<div class="label">Current Water Level</div>
-<div id="waterLevel" class="value">Loading...</div>
-</div>
-
-<div class="card">
-<div class="label">Last 2 / Next 2 Tides</div>
-<div id="tideList" class="value text-sm">Loading...</div>
+<div id="windText" class="value mt-4"></div>
 </div>
 
 <div class="card">
@@ -61,95 +75,94 @@ body { font-family: system-ui, sans-serif; }
 </div>
 
 <div class="card">
-<div class="label">Wind</div>
-<div id="wind" class="value">Loading...</div>
-</div>
-
-<div class="card">
 <div class="label">Air / Water Temp</div>
 <div id="temps" class="value">Loading...</div>
 </div>
 
-<div class="card">
-<div class="label">Pressure</div>
-<div id="pressure" class="value">Loading...</div>
 </div>
 
 <div class="card">
-<div class="label">Sunrise / Sunset</div>
-<div id="sun" class="value">Loading...</div>
+<div class="label mb-4">24 Hour Tide Chart (Sewells Point)</div>
+<canvas id="tideChart"></canvas>
 </div>
 
+<div class="card">
+<div class="label mb-4">HRBT Operational Map</div>
+<div id="map"></div>
 </div>
 
-<div class="mt-10 text-center">
-<img src="povsargarapp-qr.png" alt="QR Code" class="mx-auto w-40">
-<p class="mt-3 text-sm text-slate-400">
-Scan to open and install on mobile
-</p>
+<div class="text-center">
+<img src="povsargarapp-qr.png" class="mx-auto w-40">
+<p class="text-sm text-slate-400 mt-2">Scan to Install</p>
 </div>
 
 </section>
 
 <footer class="text-center p-4 text-slate-500 text-sm">
-NOAA CO-OPS 8638610 | NDBC Buoy 44099 | Updates every 5 minutes
+NOAA 8638610 | Buoy 44099 | Updates every 5 minutes
 </footer>
 
 <script>
-async function fetchMarineData() {
+let tideChart;
 
+async function fetchData() {
 try {
 
-// ===== TIDE PREDICTIONS =====
-const tideRes = await fetch("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=web&begin_date=today&range=36&datum=MLLW&station=8638610&time_zone=lst_ldt&units=english&interval=hilo&format=json");
+// ===== TIDE 6-min interval for graph =====
+const tideRes = await fetch(
+"https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&application=web&begin_date=today&range=24&station=8638610&time_zone=lst_ldt&units=english&interval=6&format=json"
+);
 const tideData = await tideRes.json();
 
-// ===== WATER LEVEL =====
-const levelRes = await fetch("https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_level&application=web&date=latest&station=8638610&time_zone=lst_ldt&units=english&format=json");
-const levelData = await levelRes.json();
+if(tideData.data){
+let labels = tideData.data.map(d => d.t.substring(11,16));
+let values = tideData.data.map(d => d.v);
 
-// ===== BUOY DATA =====
+if(tideChart) tideChart.destroy();
+
+tideChart = new Chart(document.getElementById("tideChart"), {
+type: "line",
+data: {
+labels: labels,
+datasets: [{
+label: "Water Level (ft)",
+data: values,
+borderColor: "#f97316",
+backgroundColor: "rgba(249,115,22,0.2)",
+fill: true,
+tension: 0.4
+}]
+},
+options: {
+plugins: { legend: { labels:{ color:"white"} } },
+scales: {
+x: { ticks:{ color:"white"} },
+y: { ticks:{ color:"white"} }
+}
+}
+});
+}
+
+// ===== BUOY =====
 const buoyRes = await fetch("https://www.ndbc.noaa.gov/data/realtime2/44099.json");
 const buoyData = await buoyRes.json();
 
-if (tideData.predictions) {
-let now = new Date();
-let tides = tideData.predictions;
-
-let lastTwo = tides.filter(t => new Date(t.t) < now).slice(-2);
-let nextTwo = tides.filter(t => new Date(t.t) > now).slice(0,2);
-
-let trend = nextTwo[0].type === "H" ? "Rising ↑ toward High" : "Falling ↓ toward Low";
-document.getElementById("tideTrend").innerText = trend;
-
-let tideHTML = "";
-lastTwo.forEach(t => tideHTML += `${t.type} ${t.t}<br>`);
-nextTwo.forEach(t => tideHTML += `${t.type} ${t.t}<br>`);
-
-document.getElementById("tideList").innerHTML = tideHTML;
-}
-
-if (levelData.data) {
-document.getElementById("waterLevel").innerText =
-`${levelData.data[0].v} ft`;
-}
-
-if (buoyData.data) {
+if(buoyData.data){
 let b = buoyData.data[0];
 
 document.getElementById("waveHeight").innerText =
 `${b.wave_height} ft @ ${b.dominant_wave_period}s`;
 
-document.getElementById("wind").innerText =
-`${b.wind_speed} kts (gust ${b.wind_gust}) ${b.wind_direction}°`;
-
 document.getElementById("temps").innerText =
 `Air ${b.air_temperature}°F | Water ${b.water_temperature}°F`;
 
-document.getElementById("pressure").innerText =
-`${b.air_pressure} mb`;
+document.getElementById("windText").innerText =
+`${b.wind_speed} kts ${b.wind_direction}°`;
 
-// Risk Assessment
+document.getElementById("windArrow").style.transform =
+`translateX(-50%) rotate(${b.wind_direction}deg)`;
+
+// Risk Logic
 let risk = "GOOD";
 let className = "good";
 
@@ -165,17 +178,28 @@ document.getElementById("riskLevel").innerHTML =
 `Operational Status: <span class="${className}">${risk}</span>`;
 }
 
-} catch (error) {
-console.log(error);
+} catch(err) {
+console.log(err);
+}
 }
 
-}
+fetchData();
+setInterval(fetchData, 300000);
 
-fetchMarineData();
-setInterval(fetchMarineData, 300000);
-</script>
+// ===== MAP =====
+const map = L.map('map').setView([36.98, -76.31], 10);
 
-<script>
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+attribution: '© OpenStreetMap'
+}).addTo(map);
+
+L.marker([36.95, -76.33]).addTo(map)
+.bindPopup("Sewells Point Tide Station 8638610");
+
+L.marker([36.94, -75.72]).addTo(map)
+.bindPopup("Buoy 44099 - Chesapeake Bay Entrance");
+
+// Service Worker
 if ('serviceWorker' in navigator) {
 navigator.serviceWorker.register('service-worker.js');
 }
