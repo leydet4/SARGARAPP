@@ -51,7 +51,7 @@ exports.handler = async function () {
 try {
 
 // ======================
-// TIDES (Sewells Point - Near HRBT)
+// TIDES
 // ======================
 const today = new Date();
 const tomorrow = new Date();
@@ -71,17 +71,13 @@ const tideUrl =
 const tideData = await getJSON(tideUrl);
 
 // ======================
-// BUOY (44099 - Chesapeake Bay Entrance / Near HRBT)
+// BUOY (44099)
 // ======================
 const buoyText = await getText(
 "https://www.ndbc.noaa.gov/data/realtime2/44099.txt"
 );
 
 const lines = buoyText.split("\n").filter(l => l.trim() !== "");
-
-if (lines.length < 3) {
-  throw new Error("Buoy data format unexpected");
-}
 
 const header = lines[0].trim().split(/\s+/);
 const latest = lines[2].trim().split(/\s+/);
@@ -97,6 +93,19 @@ const rawWindDir = latest[col("WDIR")];
 const observationTime =
 `${latest[0]}-${latest[1]}-${latest[2]} ${latest[3]}:${latest[4]} UTC`;
 
+// ======================
+// WEATHER (KORF)
+// ======================
+const weatherData = await getJSON(
+"https://api.weather.gov/stations/KORF/observations/latest"
+);
+
+const props = weatherData.properties;
+
+const airTempF = props.temperature?.value !== null
+? cToF(props.temperature.value)
+: "N/A";
+
 let windSpeedKnots = null;
 let windDirDeg = null;
 let windSource = null;
@@ -105,29 +114,21 @@ let windSource = null;
 if (rawWindSpeed !== "MM" && rawWindDir !== "MM") {
   windSpeedKnots = mpsToKnots(rawWindSpeed);
   windDirDeg = rawWindDir;
-  windSource = "NOAA Buoy 44099 (Chesapeake Bay Entrance near HRBT)";
+  windSource = "NOAA Buoy 44099 (Chesapeake Bay Entrance / HRBT Area)";
 }
 
 // Fallback wind (KORF)
-if (!windSpeedKnots) {
-
-  const weatherData = await getJSON(
-    "https://api.weather.gov/stations/KORF/observations/latest"
-  );
-
-  const props = weatherData.properties;
-
-  if (props.windSpeed?.value !== null && props.windDirection?.value !== null) {
-    windSpeedKnots = mpsToKnots(props.windSpeed.value);
-    windDirDeg = props.windDirection.value.toString();
-    windSource = "NOAA Weather Station KORF (Norfolk Airport)";
-  }
+if (!windSpeedKnots && props.windSpeed?.value !== null) {
+  windSpeedKnots = mpsToKnots(props.windSpeed.value);
+  windDirDeg = props.windDirection?.value?.toString() || "N/A";
+  windSource = "NOAA Weather Station KORF (Norfolk Airport)";
 }
 
 const buoyData = {
 waveHeightFt: rawWave !== "MM" ? metersToFeet(rawWave) : "N/A",
 dominantPeriodSec: rawPeriod !== "MM" ? rawPeriod : "N/A",
 waterTempF: rawWaterTemp !== "MM" ? cToF(rawWaterTemp) : "N/A",
+airTempF,
 windSpeedKnots: windSpeedKnots || "N/A",
 windDirDeg: windDirDeg || "N/A",
 windSource: windSource || "Unavailable",
@@ -141,8 +142,6 @@ headers: {
 "Content-Type": "application/json"
 },
 body: JSON.stringify({
-tideStation: "NOAA CO-OPS Sewells Point (Near HRBT)",
-buoyStation: "NOAA Buoy 44099 (Chesapeake Bay Entrance / HRBT Area)",
 serverTime: new Date().toISOString(),
 tideData,
 buoyData
