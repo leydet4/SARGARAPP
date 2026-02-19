@@ -13,110 +13,58 @@
 
 <style>
 body { font-family: system-ui, sans-serif; }
-
-.card {
-background:#1e293b;
-border-radius:12px;
-padding:16px;
-}
-
-.section-title {
-font-size:15px;
-font-weight:700;
-}
-
-.source {
-color:#64748b;
-font-size:11px;
-}
-
-.primary-value {
-font-size:20px;
-font-weight:800;
-margin-top:6px;
-}
-
-.secondary-value {
-font-size:14px;
-font-weight:600;
-color:#94a3b8;
-}
-
+.card { background:#1e293b; border-radius:12px; padding:16px; }
+.section-title { font-size:15px; font-weight:700; }
+.source { color:#64748b; font-size:11px; }
+.primary-value { font-size:20px; font-weight:800; margin-top:6px; }
+.secondary-value { font-size:14px; color:#94a3b8; }
 .compass {
-width:110px;
-height:110px;
-border:2px solid #475569;
-border-radius:50%;
-position:relative;
-margin:10px auto;
+width:110px; height:110px; border:2px solid #475569;
+border-radius:50%; position:relative; margin:10px auto;
 }
-
 .arrow {
-width:5px;
-height:45px;
-background:#f97316;
-position:absolute;
-top:10px;
-left:50%;
-transform-origin:bottom center;
-border-radius:3px;
+width:5px; height:45px; background:#f97316;
+position:absolute; top:10px; left:50%;
+transform-origin:bottom center; border-radius:3px;
 }
-
 .center-dot {
-width:8px;
-height:8px;
-background:white;
-border-radius:50%;
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%, -50%);
+width:8px; height:8px; background:white;
+border-radius:50%; position:absolute;
+top:50%; left:50%; transform:translate(-50%, -50%);
 }
-
 .direction-label {
-position:absolute;
-font-size:11px;
-font-weight:600;
-color:#cbd5e1;
+position:absolute; font-size:11px; font-weight:600; color:#cbd5e1;
 }
-
 .n { top:4px; left:50%; transform:translateX(-50%); }
 .s { bottom:4px; left:50%; transform:translateX(-50%); }
 .e { right:4px; top:50%; transform:translateY(-50%); }
 .w { left:4px; top:50%; transform:translateY(-50%); }
-
-.tide-big {
-font-size:20px;
-font-weight:800;
-margin-top:6px;
-}
-
-.tide-list {
-font-size:14px;
-line-height:1.5;
-}
 </style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<header class="bg-slate-800 px-4 py-3">
+<header class="bg-slate-800 px-4 py-3 flex justify-between items-center">
 <h1 class="text-lg font-bold">
 Port of Virginia Todd Dooley SAR Forum 2026
 </h1>
+
+<button onclick="loadMarineData()" 
+class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm font-semibold">
+Refresh
+</button>
 </header>
 
 <section class="p-4 space-y-4">
 
-<div id="statusMessage" class="text-green-400 text-sm font-semibold">
-Marine Data Connected
+<div class="text-sm text-slate-400">
+Last Updated: <span id="lastUpdated">--</span>
 </div>
 
 <div class="grid md:grid-cols-3 gap-4">
 
 <!-- WIND -->
 <div class="card text-center">
-
 <div class="section-title">Wind</div>
 <div id="windSource" class="source"></div>
 
@@ -125,53 +73,50 @@ Marine Data Connected
 <div class="direction-label s">S</div>
 <div class="direction-label e">E</div>
 <div class="direction-label w">W</div>
-
 <div id="windArrow" class="arrow"></div>
 <div class="center-dot"></div>
 </div>
 
 <div id="windText" class="primary-value">--</div>
 <div id="windCardinal" class="secondary-value"></div>
-
 </div>
 
 <!-- WAVES -->
 <div class="card text-center">
 <div class="section-title">Wave Height</div>
-<div class="source">NOAA Buoy 44099</div>
+<div class="source">Chesapeake Bay Entrance (Near HRBT)</div>
 <div id="waveHeight" class="primary-value">--</div>
 </div>
 
 <!-- WATER TEMP -->
 <div class="card text-center">
 <div class="section-title">Water Temp</div>
-<div class="source">NOAA Buoy 44099</div>
+<div class="source">Chesapeake Bay Entrance (Near HRBT)</div>
 <div id="waterTemp" class="primary-value">--</div>
 </div>
 
 </div>
 
-<!-- TIDES -->
 <div class="card">
+<div class="section-title">Tides</div>
+<div class="source">Sewells Point (Near HRBT)</div>
 
-<div class="section-title">Tides (Sewells Point 8638610)</div>
-
-<div id="tideTrend" class="tide-big"></div>
+<div id="tideTrend" class="primary-value mt-2"></div>
 
 <div class="grid md:grid-cols-2 gap-6 mt-3">
-
 <div>
 <div class="text-sm font-semibold mb-1">Last</div>
-<div id="lastTides" class="tide-list"></div>
+<div id="lastTides" class="text-sm"></div>
 </div>
-
 <div>
 <div class="text-sm font-semibold mb-1">Next</div>
-<div id="nextTides" class="tide-list"></div>
+<div id="nextTides" class="text-sm"></div>
+</div>
+</div>
 </div>
 
-</div>
-
+<div class="text-xs text-slate-500">
+Buoy Observation Time (UTC): <span id="buoyTime">--</span>
 </div>
 
 </section>
@@ -180,8 +125,8 @@ Marine Data Connected
 
 function degreesToCardinal(deg) {
 if (!deg || deg === "N/A") return "";
-const directions = ["N","NE","E","SE","S","SW","W","NW"];
-return directions[Math.round(deg / 45) % 8];
+const dirs = ["N","NE","E","SE","S","SW","W","NW"];
+return dirs[Math.round(deg / 45) % 8];
 }
 
 async function loadMarineData() {
@@ -189,11 +134,11 @@ async function loadMarineData() {
 try {
 
 const response = await fetch("/.netlify/functions/marine");
-if (!response.ok) throw new Error("Function returned " + response.status);
-
 const data = await response.json();
 
-// WIND
+document.getElementById("lastUpdated").innerText =
+new Date().toLocaleString();
+
 if (data.buoyData) {
 
 const deg = parseInt(data.buoyData.windDirDeg);
@@ -216,9 +161,11 @@ data.buoyData.dominantPeriodSec + "s";
 
 document.getElementById("waterTemp").innerText =
 data.buoyData.waterTempF + " °F";
+
+document.getElementById("buoyTime").innerText =
+data.buoyData.buoyObservationTime;
 }
 
-// TIDES
 if (data.tideData?.predictions?.length > 0) {
 
 const tides = data.tideData.predictions;
@@ -233,17 +180,12 @@ lastTwo.map(t => `${t.type === "H" ? "H" : "L"} - ${t.t.substring(5)}`).join("<b
 document.getElementById("nextTides").innerHTML =
 nextTwo.map(t => `${t.type === "H" ? "H" : "L"} - ${t.t.substring(5)}`).join("<br>");
 
-if (nextTwo.length > 0) {
 document.getElementById("tideTrend").innerText =
 nextTwo[0].type === "H" ? "Rising ↑" : "Falling ↓";
 }
 
-}
-
-} catch (error) {
-document.getElementById("statusMessage").innerText = "Marine Data Failed";
-document.getElementById("statusMessage").classList.replace("text-green-400","text-red-500");
-console.error(error);
+} catch (err) {
+console.error(err);
 }
 
 }
