@@ -14,28 +14,32 @@ body { font-family: system-ui, sans-serif; }
 .card {
   background:#1e293b;
   border-radius:16px;
-  padding:18px;
+  padding:20px;
   box-shadow:0 0 25px rgba(0,0,0,.35);
 }
 
 iframe {
   width:100%;
-  height:400px;
+  height:380px;
   border-radius:12px;
 }
 
-input, textarea {
+input {
   background:#334155;
   border-radius:10px;
   padding:10px;
   width:100%;
+}
+
+button {
+  border-radius:12px;
 }
 </style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="loginScreen" class="min-h-screen flex items-center justify-center">
 
 <div class="card w-full max-w-md text-center space-y-4">
@@ -49,7 +53,7 @@ placeholder="Enter Admin Password"
 class="text-center text-lg">
 
 <button onclick="checkPassword()"
-class="w-full bg-red-700 hover:bg-red-800 p-3 rounded font-bold">
+class="w-full bg-red-700 hover:bg-red-800 p-3 font-bold">
 LOGIN
 </button>
 
@@ -68,43 +72,34 @@ Back to Dashboard
 <h1 class="text-2xl font-black">Admin Dashboard</h1>
 
 <button onclick="logout()"
-class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded font-bold">
+class="bg-red-700 hover:bg-red-800 px-4 py-2 font-bold">
 LOGOUT
 </button>
 </div>
 
-<!-- UPLOAD SECTION -->
+<!-- RESOURCE UPLOAD -->
 <div class="card space-y-4">
 
-<h2 class="text-xl font-bold">Upload New Resource</h2>
+<h2 class="text-xl font-bold">Upload Resource</h2>
 
-<form name="resourceUpload"
-method="POST"
-data-netlify="true"
-enctype="multipart/form-data">
+<form id="uploadForm" enctype="multipart/form-data" class="space-y-3">
 
-<input type="hidden" name="form-name" value="resourceUpload">
+<input type="text" name="title" placeholder="Resource Title" required>
 
-<label class="text-sm">Resource Title</label>
-<input type="text" name="title" required>
-
-<label class="text-sm">Upload File (PDF or Image)</label>
 <input type="file" name="file" required>
 
 <button type="submit"
-class="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-bold mt-3">
+class="w-full bg-green-600 hover:bg-green-700 p-3 font-bold">
 UPLOAD RESOURCE
 </button>
 
 </form>
 
-<p class="text-xs text-slate-400 mt-2">
-Uploaded files can be downloaded from Netlify → Forms → resourceUpload.
-</p>
+<div id="uploadStatus" class="text-sm text-slate-400"></div>
 
 </div>
 
-<!-- GAR SHEETS SECTION -->
+<!-- GAR SHEETS -->
 <div class="grid md:grid-cols-2 gap-6">
 
 <div class="card">
@@ -142,7 +137,6 @@ const ADMIN_PASSWORD = "POVSAR2026";
 
 function checkPassword() {
   const entered = document.getElementById("passwordInput").value;
-
   if (entered === ADMIN_PASSWORD) {
     sessionStorage.setItem("adminAuth", "true");
     showAdmin();
@@ -164,6 +158,26 @@ function logout() {
 if (sessionStorage.getItem("adminAuth") === "true") {
   showAdmin();
 }
+
+document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData(e.target);
+
+  const res = await fetch("/.netlify/functions/uploadResource", {
+    method: "POST",
+    body: formData
+  });
+
+  const result = await res.json();
+
+  if (result.success) {
+    document.getElementById("uploadStatus").innerText = "Upload successful.";
+    e.target.reset();
+  } else {
+    document.getElementById("uploadStatus").innerText = "Upload failed.";
+  }
+});
 
 </script>
 
