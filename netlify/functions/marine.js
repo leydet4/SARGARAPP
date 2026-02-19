@@ -49,15 +49,25 @@ function formatEastern(date) {
   }).format(date);
 }
 
+function todayYYYYMMDD() {
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
+  return `${y}${m}${d}`;
+}
+
 exports.handler = async function () {
 
 try {
 
 // ======================
-// TIDES (36 hour window)
+// TIDES (36hr from today)
 // ======================
+const beginDate = todayYYYYMMDD();
+
 const tideUrl =
-`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=POV_SAR&begin_date=today&range=36&datum=MLLW&station=8638610&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=POV_SAR&begin_date=${beginDate}&range=36&datum=MLLW&station=8638610&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
 
 const tideData = await getJSON(tideUrl);
 
