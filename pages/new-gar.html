@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GAR 2.0 Submission</title>
+<link rel="stylesheet" href="../app.css">
+
+<style>
+body { background:#0d0d0d; color:#eee; font-family:system-ui,sans-serif; }
+
+.choice {
+  border:2px solid #555; border-radius:8px;
+  padding:10px 18px; font-weight:700; cursor:pointer;
+  transition:0.2s; min-width:90px;
+}
+.choice[data-risk="Low"], .choice[data-overall="Low"] { background:#133913; color:#aaffaa; }
+.choice[data-risk="Medium"], .choice[data-overall="Medium"] { background:#3e3e0a; color:#fff587; }
+.choice[data-risk="High"], .choice[data-overall="High"] { background:#471010; color:#ff7d7d; }
+.choice.active[data-risk="Low"], .choice.active[data-overall="Low"] { background:#1f7a1f; color:#fff; }
+.choice.active[data-risk="Medium"], .choice.active[data-overall="Medium"] { background:#d4c20a; color:#000; }
+.choice.active[data-risk="High"], .choice.active[data-overall="High"] { background:#b31515; color:#fff; }
+.choice:hover { transform:scale(1.05); }
+
+.now-btn {
+  background:#ffcc00 !important;
+  color:#000 !important;
+  border:none;
+  font-weight:700;
+  padding:6px 12px;
+  border-radius:6px;
+  transition:0.2s;
+}
+.now-btn:hover { background:#ffd633 !important; }
+
+.gar-form {
+  background:#111;
+  padding:20px;
+  border-radius:12px;
+  max-width:1000px;
+  margin:30px auto;
+  box-shadow:0 0 12px #000;
+}
+h2,h3 { text-align:center; color:#ffcc00; margin-bottom:8px; }
+label {
+  color:#ffcc00;
+  font-weight:600;
+  margin-bottom:4px;
+  text-align:center;
+  display:block;
+}
+input, select {
+  background:#222;
+  color:#eee;
+  border:1px solid #444;
+  border-radius:6px;
+  padding:6px;
+  text-align:center;
+}
+.row {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.risk-group, .overall-group {
+  background:#161616;
+  border:1px solid #333;
+  border-radius:10px;
+  margin:20px 0;
+  padding:14px;
+  text-align:center;
+}
+.risk-desc {
+  text-align:left;
+  margin:0 auto 10px;
+  max-width:600px;
+  line-height:1.4;
+  color:#ccc;
+}
+.btn-row { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; }
+
+/* Crew layout */
+#crewContainer {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:12px;
+  margin-top:14px;
+  width:100%;
+}
+.crew-card {
+  background:#1a1a1a;
+  border:1px solid #333;
+  border-radius:12px;
+  padding:12px;
+  width:280px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  transition:all 0.2s ease;
+}
+.crew-card h4 {
+  text-align:center;
+  color:#ffcc00;
+  margin:0 0 8px;
+  font-size:1rem;
+}
+.crew-row { display:flex; flex-direction:column; gap:6px; }
+.crew-field { display:flex; flex-direction:column; }
+.crew-field label {
+  font-size:.8rem;
+  color:#bbb;
+  text-align:left;
+  margin-bottom:2px;
+}
+.crew-field input {
+  background:#222;
+  border:1px solid #444;
+  color:#eee;
+  border-radius:6px;
+  padding:6px;
+  text-align:center;
+  font-size:.9rem;
+}
+
+/* Center crew count */
+#crewCount {
+  display:block;
+  margin:0 auto;
+  width:80px;
+  font-size:1rem;
+  text-align:center;
+  background:#222;
+  color:#eee;
+  border:1px solid #555;
+  border-radius:8px;
+  padding:6px;
+}
+
+.decision {
+  text-align:center;
+  font-weight:700;
+  font-size:1.1rem;
+  margin-top:15px;
+  border-radius:8px;
+  padding:8px;
+}
+.decision.green { background:#0a0; color:#fff; }
+.decision.yellow { background:#c7b400; color:#000; }
+.decision.red { background:#a00; color:#fff; }
+
+button#submit {
+  margin-top:15px;
+  background:#ffcc00;
+  color:#000;
+  font-weight:700;
+  border:none;
+  padding:10px 18px;
+  border-radius:8px;
+  cursor:pointer;
+}
+button#submit:hover { background:#ffd633; }
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h2>GAR 2.0 Submission</h2>
+
+  <div class="gar-form">
+    <!-- Mission Info -->
+    <div class="row">
+      <div>
+        <label>Your Name</label>
+        <input id="name" placeholder="Enter your name" required>
+      </div>
+      <div>
+        <label>Boat</label>
+        <input id="boat" readonly placeholder="Auto-filled">
+      </div>
+      <div>
+        <label>Shift</label>
+        <select id="shift">
+          <option value="">--</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+        </select>
+      </div>
+      <div>
+        <label>Date (YYYY-MM-DD)</label>
+        <input id="date" type="date">
+        <button id="nowDate" class="now-btn">Now</button>
+      </div>
+      <div>
+        <label>Time (24-hr HH:MM)</label>
+        <input id="time" type="text" inputmode="numeric" maxlength="5" pattern="^([01]\\d|2[0-3]):[0-5]\\d$" placeholder="00:00">
+        <button id="nowTime" class="now-btn">Now</button>
+        <small style="display:block;color:#888;margin-top:3px;">(Use 24-hour format)</small>
+      </div>
+    </div>
+
+    <label>Mission Location</label>
+    <input id="location" placeholder="Enter mission area, coordinates, or address"
+           style="width:80%;margin:0 auto 10px;display:block;">
+
+    <label># of Crew</label>
+    <input id="crewCount" type="number" min="1" max="12" value="1">
+    <div id="crewContainer"></div>
+
+    <!-- === Risk Elements === -->
+    <div class="risk-group">
+      <h3>Planning</h3>
+      <div class="risk-desc">Thoroughness of planning; completeness of mission information and risk controls.</div>
+      <div class="btn-row">
+        <button class="choice" data-risk="Low" onclick="setRisk('planning','Low',this)">Low</button>
+        <button class="choice" data-risk="Medium" onclick="setRisk('planning','Medium',this)">Medium</button>
+        <button class="choice" data-risk="High" onclick="setRisk('planning','High',this)">High</button>
+      </div>
+    </div>
+
+    <div class="risk-group">
+      <h3>Event</h3>
+      <div class="risk-desc">Complexity, frequency, and time limitations of operational planning.</div>
+      <div class="btn-row">
+        <button class="choice" data-risk="Low" onclick="setRisk('event','Low',this)">Low</button>
+        <button class="choice" data-risk="Medium" onclick="setRisk('event','Medium',this)">Medium</button>
+        <button class="choice" data-risk="High" onclick="setRisk('event','High',this)">High</button>
+      </div>
+    </div>
+
+    <div class="risk-group">
+      <h3>Asset – Crew</h3>
+      <div class="risk-desc">Proper number, skill level, and fatigue of crew; adequacy of supervision and training.</div>
+      <div class="btn-row">
+        <button class="choice" data-risk="Low" onclick="setRisk('assetCrew','Low',this)">Low</button>
+        <button class="choice" data-risk="Medium" onclick="setRisk('assetCrew','Medium',this)">Medium</button>
+        <button class="choice" data-risk="High" onclick="setRisk('assetCrew','High',this)">High</button>
+      </div>
+    </div>
+
+    <div class="risk-group">
+      <h3>Asset – Boat Resources</h3>
+      <div class="risk-desc">Boat condition, operational capability, propulsion, navigation, and other systems.</div>
+      <div class="btn-row">
+        <button class="choice" data-risk="Low" onclick="setRisk('assetBoat','Low',this)">Low</button>
+        <button class="choice" data-risk="Medium" onclick="setRisk('assetBoat','Medium',this)">Medium</button>
+        <button class="choice" data-risk="High" onclick="setRisk('assetBoat','High',this)">High</button>
+      </div>
+    </div>
+
+    <div class="risk-group">
+      <h3>Communications / Supervision</h3>
+      <div class="risk-desc">Level of supervision, communication availability, and effectiveness of instructions.</div>
+      <div class="btn-row">
+        <button class="choice" data-risk="Low" onclick="setRisk('communications','Low',this)">Low</button>
+        <button class="choice" data-risk="Medium" onclick="setRisk('communications','Medium',this)">Medium</button>
+        <button class="choice" data-risk="High" onclick="setRisk('communications','High',this)">High</button>
+      </div>
+    </div>
+
+    <div class="risk-group">
+      <h3>Environment</h3>
+      <div class="risk-desc">Weather, visibility, sea state, current, temperature, and other environmental conditions.</div>
+      <div class="btn-row">
+        <button class="choice" data-risk="Low" onclick="setRisk('environment','Low',this)">Low</button>
+        <button class="choice" data-risk="Medium" onclick="setRisk('environment','Medium',this)">Medium</button>
+        <button class="choice" data-risk="High" onclick="setRisk('environment','High',this)">High</button>
+      </div>
+    </div>
+
+    <!-- === Overall Risk === -->
+    <div class="overall-group">
+      <h3>Overall Risk</h3>
+      <div class="btn-row">
+        <button class="choice" data-overall="Low" onclick="setOverall('overallRisk','Low',this)">Low</button>
+        <button class="choice" data-overall="Medium" onclick="setOverall('overallRisk','Medium',this)">Medium</button>
+        <button class="choice" data-overall="High" onclick="setOverall('overallRisk','High',this)">High</button>
+      </div>
+    </div>
+
+    <!-- === Overall Gain === -->
+    <div class="overall-group">
+      <h3>Overall Gain</h3>
+      <div class="risk-desc">
+        <b>Low Gain</b> – Mission has limited operational impact or benefit.<br>
+        <b>Medium Gain</b> – Mission provides measurable value to readiness or training.<br>
+        <b>High Gain</b> – Mission is critical to life safety, response, or essential operation.
+      </div>
+      <div class="btn-row">
+        <button class="choice" data-overall="Low" onclick="setOverall('overallGain','Low',this)">Low</button>
+        <button class="choice" data-overall="Medium" onclick="setOverall('overallGain','Medium',this)">Medium</button>
+        <button class="choice" data-overall="High" onclick="setOverall('overallGain','High',this)">High</button>
+      </div>
+    </div>
+
+    <div id="commandDecision" class="decision">—</div>
+    <button id="submit">Submit GAR</button>
+  </div>
+</div>
+
+<!-- Keep your original helper (risk logic, crew builder, submit, etc.) -->
+<script src="../helpers/new-gar.js"></script>
+
+<!-- Minimal additions: auto-fill boat + date/time helpers (non-conflicting) -->
+<script>
+  // Auto-fill boat from query string or localStorage (as before)
+  (function(){
+    const params = new URLSearchParams(window.location.search);
+    const boatParam = params.get("boat");
+    const savedBoat = localStorage.getItem("selectedBoat");
+    const boatField = document.getElementById("boat");
+
+    if (boatParam) {
+      boatField.value = boatParam;
+      localStorage.setItem("selectedBoat", boatParam);
+    } else if (savedBoat) {
+      boatField.value = savedBoat;
+    } else {
+      boatField.value = "";
+    }
+  })();
+
+  // Convenience: fill "Now" date/time if your helper doesn't already do it
+  document.getElementById('nowDate')?.addEventListener('click', e=>{
+    e.preventDefault();
+    const now = new Date();
+    document.getElementById('date').value = now.toISOString().slice(0,10);
+  });
+  document.getElementById('nowTime')?.addEventListener('click', e=>{
+    e.preventDefault();
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('time').value = `${hh}:${mm}`;
+  });
+</script>
+</body>
+</html>

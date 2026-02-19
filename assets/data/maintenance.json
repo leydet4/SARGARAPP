@@ -1,0 +1,19 @@
+{
+  "issues": [
+    {
+      "id": "FB4-2025-001",
+      "boat": "Fireboat 4",
+      "title": "Stbd engine raw-water seep",
+      "description": "Minor seep at hose clamp near seacock.",
+      "status": "Open",
+      "severity": "Medium",
+      "category": "Engine",
+      "actions": "Replace clamp; re-test.",
+      "partsNeeded": "1x SS clamp 1-1/2\"",
+      "reportedBy": "J. Smith",
+      "reportedAt": "2025-09-01T13:20:00Z",
+      "updatedAt": "2025-09-03T15:40:00Z",
+      "links": []
+    }
+  ]
+}

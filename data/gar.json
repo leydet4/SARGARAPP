@@ -1,0 +1,91 @@
+[
+  {
+    "id": "ISSUE-20250908-00002",
+    "timestamp": "2025-09-08T21:40:47.567Z",
+    "boat": "Boat 5",
+    "dateReported": "9/8/2025",
+    "reporter": "Billy Helms",
+    "category": "Electrical",
+    "description": "The battery was found dead. We put it on a charger.",
+    "severity": "Minor (Workaround available but needs attention)",
+    "suggestions": "",
+    "photo": "",
+    "status": "Resolved",
+    "updatedAt": "2025-10-10T01:14:41.593Z",
+    "updatedBy": "leydet",
+    "history": []
+  },
+  {
+    "id": "ISSUE-20250908-00001",
+    "timestamp": "2025-09-08T18:21:04.482Z",
+    "boat": "Fireboat 4",
+    "dateReported": "9/6/2025",
+    "reporter": "Leydet",
+    "category": "Electronics",
+    "description": "Radar not working",
+    "severity": "Minor (Workaround available but needs attention)",
+    "suggestions": "",
+    "photo": "",
+    "status": "In Progress",
+    "updatedAt": "2025-09-08T23:59:01.922Z",
+    "history": [
+      {
+        "type": "status",
+        "from": "In Progress",
+        "to": "In Progress",
+        "by": "Leydet",
+        "at": "2025-09-08T18:30:24.594Z"
+      },
+      {
+        "type": "status",
+        "from": "In Progress",
+        "to": "Resolved",
+        "by": "leydet",
+        "at": "2025-09-08T18:57:41.558Z"
+      },
+      {
+        "type": "status",
+        "from": "Resolved",
+        "to": "In Progress",
+        "by": "leydet",
+        "at": "2025-09-08T18:57:52.902Z"
+      },
+      {
+        "type": "delete",
+        "soft": true,
+        "by": "leydet",
+        "at": "2025-09-08T21:21:17.964Z"
+      },
+      {
+        "type": "restore",
+        "by": "Admin",
+        "at": "2025-09-08T21:21:23.436Z"
+      }
+    ],
+    "updatedBy": "admin",
+    "deleted": false,
+    "deletedAt": "",
+    "deletedBy": "",
+    "archived": false,
+    "archivedAt": "",
+    "archivedBy": ""
+  },
+  {
+    "id": "ISSUE-20250914-00001",
+    "boat": "Fireboat 4",
+    "description": "iPad GFI found tripped 2nd time recently",
+    "category": "Electrical",
+    "severity": "Minor (Workaround available but needs attention)",
+    "person": "Leydet",
+    "reporter": "Leydet",
+    "suggestions": "Check iPad on other GFI to determine if it's then charger",
+    "status": "Resolved",
+    "dateReported": "2025-09-14T10:25:47.985Z",
+    "createdAt": "2025-09-14T10:25:48.359Z",
+    "updatedAt": "2025-10-10T01:15:41.444Z",
+    "updatedBy": "leydet",
+    "archived": false,
+    "archivedAt": "",
+    "archivedBy": ""
+  }
+]

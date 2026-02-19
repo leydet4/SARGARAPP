@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Important Contacts</title>
+  <link rel="stylesheet" href="../app.css"/>
+  <style>
+    .wrap { max-width: 900px; margin: 0 auto; padding: 0 12px; }
+    .contact { background:#2a2a2a; border:1px solid #3a3a3a; border-radius:12px; padding:14px; margin:12px 0; box-shadow:0 2px 10px rgba(0,0,0,.4); }
+    .name { font-weight:900; font-size:1.1rem; color:#ffcc00; margin-bottom:8px; text-align:center; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center; }
+    .call-btn {
+      display:inline-flex; align-items:center; gap:8px;
+      background:#0b5; color:#fff; text-decoration:none;
+      padding:10px 14px; border-radius:10px; font-weight:800;
+      box-shadow:0 2px 8px rgba(0,0,0,.35);
+    }
+    .call-btn:hover { background:#0a4; }
+    .call-btn.small { background:#0074d9; }
+    .call-btn.small:hover { background:#005fa3; }
+    .searchbar { margin:10px auto 2px; max-width: 520px; }
+    .searchbar input {
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid #3a3a3a;
+      background:#1e1e1e; color:#f0f0f0; font-size:1rem;
+    }
+    .hint { text-align:center; color:#9fb8e8; font-size:.9rem; margin:6px 0 10px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="wrap">
+      <h1>Important Contacts</h1>
+      <div class="toolbar">
+        <a class="btn" href="../index.html">← Back to Home</a>
+      </div>
+      <div class="searchbar">
+        <input id="filter" type="search" placeholder="Filter by agency or phone… (e.g., 'USCG' or '757')" />
+      </div>
+      <div class="hint">Tip: Tap the green button to call directly.</div>
+    </div>
+  </div>
+
+  <div class="wrap" id="list">
+    <!-- USCG Sector Virginia -->
+    <div class="contact">
+      <div class="name">USCG Sector Virginia</div>
+      <div class="row">
+        <a class="call-btn" href="tel:7574838567">📞 757-483-8567</a>
+        <a class="call-btn" href="tel:8777225727">📞 877-722-5727 opt #1</a>
+      </div>
+    </div>
+
+    <!-- Virginia Marine Police Dispatch -->
+    <div class="contact">
+      <div class="name">Virginia Marine Police Dispatch</div>
+      <div class="row">
+        <a class="call-btn" href="tel:8005414646">📞 800-541-4646</a>
+      </div>
+    </div>
+
+    <!-- City of Norfolk Non-Emergency -->
+    <div class="contact">
+      <div class="name">City of Norfolk Non-Emergency</div>
+      <div class="row">
+        <a class="call-btn" href="tel:7574415610">📞 757-441-5610</a>
+      </div>
+    </div>
+
+    <!-- City of Portsmouth Non-Emergency -->
+    <div class="contact">
+      <div class="name">City of Portsmouth Non-Emergency</div>
+      <div class="row">
+        <a class="call-btn" href="tel:7573935300">📞 757-393-5300</a>
+      </div>
+    </div>
+
+    <!-- City of Virginia Beach Non-Emergency -->
+    <div class="contact">
+      <div class="name">City of Virginia Beach Non-Emergency</div>
+      <div class="row">
+        <a class="call-btn" href="tel:7573855000">📞 757-385-5000</a>
+      </div>
+    </div>
+
+    <!-- Virginia DWR Dispatch -->
+    <div class="contact">
+      <div class="name">Virginia Department of Wildlife Resources Dispatch</div>
+      <div class="row">
+        <a class="call-btn" href="tel:8002375712">📞 800-237-5712</a>
+      </div>
+    </div>
+
+    <!-- Bill Burkett (VPA) -->
+    <div class="contact">
+      <div class="name">Bill Burkett (VPA)</div>
+      <div class="row">
+        <a class="call-btn" href="tel:7576156661">📞 757-615-6661</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simple client-side filter
+    const input = document.getElementById('filter');
+    const cards = [...document.querySelectorAll('.contact')];
+    input.addEventListener('input', () => {
+      const q = input.value.toLowerCase().trim();
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(q) ? '' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>

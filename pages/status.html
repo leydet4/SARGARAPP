@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Status</title>
+  <link rel="stylesheet" href="../app.css"/>
+  <style>
+    body{background:#0b111c;color:#e5ecff}
+    .wrap{max-width:1000px;margin:0 auto;padding:16px}
+    h1{font-size:1.25rem;margin:0 0 12px}
+    .muted{color:#9fb8e8;font-size:.9rem;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;border:1px solid #23324c;border-radius:8px;overflow:hidden}
+    thead tr{background:#132033}
+    th,td{padding:10px;text-align:left;border-top:1px solid #23324c;vertical-align:top}
+    tbody tr:nth-child(even){background:#0f1a2b}
+    .list{margin:0;padding-left:18px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 id="title">Status</h1>
+    <div class="muted" id="subtitle"></div>
+    <div id="view"></div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const type = params.get("type") || "";
+
+    const SOURCES = {
+      "op-released": {
+        url: "../data/sonobot-operator-released.json",
+        title: "Released SONOBOT Operators",
+        subtitle: "Students fully released as SONOBOT Operators."
+      },
+      "op-incomplete": {
+        url: "../data/sonobot-operator-incomplete.json",
+        title: "Incomplete Tasks — SONOBOT Operator",
+        subtitle: "Per-student list of evolutions still needed."
+      },
+      "sup-released": {
+        url: "../data/sonobot-support-released.json",
+        title: "Released SONOBOT Support",
+        subtitle: "Students fully released as SONOBOT Support."
+      },
+      "sup-incomplete": {
+        url: "../data/sonobot-support-incomplete.json",
+        title: "Incomplete Tasks — SONOBOT Support",
+        subtitle: "Per-student list of evolutions still needed."
+      }
+    };
+
+    async function main(){
+      const cfg = SOURCES[type];
+      const view = document.getElementById("view");
+      if(!cfg){ view.textContent = "Unknown view."; return; }
+
+      document.getElementById("title").textContent = cfg.title;
+      document.getElementById("subtitle").textContent = cfg.subtitle;
+
+      try{
+        const res = await fetch(cfg.url, { cache: "no-store" });
+        if(!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+        const data = await res.json();
+
+        // Shape check: released has shift+date; otherwise treat as incomplete
+        if(Array.isArray(data) && data.length && "shift" in data[0] && "date" in data[0]){
+          renderReleased(view, data);
+        } else {
+          renderIncomplete(view, data);
+        }
+      }catch(err){
+        view.textContent = `Error: ${err.message}`;
+      }
+    }
+
+    function renderReleased(root, rows){
+      const table = document.createElement("table");
+      table.innerHTML = `
+        <thead>
+          <tr><th>Student</th><th>Shift</th><th>Date Fully Completed</th></tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector("tbody");
+      rows.forEach(r=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(r.name || "")}</td>
+          <td>${escapeHtml(r.shift || "")}</td>
+          <td>${escapeHtml(r.date || "")}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      root.replaceChildren(table);
+    }
+
+    function renderIncomplete(root, rows){
+      const table = document.createElement("table");
+      table.innerHTML = `
+        <thead>
+          <tr><th>Student</th><th>Incomplete Evolutions</th></tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector("tbody");
+      rows.forEach(r=>{
+        const tr = document.createElement("tr");
+        const list = (r.evolutions || []).map(e => `<li>${escapeHtml(e)}</li>`).join("");
+        tr.innerHTML = `
+          <td>${escapeHtml(r.name || "")}</td>
+          <td><ul class="list">${list}</ul></td>
+        `;
+        tbody.appendChild(tr);
+      });
+      root.replaceChildren(table);
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      })[m]);
+    }
+
+    main();
+  </script>
+</body>
+</html>

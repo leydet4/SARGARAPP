@@ -1,0 +1,11 @@
+{
+  "name": "marine-app",
+  "version": "1.0.0",
+  "description": "Chesapeake Marine App",
+  "main": "index.html",
+  "type": "module",
+  "dependencies": {
+    "nodemailer": "^6.9.8",
+    "@neondatabase/serverless": "^0.9.0"
+  }
+}

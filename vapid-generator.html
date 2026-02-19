@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Maintenance — Boat</title>
+  <link rel="stylesheet" href="../app.css"/>
+  <style>
+    /* Prevent tiny horizontal jiggle */
+    *{ box-sizing:border-box }
+    html, body { width:100%; max-width:100%; overflow-x:hidden; }
+
+    .wrap{max-width:1000px;margin:0 auto;padding:0 12px;}
+    .toolbar{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:10px 0 12px}
+    .hint{color:#9fb8e8;font-size:.9rem;text-align:center;margin:6px 0 14px}
+    .err{color:#ffb3b3;text-align:center;margin:8px 0}
+    .empty{border:1px dashed #23324c;border-radius:14px;padding:18px;text-align:center;color:#9fb8e8;margin-top:10px}
+    .meta{color:#a9b7d6;font-size:.82rem;text-align:center;margin-top:6px}
+
+    .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0 14px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid #23324c;background:#121a28;color:#cfe0ff;font-size:.85rem}
+    .status-open{background:#2a1717;border-color:#553;color:#ffd1d1}
+    .status-wip{background:#2a2312;border-color:#66531f;color:#ffe6b3}
+    .status-res{background:#142a1f;border-color:#1f5533;color:#c7ffd1}
+    .btn.small{padding:6px 10px;font-size:.85rem;min-height:auto}
+    .select{background:#0b111c;border:1px solid #23324c;color:#e9eef9;border-radius:8px;padding:6px 8px}
+    .srch{min-width:180px; width:min(100%,280px)}
+    .muted{color:#a9b7d6;font-size:.86rem}
+    .rowhead{color:#ffcc00;font-weight:700}
+
+    /* Desktop table: keep everything readable, no content cut off */
+    .table-wrap{
+      overflow-x: visible;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+    }
+    table{
+      width:100%;
+      max-width:100%;
+      border-collapse:separate;
+      border-spacing:0 8px;
+      table-layout:auto;               /* let browser size columns by content */
+    }
+    thead th{
+      font-weight:700;
+      color:#cfe0ff;
+      text-align:left;
+      padding:8px 10px;
+      white-space:normal;
+      word-break:break-word;
+      overflow-wrap:anywhere;
+    }
+    tbody tr{background:#0f1624;border:1px solid #23324c}
+    td{
+      padding:10px;
+      vertical-align:top;
+      word-break:break-word;
+      overflow-wrap:anywhere;
+    }
+    th, td{ overflow-wrap:anywhere; word-break:break-word; }
+
+    /* Inputs/buttons must not force the table wider */
+    td .select{ max-width:100%; }
+    td .btn.small{ max-width:100%; white-space:normal; }
+
+    /* Mobile cards */
+    @media (max-width: 880px){
+      .table-wrap{display:none}
+      .cards{display:grid;gap:10px}
+      .card{border:1px solid #23324c;border-radius:12px;background:#0f1624;padding:12px;max-width:100%}
+      .card h3{margin:0 0 6px 0;color:#ffcc00;font-size:1rem}
+      .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+      .kv{display:flex;gap:6px;flex-wrap:wrap;font-size:.92rem}
+      .kv b{color:#cfe0ff}
+      .actions{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+      .actions .btn{ width:min(100%, 360px); }
+    }
+    @media (min-width: 881px){ .cards{display:none} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="wrap" style="padding-top:10px;text-align:center;">
+      <h1 id="title">Maintenance</h1>
+      <div class="toolbar">
+        <a class="btn" href="../index.html">← Home</a>
+        <a class="btn" href="./maintenance.html">← All Boats</a>
+        <a class="btn" href="./maintenance-admin.html">🛠 Admin</a>
+        <button id="exportBtn" class="btn">⬇️ Export to Excel</button>
+      </div>
+      <p class="hint">Update statuses here. Use “Add Issue” to create new items.</p>
+    </header>
+
+    <main class="wrap">
+      <div class="controls">
+        <button id="addBtn" class="btn">➕ Add Issue</button>
+        <select id="statusFilter" class="select">
+          <option value="">All Statuses</option>
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+        <input id="searchInput" class="select srch" placeholder="Search description/person/category…" />
+        <div class="pill">Total: <b id="totalCount">—</b></div>
+        <div class="pill status-open">Open: <b id="openCount">—</b></div>
+        <div class="pill status-wip">In Progress: <b id="wipCount">—</b></div>
+        <div class="pill status-res">Resolved: <b id="resCount">—</b></div>
+      </div>
+
+      <div id="error" class="err" style="display:none;"></div>
+      <div id="empty" class="empty" style="display:none;">No issues found for this boat.</div>
+
+      <!-- Desktop table -->
+      <div class="table-wrap">
+        <table>
+          <!-- Roomier widths so content doesn’t truncate -->
+          <colgroup>
+            <col style="width:18%"><!-- Category/ID -->
+            <col style="width:38%"><!-- Description/Suggestion -->
+            <col style="width:16%"><!-- Person/Date -->
+            <col style="width:10%"><!-- Severity -->
+            <col style="width:14%"><!-- Status + audit -->
+            <col style="width:4%"><!-- Actions -->
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Person / Date</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Mobile cards -->
+      <div id="cards" class="cards"></div>
+
+      <div id="meta" class="meta"></div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js" defer></script>
+
+  <script>
+    (function(){
+      const API_URL = '/.netlify/functions/maintenance';
+      const qs = new URLSearchParams(location.search);
+      const BOAT = (qs.get('boat') || '').trim();
+
+      const titleEl = document.getElementById('title');
+      const addBtn = document.getElementById('addBtn');
+      const exportBtn = document.getElementById('exportBtn');
+      const tbody = document.getElementById('tbody');
+      const cardsEl = document.getElementById('cards');
+      const errorEl = document.getElementById('error');
+      const emptyEl = document.getElementById('empty');
+      const statusFilter = document.getElementById('statusFilter');
+      const searchInput = document.getElementById('searchInput');
+      const totalCountEl = document.getElementById('totalCount');
+      const openCountEl  = document.getElementById('openCount');
+      const wipCountEl   = document.getElementById('wipCount');
+      const resCountEl   = document.getElementById('resCount');
+      const metaEl = document.getElementById('meta');
+
+      if (!BOAT) titleEl.textContent = 'Maintenance — (No boat selected)';
+      else titleEl.textContent = `Maintenance — ${BOAT}`;
+
+      addBtn.addEventListener('click', () => {
+        const url = `./maintenance-new.html?boat=${encodeURIComponent(BOAT)}`;
+        window.location.href = url;
+      });
+
+      function getSavedUser(){ return localStorage.getItem('maint_user_name') || ''; }
+      function setSavedUser(n){ localStorage.setItem('maint_user_name', n || ''); }
+
+      const toLowerKeyMap = obj => { const m={}; for (const k in obj) m[k.toLowerCase()] = obj[k]; return m; };
+      function normalizeRow(row){
+        const m = toLowerKeyMap(row);
+        return {
+          id: (m['id']||'').trim(),
+          boat: (m['boat']||'').trim(),
+          person: (m['reporter']||m['person reporting']||m['person']||'').trim(),
+          dateReported: (m['datereported']||m['date reported']||m['date']||'').trim(),
+          description: (m['description']||m['issue description']||'').trim(),
+          category: (m['category']||m['issue category']||'').trim(),
+          severity: (m['severity']||m['severity level']||'').trim(),
+          suggestions: (m['suggestions']||'').trim(),
+          status: (m['status']||'Open').trim(),
+          updatedAt: (m['updatedat']||m['updated at']||'').trim(),
+          updatedBy: (m['updatedby']||'').trim(),
+          timestamp: (m['timestamp']||'').trim(),
+          createdAt: (m['createdat']||'').trim(),
+          history: Array.isArray(row.history) ? row.history : []
+        };
+      }
+      function onlyDate(s){ if(!s) return ''; if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) return s; const d=new Date(s); return isNaN(d)?s:d.toLocaleDateString(); }
+      function dateTime(s){ if(!s) return ''; const d=new Date(s); return isNaN(d)?s:d.toLocaleString(); }
+
+      let allIssues = [];
+
+      function computeCounts(items){
+        const c={open:0,wip:0,res:0};
+        items.forEach(it=>{ const s=(it.status||'Open').toLowerCase(); if(s.startsWith('in ')) c.wip++; else if(s.startsWith('res')) c.res++; else c.open++; });
+        return c;
+      }
+
+      function render(){
+        errorEl.style.display='none';
+        let rows = allIssues.slice();
+
+        const filter=(statusFilter.value||'').toLowerCase();
+        const q=(searchInput.value||'').trim().toLowerCase();
+
+        if (filter) {
+          rows = rows.filter(it=>{
+            const s=(it.status||'').toLowerCase();
+            if (filter==='open') return !s.startsWith('in ') && !s.startsWith('res');
+            if (filter==='in progress') return s.startsWith('in ');
+            if (filter==='resolved') return s.startsWith('res');
+            return true;
+          });
+        }
+        if (q) {
+          rows = rows.filter(it=>{
+            const hay=[it.description,it.person,it.category,it.severity,it.suggestions,it.id].join(' ').toLowerCase();
+            return hay.includes(q);
+          });
+        }
+        rows.sort((a,b)=>{
+          const ta=new Date(a.updatedAt||a.dateReported||0).getTime();
+          const tb=new Date(b.updatedAt||b.dateReported||0).getTime();
+          return tb-ta;
+        });
+
+        const counts=computeCounts(rows);
+        totalCountEl.textContent=String(rows.length);
+        openCountEl.textContent=String(counts.open);
+        wipCountEl.textContent=String(counts.wip);
+        resCountEl.textContent=String(counts.res);
+
+        tbody.innerHTML=''; cardsEl.innerHTML='';
+        if (!rows.length){ emptyEl.style.display='block'; metaEl.textContent=''; exportBtn.disabled=true; return; }
+        emptyEl.style.display='none'; exportBtn.disabled=false;
+
+        rows.forEach(it=>{
+          const id = it.id;
+          const person = it.person || '—';
+          const dateOnly = onlyDate(it.dateReported || it.updatedAt || '');
+          const statusValue = it.status || 'Open';
+          const statusOpts = ['Open','In Progress','Resolved'];
+          const lastBy = it.updatedBy || '—';
+          const lastAt = it.updatedAt ? dateTime(it.updatedAt) : '—';
+
+          /* DESKTOP ROW */
+          const tr=document.createElement('tr');
+
+          const tdCat=document.createElement('td');
+          tdCat.innerHTML = `<div class="rowhead">${it.category||'—'}</div><div class="muted">${id||'<span style="color:#ffb3b3">Missing ID</span>'}</div>`;
+          tr.appendChild(tdCat);
+
+          const tdDesc=document.createElement('td');
+          tdDesc.innerHTML = `<div>${it.description||'—'}</div>${it.suggestions?`<div class="muted">Suggestion: ${it.suggestions}</div>`:''}`;
+          tr.appendChild(tdDesc);
+
+          const tdPerson=document.createElement('td');
+          tdPerson.innerHTML = `<div>Reported by: ${person}</div><div class="muted">Date: ${dateOnly||'—'}</div>`;
+          tr.appendChild(tdPerson);
+
+          const tdSeverity=document.createElement('td');
+          tdSeverity.textContent = it.severity||'—';
+          tr.appendChild(tdSeverity);
+
+          const tdStatus=document.createElement('td');
+          const select=document.createElement('select');
+          select.className='select';
+          statusOpts.forEach(s=>{
+            const opt=document.createElement('option'); opt.value=s; opt.textContent=s; if(statusValue===s) opt.selected=true;
+            select.appendChild(opt);
+          });
+          const audit=document.createElement('div');
+          audit.className='muted'; audit.style.marginTop='6px';
+          audit.textContent = `Last updated by ${lastBy} @ ${lastAt}`;
+          tdStatus.appendChild(select); tdStatus.appendChild(audit);
+          tr.appendChild(tdStatus);
+
+          const tdActions=document.createElement('td');
+          const saveBtn=document.createElement('button');
+          saveBtn.className='btn small'; saveBtn.textContent='💾 Save'; saveBtn.disabled=!id; if(!id) saveBtn.title='Missing ID';
+          saveBtn.addEventListener('click', async ()=>{
+            const who = prompt('Your name (for audit trail):', getSavedUser());
+            if (!who || !who.trim()) return; setSavedUser(who.trim());
+            await saveStatus(id, select.value, who.trim(), saveBtn, audit);
+          });
+          tdActions.appendChild(saveBtn);
+          tr.appendChild(tdActions);
+
+          tbody.appendChild(tr);
+
+          /* MOBILE CARD */
+          const card=document.createElement('div'); card.className='card';
+          card.innerHTML = `
+            <h3>${it.category||'—'}</h3>
+            <div class="kv"><b>ID:</b> ${id||'<span style="color:#ffb3b3">Missing ID</span>'}</div>
+            <div class="kv"><b>Reported by:</b> ${person}</div>
+            <div class="kv"><b>Date:</b> ${dateOnly||'—'}</div>
+            <div class="kv"><b>Severity:</b> ${it.severity||'—'}</div>
+            <div class="kv"><b>Description:</b> ${it.description||'—'}</div>
+            ${it.suggestions?`<div class="muted">Suggestion: ${it.suggestions}</div>`:''}
+            <div class="row" style="margin-top:8px;">
+              <select class="select" data-card-status>
+                ${statusOpts.map(s=>`<option ${s===statusValue?'selected':''}>${s}</option>`).join('')}
+              </select>
+              <div class="actions">
+                <button class="btn small" data-card-save ${!id?'disabled title="Missing ID"':''}>💾 Save</button>
+              </div>
+            </div>
+            <div class="muted" style="margin-top:6px;">Last updated by ${lastBy} @ ${lastAt}</div>
+          `;
+          const cardSelect=card.querySelector('[data-card-status]');
+          const cardSave=card.querySelector('[data-card-save]');
+          if (cardSave) cardSave.addEventListener('click', async ()=>{
+            const who = prompt('Your name (for audit trail):', getSavedUser());
+            if (!who || !who.trim()) return; setSavedUser(who.trim());
+            await saveStatus(id, cardSelect.value, who.trim(), cardSave);
+          });
+          cardsEl.appendChild(card);
+        });
+
+        const latest = rows.reduce((max,it)=>Math.max(max,new Date(it.updatedAt||it.dateReported||0).getTime()),0);
+        metaEl.textContent = latest ? `Last update: ${new Date(latest).toLocaleString()}` : '';
+      }
+
+      async function saveStatus(id, status, who, btn, auditEl){
+        if (!id){ errorEl.textContent='Missing row ID; cannot save.'; errorEl.style.display='block'; return; }
+        btn.disabled=true; const old=btn.textContent; btn.textContent='Saving…'; errorEl.style.display='none';
+        try{
+          const res = await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update',id,status,updatedBy:who})});
+          const json = await res.json();
+          if (!res.ok || json.ok===false) throw new Error(json.error || `HTTP ${res.status}`);
+
+          const idx = allIssues.findIndex(x=> (x.id||'')===id);
+          if (idx>=0){
+            allIssues[idx].status=status;
+            allIssues[idx].updatedAt=json.updatedAt || new Date().toISOString();
+            allIssues[idx].updatedBy=json.updatedBy || who;
+          }
+          if (auditEl){
+            const at = json.updatedAt ? new Date(json.updatedAt).toLocaleString() : new Date().toLocaleString();
+            auditEl.textContent = `Last updated by ${json.updatedBy || who} @ ${at}`;
+          }
+          render();
+        }catch(err){
+          errorEl.textContent='Save failed: '+(err.message||'Unknown error'); errorEl.style.display='block';
+        }finally{
+          btn.disabled=false; btn.textContent=old;
+        }
+      }
+
+      function exportFileName(ext){
+        const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0');
+        return `Maintenance_${(BOAT||'Boat').replace(/\s+/g,'_')}_${y}${m}${day}.${ext}`;
+      }
+      function rowsForExport(){
+        return allIssues.map(it=>({
+          ID: it.id||'',
+          Boat: it.boat||BOAT||'',
+          'Date Reported': it.dateReported||'',
+          'Person Reporting': it.person||'',
+          'Issue Category': it.category||'',
+          'Issue Description': it.description||'',
+          'Severity Level': it.severity||'',
+          Suggestions: it.suggestions||'',
+          Status: it.status||'',
+          'Updated At': it.updatedAt||'',
+          'Updated By': it.updatedBy||''
+        }));
+      }
+      function exportCSV(){
+        const rows=rowsForExport();
+        const headers=Object.keys(rows[0]||{'ID':'','Boat':'','Date Reported':'','Person Reporting':'','Issue Category':'','Issue Description':'','Severity Level':'','Suggestions':'','Status':'','Updated At':'','Updated By':''});
+        const esc=v=>{const s=String(v??''); return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;};
+        const csv=[headers.map(esc).join(',')].concat(rows.map(r=>headers.map(h=>esc(r[h])).join(','))).join('\n');
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=exportFileName('csv'); document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},0);
+      }
+      function exportXLSXorCSV(){
+        const rows=rowsForExport(); if (!rows.length){ errorEl.textContent='No issues to export for this boat.'; errorEl.style.display='block'; return; }
+        if (window.XLSX && XLSX.utils && XLSX.writeFile){
+          const wb=XLSX.utils.book_new(); const ws=XLSX.utils.json_to_sheet(rows); XLSX.utils.book_append_sheet(wb,ws,(BOAT||'Boat').slice(0,31)); XLSX.writeFile(wb,exportFileName('xlsx'));
+        } else { exportCSV(); }
+      }
+
+      async function load(){
+        try{
+          if (!BOAT){ errorEl.textContent='No boat specified. Use ?boat=Boat%202 for example.'; errorEl.style.display='block'; exportBtn.disabled=true; return; }
+          const url = `${API_URL}?action=list&boat=${encodeURIComponent(BOAT)}&t=${Date.now()}`;
+          const res = await fetch(url,{cache:'no-store'}); const json=await res.json();
+          if (!res.ok || json.ok===false) throw new Error(json.error||`HTTP ${res.status}`);
+          const raw = Array.isArray(json.issues)?json.issues:[];
+          allIssues = raw.map(normalizeRow);
+
+          // Auto-mark this boat seen on this device (per-user)
+          (function(){
+            const LS = 'maint_seen_by_boat_v1';
+            function read(){ try { return JSON.parse(localStorage.getItem(LS) || '{}'); } catch { return {}; } }
+            function write(m){ localStorage.setItem(LS, JSON.stringify(m)); }
+            const latest = allIssues.length
+              ? allIssues.reduce((max,it)=>Math.max(max, new Date(it.createdAt||it.timestamp||it.dateReported||it.updatedAt||0).getTime()), 0)
+              : Date.now();
+            const m = read();
+            m[BOAT] = Math.max(m[BOAT] || 0, latest);
+            write(m);
+          })();
+
+          statusFilter.addEventListener('change', render);
+          searchInput.addEventListener('input', render);
+          exportBtn.addEventListener('click', exportXLSXorCSV);
+
+          render();
+        }catch(err){
+          errorEl.textContent='Could not load data: '+(err.message||'Unknown error'); errorEl.style.display='block'; exportBtn.disabled=true;
+        }
+      }
+      document.addEventListener('DOMContentLoaded', load, { once:true });
+    })();
+  </script>
+</body>
+</html>

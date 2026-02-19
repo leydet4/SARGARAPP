@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>HRBT — Wave & Wind</title>
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#222222">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="/app.css?v=2"/>
+
+  <style>
+    .toolbar { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; margin: .75rem auto 1rem; }
+    .subnote { text-align:center; color:#9fb8e8; font-size:.9rem; margin:.25rem auto 1rem; max-width:900px; }
+    .stat { font-size:1.25rem; font-weight:800; margin:.25rem 0; }
+    .label { color:#9fb8e8; font-size:.9rem; }
+    .source { font-size:.9rem; color:#bbb; margin-top:.5rem; }
+    .no-data { color:#ff8888; font-weight:700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header style="text-align:center; margin:1rem 0 0.25rem;">
+      <h1>HRBT — Wave &amp; Wind</h1>
+    </header>
+
+    <div class="toolbar">
+      <a class="btn" href="/index.html">← Back to Home</a>
+      <a class="btn" href="/pages/dashboard.html">← Back to Dashboard</a>
+      <button class="btn" id="refreshBtn">↻ Refresh</button>
+    </div>
+
+    <p class="subnote">
+      <strong>Waves:</strong> NDBC 44087 Thimble Shoal (fallback 44072 York Spit, then raw text 44087 via proxy) &nbsp; • &nbsp;
+      <strong>Wind:</strong> CO-OPS 8638901 Chesapeake Bay Bridge Tunnel (CBBT)<br/>
+      <em>Nearest working buoy(s) to HRBT — local conditions can differ with wind, tide, and fetch.</em>
+    </p>
+
+    <!-- Wave Card -->
+    <section class="data-box" id="waveCard">
+      <h3>Waves</h3>
+      <div id="waveContent">
+        <div class="label">Significant Wave Height</div>
+        <div class="stat" id="waveHeight">—</div>
+        <div class="label">Dominant (or Avg) Period</div>
+        <div class="stat" id="wavePeriod">—</div>
+        <div class="data-updated" id="waveUpdated">Updated —</div>
+        <div class="source" id="waveSource">Source —</div>
+      </div>
+    </section>
+
+    <!-- Wind Card -->
+    <section class="data-box" id="windCard">
+      <h3>Wind (CBBT)</h3>
+      <div id="windContent">
+        <div class="label">Wind</div>
+        <div class="stat" id="windStat">—</div>
+        <div class="data-updated" id="windUpdated">Updated —</div>
+        <div class="source" id="windSource">Source — CO-OPS 8638901</div>
+      </div>
+    </section>
+
+    <footer style="text-align:center; margin:1rem 0 1.5rem; font-size:.85rem; color:#777;">
+      If a section is blank, you’ll see <span class="no-data">No data available</span>.
+    </footer>
+  </div>
+
+  <script>
+    // -------- Helpers --------
+    const $ = (id) => document.getElementById(id);
+    const proxy = (u, type='json') => `/.netlify/functions/proxy?type=${encodeURIComponent(type)}&u=${encodeURIComponent(u)}`;
+
+    const timeoutFetch = (url, ms = 10000, init = {}) =>
+      Promise.race([
+        fetch(url, init),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout")), ms))
+      ]);
+
+    const fmtTime = (isoOrStr) => {
+      try { const d = new Date(isoOrStr); return isNaN(d.getTime()) ? "—" : d.toLocaleString(); }
+      catch { return "—"; }
+    };
+
+    const degToCardinal = (deg) => {
+      const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+      const i = Math.round(deg / 22.5) % 16;
+      return dirs[i];
+    };
+
+    const setNoData = (which, msg = 'No data available') => {
+      if (which === 'waves') {
+        $('waveHeight').textContent = msg;
+        $('wavePeriod').textContent = '—';
+        $('waveUpdated').textContent = 'Updated —';
+        $('waveSource').textContent = 'Source — (no live wave feed reachable)';
+      } else if (which === 'wind') {
+        $('windStat').textContent = msg;
+        $('windUpdated').textContent = 'Updated —';
+        $('windSource').textContent = 'Source — CO-OPS 8638901';
+      }
+    };
+
+    // -------- Wind (CO-OPS 8638901 CBBT) --------
+    async function loadWind() {
+      try {
+        const url = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=wind&application=NOS.COOPS.TAC.MET&station=8638901&time_zone=lst_ldt&units=english&format=json&date=latest';
+        const res = await timeoutFetch(url, 12000);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const latest = data?.data?.[0];
+        if (!latest) throw new Error('No wind record');
+
+        const dir = Number(latest.d);
+        const spdKts = Number(latest.s);
+        const spdMph = isFinite(spdKts) ? (spdKts * 1.15078).toFixed(1) : '—';
+        const dirTxt = isFinite(dir) ? `${dir}° (${degToCardinal(dir)})` : '';
+
+        $('windStat').textContent = `${spdMph} mph ${dirTxt}`.trim();
+        $('windUpdated').textContent = `Updated ${fmtTime(latest.t)}`;
+        $('windSource').textContent = 'Source — CO-OPS 8638901 (CBBT)';
+      } catch (e) {
+        setNoData('wind');
+      }
+    }
+
+    // -------- Waves via Proxy (ERDDAP 44087 -> 44072 -> NDBC raw 44087) --------
+    async function fetchNdbcErddap(station) {
+      const endpoints = [
+        `https://erddap.marine.usf.edu/erddap/tabledap/ndbcStdmet.json?station=%22${station}%22&time&WVHT&DPD&APD&orderByMax(%22time%22)`,
+        `https://erddap.sensors.ioos.us/erddap/tabledap/ndbcStdmet.json?station=%22${station}%22&time&WVHT&DPD&APD&orderByMax(%22time%22)`
+      ];
+      let lastErr;
+      for (const raw of endpoints) {
+        try {
+          const r = await timeoutFetch(proxy(raw, 'json'), 12000);
+          if (!r.ok) { lastErr = new Error('HTTP '+r.status); continue; }
+          const j = await r.json();
+          const table = j?.table;
+          const cols = table?.columnNames || [];
+          const rows = table?.rows || [];
+          if (!rows.length) { lastErr = new Error('No rows'); continue; }
+          const tIdx = cols.indexOf('time');
+          const hIdx = cols.indexOf('WVHT'); // Sig wave height (m)
+          const dIdx = cols.indexOf('DPD');  // Dominant period (s)
+          const aIdx = cols.indexOf('APD');  // Average period (s)
+          const rec = rows[0];
+
+          const ts = rec[tIdx];
+          const ht_m = Number(rec[hIdx]);
+          const dp_s = Number(rec[dIdx]);
+          const ap_s = Number(rec[aIdx]);
+
+          const ht_ft = isFinite(ht_m) ? (ht_m * 3.28084).toFixed(1) : null;
+          const period = isFinite(dp_s) ? `${dp_s.toFixed(0)} s (dom)` :
+                          isFinite(ap_s) ? `${ap_s.toFixed(0)} s (avg)` : '—';
+
+          return {
+            heightText: isFinite(ht_m) ? `${ht_ft} ft` : '—',
+            periodText: period,
+            updatedText: `Updated ${fmtTime(ts)}`
+          };
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('All ERDDAP endpoints failed');
+    }
+
+    async function fetchNdbcRaw44087() {
+      // Raw text via proxy to avoid CORS
+      const rawUrl = 'https://www.ndbc.noaa.gov/data/latest_obs/44087.txt';
+      const r = await timeoutFetch(proxy(rawUrl, 'text'), 12000);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const text = await r.text();
+
+      const mSea = text.match(/Seas:\s*([\d.]+)\s*ft/i);
+      const mPeak = text.match(/Peak\s*Period:\s*([\d.]+)\s*sec/i);
+      if (!mSea) throw new Error('No seas match in text');
+
+      return {
+        heightText: `${mSea[1]} ft`,
+        periodText: mPeak ? `${Number(mPeak[1]).toFixed(0)} s (peak)` : '—',
+        updatedText: `Updated ${fmtTime(new Date().toISOString())}`
+      };
+    }
+
+    async function loadWaves() {
+      try {
+        const r1 = await fetchNdbcErddap('44087');
+        $('waveHeight').textContent = r1.heightText;
+        $('wavePeriod').textContent = r1.periodText;
+        $('waveUpdated').textContent = r1.updatedText;
+        $('waveSource').textContent = 'Source — NDBC 44087 Thimble Shoal (ERDDAP via proxy)';
+        return;
+      } catch (_) {}
+
+      try {
+        const r2 = await fetchNdbcErddap('44072');
+        $('waveHeight').textContent = r2.heightText;
+        $('wavePeriod').textContent = r2.periodText;
+        $('waveUpdated').textContent = r2.updatedText;
+        $('waveSource').textContent = 'Source — NDBC 44072 York Spit (ERDDAP via proxy)';
+        return;
+      } catch (_) {}
+
+      try {
+        const r3 = await fetchNdbcRaw44087();
+        $('waveHeight').textContent = r3.heightText;
+        $('wavePeriod').textContent = r3.periodText;
+        $('waveUpdated').textContent = r3.updatedText;
+        $('waveSource').textContent = 'Source — NDBC 44087 (raw text via proxy)';
+        return;
+      } catch (e) {
+        setNoData('waves');
+      }
+    }
+
+    async function loadAll() {
+      $('refreshBtn').disabled = true;
+      await Promise.allSettled([loadWaves(), loadWind()]);
+      $('refreshBtn').disabled = false;
+    }
+
+    $('refreshBtn').addEventListener('click', loadAll);
+    loadAll();
+  </script>
+</body>
+</html>

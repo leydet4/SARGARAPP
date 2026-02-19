@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>CFD Marine Team App</title>
+
+  <!-- PWA Essentials -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#222222">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CFD Marine">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-180.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/assets/icons/icon-167.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/assets/icons/icon-152.png">
+
+  <!-- Preload CSS -->
+  <link rel="preload" href="/app.css?v=3" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="/app.css?v=3"></noscript>
+
+  <style>
+    .logo { display:block; margin:0 auto 1rem; max-width:160px; height:auto; }
+    .section { margin:2rem 0; text-align:center; }
+    .section h2 { margin-bottom:1rem; font-size:1.3rem; color:#ffcc00; }
+    .button-row { display:flex; flex-wrap:wrap; justify-content:center; gap:0.75rem; }
+    .button-row .btn { min-width:180px; }
+    .topbar { display:flex; justify-content:center; gap:.5rem; margin-bottom:.75rem; }
+    #installBtn { display:none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header style="text-align:center; margin-bottom:1.25rem;">
+      <img src="/assets/img/Chesapeake Fire Badge.png" alt="CFD Marine Team Badge" class="logo"/>
+      <h1>Chesapeake Marine Team App</h1>
+      <p style="color:#aaa; font-size:.9rem;">Quick access to tides, weather, training, and ops resources</p>
+      <div class="topbar">
+        <button id="installBtn" class="btn">➕ Install App</button>
+        <a class="btn btn-secondary" href="/install.html">📲 Install Help</a>
+      </div>
+    </header>
+
+    <!-- iOS install hint -->
+    <div id="iosInstallHint" class="install-hint" hidden>
+      <div class="install-hint__inner">
+        <div class="install-hint__text">
+          <strong>Install this app</strong><br>
+          On iPhone/iPad: open in <b>Safari</b>, tap the <b>Share</b> icon ⬆️, then <b>Add to Home Screen</b>.
+        </div>
+        <button id="iosInstallClose" class="install-hint__close" aria-label="Close">✕</button>
+      </div>
+    </div>
+
+    <!-- Live Dashboard -->
+    <div class="section">
+      <h2>Live Conditions</h2>
+      <div class="button-row">
+        <a class="btn" href="/pages/dashboard.html">📊 Tide Stations — Live Dashboard</a>
+        <a class="btn" href="/pages/hrbt-wave.html">🌊 HRBT Wave & Wind</a>
+        <a class="btn" href="/pages/sop-realtime-temp.html">🧥 Exposure Suit SOP — Real-Time</a>
+      </div>
+    </div>
+
+    <!-- Operations -->
+    <div class="section">
+      <h2>Operations</h2>
+      <div class="button-row">
+        <a class="btn" href="/pages/contacts.html">☎️ Important Contacts</a>
+        <a class="btn" href="/pages/bridges-locks.html">🌉 Bridges & Locks</a>
+        <a class="btn" href="/pages/gar.html">📋 GAR</a>
+        <a class="btn" href="/pages/maintenance.html">🛠️ Maintenance - Issue Reporting</a>
+      </div>
+    </div>
+
+    <!-- Training -->
+    <div class="section">
+      <h2>Training</h2>
+      <div class="button-row">
+        <a class="btn" href="/pages/training-deckhand.html">🪢 Deckhand (All Boats)</a>
+        <a class="btn" href="/pages/training-navigator.html">🧭 Navigator (B2/FB4)</a>
+        <a class="btn" href="/pages/training-smallboats.html">🛥️ Small Boats Coxswains</a>
+        <a class="btn" href="/pages/training-fb4.html">🚤 Fireboat 4</a>
+        <a class="btn" href="/pages/training-rov.html">🤖 ROV Operator/Support</a>
+        <a class="btn" href="/pages/training-sonobot.html">🛶 SONOBOT Operator/Support</a>
+        <a class="btn" href="/pages/training-nsbc.html">🦺 NSBC</a>
+      </div>
+    </div>
+
+    <footer style="text-align:center; margin-top:2rem; font-size:.8rem; color:#777;">
+      CFD Marine Team App • Updated November 2025
+    </footer>
+  </div>
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js")
+          .then(reg => console.log("SW registered:", reg.scope))
+          .catch(err => console.error("SW registration failed:", err));
+      });
+    }
+  </script>
+
+  <!-- Android Install Button -->
+  <script>
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'inline-flex';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      installBtn.disabled = true;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.style.display = 'none';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installBtn.style.display = 'none';
+    });
+  </script>
+
+  <!-- iOS Install Hint -->
+  <script>
+    (function(){
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      const ua = navigator.userAgent || '';
+      const isIosDevice =
+        /iphone|ipad|ipod/i.test(ua) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      const dismissed = localStorage.getItem('iosInstallHintDismissed') === '1';
+      if (!isStandalone && isIosDevice && !dismissed) {
+        const hint = document.getElementById('iosInstallHint');
+        const close = document.getElementById('iosInstallClose');
+        if (hint && close) {
+          hint.hidden = false;
+          close.addEventListener('click', () => {
+            hint.hidden = true;
+            localStorage.setItem('iosInstallHintDismissed', '1');
+          });
+        }
+      }
+    })();
+  </script>
+
+  <!-- Prefetch -->
+  <script>
+    const prefetch = (url) => {
+      try {
+        const l = document.createElement('link');
+        l.rel = 'prefetch';
+        l.href = url;
+        document.head.appendChild(l);
+      } catch {}
+    };
+    (window.requestIdleCallback || setTimeout)(() => {
+      [
+        '/pages/dashboard.html',
+        '/pages/hrbt-wave.html',
+        '/pages/sop-realtime-temp.html',
+        '/pages/contacts.html',
+        '/pages/bridges-locks.html',
+        '/pages/gar.html',
+        '/pages/maintenance.html',
+        '/pages/training-sonobot.html',
+        '/pages/training-smallboats.html'
+      ].forEach(prefetch);
+    }, 500);
+  </script>
+
+  <!-- Cloudflare Analytics -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon='{"token": "3136015df6d82ff2d725642bfe16df52"}'></script>
+</body>
+</html>

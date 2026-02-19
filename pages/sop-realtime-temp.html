@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SOP — Real-Time Water + Air</title>
+  <link rel="stylesheet" href="../app.css"/>
+  <style>
+    .sop-wrap{max-width:800px;margin:0 auto;padding:0 12px;}
+    .big-number{font-size:2rem;font-weight:900;}
+    .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed #444;}
+    .row:last-child{border-bottom:none;}
+    .dim{color:#9fb8e8;font-weight:700;}
+    .badge{display:inline-block;padding:4px 10px;border-radius:999px;background:#13264a;color:#cfe3ff;font-weight:700;font-size:.85rem;margin-top:8px;}
+    .warn-hero{
+      background:#2a0e0e; color:#ffb3b3; border:1px solid #7f1d1d;
+      padding:14px; border-radius:12px; font-weight:900; text-align:center; margin:14px 0;
+      box-shadow:0 6px 18px rgba(0,0,0,.35);
+    }
+    .ok-hero{
+      background:#0e2a18; color:#aff7c2; border:1px solid #1d7f4e;
+      padding:12px; border-radius:12px; font-weight:800; text-align:center; margin:12px 0;
+      box-shadow:0 6px 18px rgba(0,0,0,.25);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="sop-wrap">
+      <h1>SOP — Real-Time Water + Air</h1>
+      <div class="toolbar">
+        <a class="btn" href="../index.html">← Back to Home</a>
+        <a class="btn" href="dashboard.html">← Back to Dashboard</a>
+        <a class="btn" id="refreshBtn" href="#">↻ Refresh</a>
+      </div>
+      <div class="note" style="text-align:center;margin-bottom:10px">
+        Water: CO-OPS <b>8639348</b> (Money Point) • Air: NWS <b>KORF</b> • Wind: CO-OPS 8639348 (optional)
+      </div>
+    </div>
+  </div>
+
+  <div class="sop-wrap">
+    <div class="card" id="sopCard">
+      <h2 class="section-title">Real-Time Readings</h2>
+
+      <div class="row"><span class="dim">Water Temp</span> <span class="big-number" id="water">—</span></div>
+      <div class="row"><span class="dim">Air Temp</span>   <span class="big-number" id="air">—</span></div>
+      <div class="row"><span class="dim">Water + Air Total</span> <span class="big-number" id="total">—</span></div>
+
+      <!-- NEW NOTE -->
+      <div class="note" style="text-align:center;font-size:.85rem;color:#9fb8e8;margin:-4px 0 6px;">
+        Exposure Gear will be worn when Water + Air combined is <b>less than 110°F</b>.
+      </div>
+
+      <div id="sopNotice" class="ok-hero" style="display:none;"></div>
+
+      <div class="row"><span class="dim">Wind (optional)</span> <span id="wind">—</span></div>
+
+      <div class="stamp" id="updated" style="text-align:right;margin-top:8px;">Updated: —</div>
+      <div class="badge">Auto-refresh every 60s</div>
+    </div>
+  </div>
+
+  <script>
+    const WATER_COOPS = '8639348';
+    const NWS_STATION = 'KORF';
+
+    const getJSON = async (url) => {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    };
+    const toFixed = (n, d = 1) => (n == null || !isFinite(n) ? "N/A" : Number(n).toFixed(d));
+    const ktsToMph = (k) => (k == null || !isFinite(k) ? null : k * 1.15078);
+    const degToCardinal = (deg) => {
+      if (deg == null || !isFinite(deg)) return "N/A";
+      const a = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+      return a[Math.round(deg / 22.5) % 16];
+    };
+
+    async function loadSOP(){
+      const stamps = [];
+      let waterF = null, airF = null;
+
+      try{
+        const j = await getJSON(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=water_temperature&station=${WATER_COOPS}&time_zone=lst_ldt&units=english&format=json&date=latest`);
+        const d = j?.data?.[0];
+        if(d){ waterF = parseFloat(d.v); document.getElementById('water').textContent = toFixed(waterF)+' °F'; if(d.t) stamps.push(new Date(d.t)); }
+        else  { document.getElementById('water').textContent = 'No data'; }
+      }catch{ document.getElementById('water').textContent = 'No data'; }
+
+      try{
+        const a = await getJSON(`https://api.weather.gov/stations/${NWS_STATION}/observations/latest`);
+        const c = a?.properties?.temperature?.value;
+        if(c!=null){
+          airF = (c*9/5+32);
+          document.getElementById('air').textContent = toFixed(airF)+' °F';
+          const ts = a?.properties?.timestamp; if(ts) stamps.push(new Date(ts));
+        }else{
+          document.getElementById('air').textContent = 'No data';
+        }
+      }catch{ document.getElementById('air').textContent = 'No data'; }
+
+      const n = document.getElementById('sopNotice');
+      if(waterF!=null && airF!=null){
+        const total = waterF + airF;
+        document.getElementById('total').textContent = toFixed(total)+' °F';
+        if(total < 110){
+          n.className = 'warn-hero';
+          n.textContent = 'Exposure Gear REQUIRED — Water + Air < 110°F';
+          n.style.display = 'block';
+        }else{
+          n.className = 'ok-hero';
+          n.textContent = 'Exposure Gear NOT required';
+          n.style.display = 'block';
+        }
+      }else{
+        document.getElementById('total').textContent = '—';
+        n.style.display = 'none';
+      }
+
+      try{
+        const j = await getJSON(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=wind&station=${WATER_COOPS}&time_zone=lst_ldt&units=english&format=json&date=latest`);
+        const d = j?.data?.[0];
+        if(d){
+          const mph = ktsToMph(parseFloat(d.s));
+          const dir = degToCardinal(parseFloat(d.d));
+          document.getElementById('wind').textContent = `${toFixed(mph)} mph (${dir})`;
+          if(d.t) stamps.push(new Date(d.t));
+        }else{
+          document.getElementById('wind').textContent = 'No data';
+        }
+      }catch{
+        document.getElementById('wind').textContent = 'No data';
+      }
+
+      const up = document.getElementById('updated');
+      if(stamps.length){
+        const latest = new Date(Math.max(...stamps.map(s=>s.getTime())));
+        up.textContent = 'Updated: ' + latest.toLocaleString();
+      }else{
+        up.textContent = 'Updated: —';
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', e => { e.preventDefault(); loadSOP(); });
+    loadSOP();
+    setInterval(loadSOP, 60000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GAR Home • CFD Marine Team</title>
+  <link rel="stylesheet" href="../app.css" />
+  <style>
+    html, body { background:#111; color:#eee; font-family:system-ui, sans-serif; text-align:center; }
+    .container { max-width:1000px; margin:0 auto; padding:16px; }
+    h1 { color:#ffcc00; font-size:1.6rem; margin-bottom:12px; }
+
+    .boat-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(240px,1fr));
+      gap:20px;
+      margin-top:20px;
+    }
+
+    .boat-card {
+      background:#1b1b1b;
+      border:1px solid #333;
+      border-radius:14px;
+      padding:20px;
+      box-shadow:0 0 10px rgba(0,0,0,0.35);
+      transition:transform .15s ease,border-color .2s ease;
+    }
+
+    .boat-card:hover { transform:scale(1.02); border-color:#ffcc00; }
+
+    .boat-name { color:#ffcc00; font-size:1.2rem; font-weight:700; margin-bottom:10px; }
+
+    .action-btn {
+      background:#252525;
+      border:2px solid #555;
+      color:#eee;
+      padding:10px 14px;
+      border-radius:10px;
+      font-size:1rem;
+      width:100%;
+      max-width:200px;
+      margin:6px auto;
+      cursor:pointer;
+      transition:0.2s;
+    }
+
+    .action-btn:hover { border-color:#ffcc00; color:#ffcc00; background:#2a2a2a; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>GAR 2.0 Dashboard</h1>
+
+    <div class="boat-grid">
+      <div class="boat-card">
+        <div class="boat-name">Fireboat 4</div>
+        <button class="action-btn" onclick="newGAR('Fireboat4')">New GAR Submission</button>
+        <button class="action-btn" onclick="viewGAR('Fireboat4')">View Previous GARs</button>
+      </div>
+
+      <div class="boat-card">
+        <div class="boat-name">Boat 2</div>
+        <button class="action-btn" onclick="newGAR('Boat2')">New GAR Submission</button>
+        <button class="action-btn" onclick="viewGAR('Boat2')">View Previous GARs</button>
+      </div>
+
+      <div class="boat-card">
+        <div class="boat-name">Boat 5</div>
+        <button class="action-btn" onclick="newGAR('Boat5')">New GAR Submission</button>
+        <button class="action-btn" onclick="viewGAR('Boat5')">View Previous GARs</button>
+      </div>
+
+      <div class="boat-card">
+        <div class="boat-name">Boat 7</div>
+        <button class="action-btn" onclick="newGAR('Boat7')">New GAR Submission</button>
+        <button class="action-btn" onclick="viewGAR('Boat7')">View Previous GARs</button>
+      </div>
+
+      <div class="boat-card">
+        <div class="boat-name">Boat 8</div>
+        <button class="action-btn" onclick="newGAR('Boat8')">New GAR Submission</button>
+        <button class="action-btn" onclick="viewGAR('Boat8')">View Previous GARs</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ✅ Unified navigation with localStorage and query string
+    function newGAR(boat) {
+      const cleanBoat = boat.replace(/\s+/g, '').replace(/^boat/i, 'Boat').replace(/^fireboat/i, 'Fireboat');
+      localStorage.setItem('selectedBoat', cleanBoat);
+      location.href = `./new-gar.html?boat=${encodeURIComponent(cleanBoat)}`;
+    }
+
+    function viewGAR(boat) {
+      const cleanBoat = boat.replace(/\s+/g, '').replace(/^boat/i, 'Boat').replace(/^fireboat/i, 'Fireboat');
+      localStorage.setItem('selectedBoat', cleanBoat);
+      location.href = `./gar-boat.html?boat=${encodeURIComponent(cleanBoat)}`;
+    }
+  </script>
+</body>
+</html>
