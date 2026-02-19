@@ -2,23 +2,17 @@ const https = require("https");
 
 function getText(url) {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, {
-      headers: { "User-Agent": "POV-SAR-Forum-2026" }
-    }, (res) => {
+    https.get(url, { headers: { "User-Agent": "POV-SAR-Forum-2026" } }, res => {
       let data = "";
       res.on("data", chunk => data += chunk);
       res.on("end", () => resolve(data));
-    });
-    req.on("error", reject);
-    req.end();
+    }).on("error", reject);
   });
 }
 
 function getJSON(url) {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, {
-      headers: { "User-Agent": "POV-SAR-Forum-2026" }
-    }, (res) => {
+    https.get(url, { headers: { "User-Agent": "POV-SAR-Forum-2026" } }, res => {
       let data = "";
       res.on("data", chunk => data += chunk);
       res.on("end", () => {
@@ -28,9 +22,7 @@ function getJSON(url) {
           reject("Invalid JSON from " + url);
         }
       });
-    });
-    req.on("error", reject);
-    req.end();
+    }).on("error", reject);
   });
 }
 
@@ -62,27 +54,15 @@ exports.handler = async function () {
 try {
 
 // ======================
-// TIDES
+// TIDES (36 hour window)
 // ======================
-const today = new Date();
-const tomorrow = new Date();
-tomorrow.setDate(today.getDate() + 1);
-
-const formatDate = (d) =>
-d.getFullYear().toString() +
-String(d.getMonth() + 1).padStart(2, "0") +
-String(d.getDate()).padStart(2, "0");
-
-const beginDate = formatDate(today);
-const endDate = formatDate(tomorrow);
-
 const tideUrl =
-`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=POV_SAR&begin_date=${beginDate}&end_date=${endDate}&datum=MLLW&station=8638610&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=POV_SAR&begin_date=today&range=36&datum=MLLW&station=8638610&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
 
 const tideData = await getJSON(tideUrl);
 
 // ======================
-// BUOY
+// BUOY 44099
 // ======================
 const buoyText = await getText(
 "https://www.ndbc.noaa.gov/data/realtime2/44099.txt"
@@ -92,7 +72,7 @@ const lines = buoyText.split("\n").filter(l => l.trim() !== "");
 const header = lines[0].trim().split(/\s+/);
 const latest = lines[2].trim().split(/\s+/);
 
-const col = (name) => header.indexOf(name);
+const col = name => header.indexOf(name);
 
 const rawWave = latest[col("WVHT")];
 const rawPeriod = latest[col("DPD")];
@@ -100,7 +80,6 @@ const rawWaterTemp = latest[col("WTMP")];
 const rawWindSpeed = latest[col("WSPD")];
 const rawWindDir = latest[col("WDIR")];
 
-// Convert UTC observation to Eastern
 const utcDate = new Date(Date.UTC(
   latest[0], latest[1] - 1, latest[2], latest[3], latest[4]
 ));
@@ -108,7 +87,7 @@ const utcDate = new Date(Date.UTC(
 const easternObservation = formatEastern(utcDate);
 
 // ======================
-// WEATHER (KORF)
+// WEATHER KORF
 // ======================
 const weatherData = await getJSON(
 "https://api.weather.gov/stations/KORF/observations/latest"
@@ -117,59 +96,57 @@ const weatherData = await getJSON(
 const props = weatherData.properties;
 
 const airTempF = props.temperature?.value !== null
-? cToF(props.temperature.value)
-: "N/A";
+  ? cToF(props.temperature.value)
+  : "N/A";
 
 let windSpeedKnots = null;
 let windDirDeg = null;
 let windSource = null;
 
-// Primary wind
 if (rawWindSpeed !== "MM" && rawWindDir !== "MM") {
   windSpeedKnots = mpsToKnots(rawWindSpeed);
   windDirDeg = rawWindDir;
-  windSource = "NOAA Buoy 44099 (Chesapeake Bay Entrance / HRBT Area)";
+  windSource = "NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)";
 }
 
-// Fallback wind
 if (!windSpeedKnots && props.windSpeed?.value !== null) {
   windSpeedKnots = mpsToKnots(props.windSpeed.value);
   windDirDeg = props.windDirection?.value?.toString() || "N/A";
-  windSource = "NOAA Weather Station KORF (Norfolk Airport)";
+  windSource = "NOAA Weather Station KORF — Norfolk Airport";
 }
 
 const buoyData = {
-waveHeightFt: rawWave !== "MM" ? metersToFeet(rawWave) : "N/A",
-dominantPeriodSec: rawPeriod !== "MM" ? rawPeriod : "N/A",
-waterTempF: rawWaterTemp !== "MM" ? cToF(rawWaterTemp) : "N/A",
-airTempF,
-windSpeedKnots: windSpeedKnots || "N/A",
-windDirDeg: windDirDeg || "N/A",
-windSource: windSource || "Unavailable",
-buoyObservationTimeEST: easternObservation
+  waveHeightFt: rawWave !== "MM" ? metersToFeet(rawWave) : "N/A",
+  dominantPeriodSec: rawPeriod !== "MM" ? rawPeriod : "N/A",
+  waterTempF: rawWaterTemp !== "MM" ? cToF(rawWaterTemp) : "N/A",
+  airTempF,
+  windSpeedKnots: windSpeedKnots || "N/A",
+  windDirDeg: windDirDeg || "N/A",
+  windSource: windSource || "Unavailable",
+  buoyObservationTimeEST: easternObservation
 };
 
 return {
-statusCode: 200,
-headers: {
-"Access-Control-Allow-Origin": "*",
-"Content-Type": "application/json"
-},
-body: JSON.stringify({
-serverTimeEST: formatEastern(new Date()),
-tideData,
-buoyData
-})
+  statusCode: 200,
+  headers: {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    serverTimeEST: formatEastern(new Date()),
+    tideData,
+    buoyData
+  })
 };
 
 } catch (error) {
 
 return {
-statusCode: 500,
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({
-error: error.toString()
-})
+  statusCode: 500,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    error: error.toString()
+  })
 };
 
 }
