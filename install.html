@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SAR Forum – Install</title>
+
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#121212">
+</head>
+<body>
+
+<header>
+  <h1>SAR Forum – Install</h1>
+  <nav>
+    <a href="index.html">Dashboard</a>
+    <a href="gar.html">GAR Submissions</a>
+    <a href="resources.html">SAR Resources</a>
+    <a href="install.html" class="active">Install</a>
+  </nav>
+</header>
+
+<main class="grid">
+
+  <div class="card">
+    <h2>Install the App</h2>
+    <p class="muted">
+      This site can be installed like an app (PWA) so it shows up as an icon on your phone/tablet and opens full screen.
+    </p>
+
+    <button id="installBtn" class="button" style="display:none;">Install App</button>
+    <div id="installStatus" class="muted" style="margin-top:10px;">Loading install options...</div>
+
+    <p class="muted" style="margin-top:12px;">
+      If you don’t see an install button, use the steps below for your device.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>iPhone / iPad (Safari)</h2>
+    <ol class="steps">
+      <li>Open this site in <b>Safari</b> (not Chrome).</li>
+      <li>Tap <b>Share</b> (square with arrow up).</li>
+      <li>Tap <b>Add to Home Screen</b>.</li>
+      <li>Name it <b>SAR Forum</b> and tap <b>Add</b>.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Android (Chrome)</h2>
+    <ol class="steps">
+      <li>Open this site in <b>Chrome</b>.</li>
+      <li>Tap the <b>⋮</b> menu.</li>
+      <li>Tap <b>Install app</b> or <b>Add to Home screen</b>.</li>
+      <li>Confirm install.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Scan to Open</h2>
+    <p class="muted">Scan this QR code to open the site on your phone.</p>
+
+    <div class="qr-wrap">
+      <img id="qrImage" src="assets/qr.png" alt="QR code to open the SAR Forum app" />
+    </div>
+
+    <div class="muted" style="margin-top:10px;">
+      Link: <span id="siteUrlText"></span>
+    </div>
+
+    <p class="muted" style="margin-top:10px;">
+      After opening from the QR code, come back to this page to install.
+    </p>
+  </div>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/install.js"></script>
+</body>
+</html>
