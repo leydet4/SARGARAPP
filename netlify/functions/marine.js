@@ -78,8 +78,6 @@ dominantPeriod: latest[col("DPD")],
 waterTemp: latest[col("WTMP")],
 windSpeed: latest[col("WSPD")],
 windDir: latest[col("WDIR")]
-};
-
 
 // Column positions
 const col = (name) => header.indexOf(name);
