@@ -1,8 +1,5 @@
-self.addEventListener("install", event => {
-self.skipWaiting();
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", event => {
+  event.waitUntil(self.clients.claim());
 });
-
-self.addEventListener("fetch", event => {
-// Only cache site assets, NOT external APIs
-if (event.request.url.includes(".netlify/functions")) return;
-});
+self.addEventListener("fetch", () => {});
