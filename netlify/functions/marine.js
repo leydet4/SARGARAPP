@@ -46,6 +46,17 @@ function cToF(c) {
   return ((parseFloat(c) * 9/5) + 32).toFixed(1);
 }
 
+function formatEastern(date) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
 exports.handler = async function () {
 
 try {
@@ -71,14 +82,13 @@ const tideUrl =
 const tideData = await getJSON(tideUrl);
 
 // ======================
-// BUOY (44099)
+// BUOY
 // ======================
 const buoyText = await getText(
 "https://www.ndbc.noaa.gov/data/realtime2/44099.txt"
 );
 
 const lines = buoyText.split("\n").filter(l => l.trim() !== "");
-
 const header = lines[0].trim().split(/\s+/);
 const latest = lines[2].trim().split(/\s+/);
 
@@ -90,8 +100,12 @@ const rawWaterTemp = latest[col("WTMP")];
 const rawWindSpeed = latest[col("WSPD")];
 const rawWindDir = latest[col("WDIR")];
 
-const observationTime =
-`${latest[0]}-${latest[1]}-${latest[2]} ${latest[3]}:${latest[4]} UTC`;
+// Convert UTC observation to Eastern
+const utcDate = new Date(Date.UTC(
+  latest[0], latest[1] - 1, latest[2], latest[3], latest[4]
+));
+
+const easternObservation = formatEastern(utcDate);
 
 // ======================
 // WEATHER (KORF)
@@ -110,14 +124,14 @@ let windSpeedKnots = null;
 let windDirDeg = null;
 let windSource = null;
 
-// Primary wind (Buoy)
+// Primary wind
 if (rawWindSpeed !== "MM" && rawWindDir !== "MM") {
   windSpeedKnots = mpsToKnots(rawWindSpeed);
   windDirDeg = rawWindDir;
   windSource = "NOAA Buoy 44099 (Chesapeake Bay Entrance / HRBT Area)";
 }
 
-// Fallback wind (KORF)
+// Fallback wind
 if (!windSpeedKnots && props.windSpeed?.value !== null) {
   windSpeedKnots = mpsToKnots(props.windSpeed.value);
   windDirDeg = props.windDirection?.value?.toString() || "N/A";
@@ -132,7 +146,7 @@ airTempF,
 windSpeedKnots: windSpeedKnots || "N/A",
 windDirDeg: windDirDeg || "N/A",
 windSource: windSource || "Unavailable",
-buoyObservationTime: observationTime
+buoyObservationTimeEST: easternObservation
 };
 
 return {
@@ -142,7 +156,7 @@ headers: {
 "Content-Type": "application/json"
 },
 body: JSON.stringify({
-serverTime: new Date().toISOString(),
+serverTimeEST: formatEastern(new Date()),
 tideData,
 buoyData
 })
