@@ -3,17 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
 <title>POV SAR Forum 2026</title>
 
-<!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f172a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="POV SAR 2026">
-<link rel="apple-touch-icon" href="povsargarapp-qr.png">
 <link rel="icon" href="povsargarapp-qr.png">
 
 <script src="https://cdn.tailwindcss.com"></script>
@@ -30,14 +25,7 @@ body { font-family: system-ui, sans-serif; }
 .rising { color:#22c55e; }
 .falling { color:#38bdf8; }
 .countdown { font-size:18px; font-weight:700; margin-top:6px; color:#facc15; }
-
-.install-box {
-background:#0f172a;
-border:1px solid #334155;
-border-radius:10px;
-padding:12px;
-font-size:13px;
-}
+.install-box { background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; font-size:13px; }
 </style>
 </head>
 
@@ -45,41 +33,13 @@ font-size:13px;
 
 <header class="bg-slate-800 px-4 py-3 flex justify-between items-center">
 <h1 class="text-lg font-bold">POV SAR Forum 2026 (All Times Eastern)</h1>
-
 <div class="flex gap-2">
-<a href="gar.html"
-class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-semibold">
-GAR
-</a>
-
-<button id="installBtn"
-class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-semibold hidden">
-Install App
-</button>
-
-<button onclick="loadMarineData()"
-class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm font-semibold">
-Refresh
-</button>
+<a href="gar.html" class="bg-blue-600 px-3 py-1 rounded text-sm font-semibold">GAR</a>
+<button onclick="loadMarineData()" class="bg-orange-500 px-3 py-1 rounded text-sm font-semibold">Refresh</button>
 </div>
 </header>
 
 <section class="p-4 space-y-4">
-
-<!-- INSTALL INSTRUCTIONS -->
-<div id="installInstructions" class="install-box">
-<div class="font-semibold mb-1">Install This App:</div>
-
-<div class="space-y-1">
-<div><strong>Android (Chrome):</strong> Tap <em>Install App</em> button above or open browser menu ⋮ → "Install App".</div>
-<div><strong>iPhone (Safari only):</strong> Tap Share button → “Add to Home Screen”.</div>
-</div>
-
-<button onclick="document.getElementById('installInstructions').style.display='none'"
-class="mt-2 text-xs text-slate-400 underline">
-Dismiss
-</button>
-</div>
 
 <div class="text-xs text-slate-400">
 Last Updated (Eastern): <span id="lastUpdated">--</span>
@@ -87,7 +47,6 @@ Last Updated (Eastern): <span id="lastUpdated">--</span>
 
 <div class="grid md:grid-cols-4 gap-4">
 
-<!-- WIND -->
 <div class="card text-center">
 <div class="section-title">Wind</div>
 <div id="windSource" class="source">Loading...</div>
@@ -95,21 +54,18 @@ Last Updated (Eastern): <span id="lastUpdated">--</span>
 <div id="windCardinal" class="secondary-value"></div>
 </div>
 
-<!-- WAVES -->
 <div class="card text-center">
 <div class="section-title">Wave Height</div>
 <div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)</div>
 <div id="waveHeight" class="primary-value">--</div>
 </div>
 
-<!-- WATER TEMP -->
 <div class="card text-center">
 <div class="section-title">Water Temperature</div>
 <div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)</div>
 <div id="waterTemp" class="primary-value">--</div>
 </div>
 
-<!-- AIR TEMP -->
 <div class="card text-center">
 <div class="section-title">Air Temperature</div>
 <div class="source">NOAA Weather Station KORF — Norfolk International Airport</div>
@@ -118,7 +74,6 @@ Last Updated (Eastern): <span id="lastUpdated">--</span>
 
 </div>
 
-<!-- TIDES -->
 <div class="card">
 <div class="section-title">Tides</div>
 <div class="source">NOAA CO-OPS Sewells Point — Near HRBT</div>
@@ -146,93 +101,89 @@ Buoy Observation (Eastern): <span id="buoyTime">--</span>
 
 <script>
 
-// SERVICE WORKER
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js');
+function parseEastern(str) {
+  const [date, time] = str.split(" ");
+  const [y,m,d] = date.split("-");
+  const [hh,mm] = time.split(":");
+  return new Date(`${y}-${m}-${d}T${hh}:${mm}:00-05:00`);
 }
 
-// INSTALL BUTTON
-let deferredPrompt;
-const installBtn = document.getElementById("installBtn");
+function degreesToCardinal(deg) {
+  if (!deg || deg === "N/A" || isNaN(deg)) return "";
+  const dirs = ["N","NE","E","SE","S","SW","W","NW"];
+  return dirs[Math.round(deg / 45) % 8];
+}
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  deferredPrompt = e;
-  installBtn.classList.remove("hidden");
-});
-
-installBtn.addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  installBtn.classList.add("hidden");
-});
-
-// DASHBOARD LOGIC
 let nextTideTime = null;
 let nextTideType = null;
 
-function degreesToCardinal(deg) {
-if (!deg || deg === "N/A") return "";
-const dirs = ["N","NE","E","SE","S","SW","W","NW"];
-return dirs[Math.round(deg / 45) % 8];
-}
-
 function updateCountdown() {
-if (!nextTideTime) return;
-const now = new Date();
-const diff = nextTideTime - now;
-if (diff <= 0) {
-document.getElementById("tideCountdown").innerText =
-"Tide change occurring now";
-return;
-}
-const hours = Math.floor(diff / (1000 * 60 * 60));
-const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-document.getElementById("tideCountdown").innerText =
-`${hours}h ${minutes}m until ${nextTideType} tide (${nextTideTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})`;
+  if (!nextTideTime) return;
+  const now = new Date();
+  const diff = nextTideTime - now;
+  if (diff <= 0) {
+    document.getElementById("tideCountdown").innerText = "Tide change occurring now";
+    return;
+  }
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  document.getElementById("tideCountdown").innerText =
+    `${hours}h ${minutes}m until ${nextTideType} tide (${nextTideTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})`;
 }
 
 async function loadMarineData() {
-const response = await fetch("/.netlify/functions/marine");
-const data = await response.json();
 
-document.getElementById("lastUpdated").innerText =
-data.serverTimeEST;
+  const response = await fetch("/.netlify/functions/marine");
+  const data = await response.json();
 
-if (data.buoyData) {
-const deg = parseInt(data.buoyData.windDirDeg);
-document.getElementById("windText").innerText =
-data.buoyData.windSpeedKnots + " kts";
-document.getElementById("windCardinal").innerText =
-degreesToCardinal(deg) + " (" + deg + "°)";
-document.getElementById("windSource").innerText =
-data.buoyData.windSource;
-document.getElementById("waveHeight").innerText =
-data.buoyData.waveHeightFt + " ft @ " +
-data.buoyData.dominantPeriodSec + "s";
-document.getElementById("waterTemp").innerText =
-data.buoyData.waterTempF + " °F";
-document.getElementById("airTemp").innerText =
-data.buoyData.airTempF + " °F";
-document.getElementById("buoyTime").innerText =
-data.buoyData.buoyObservationTimeEST;
-}
+  document.getElementById("lastUpdated").innerText = data.serverTimeEST;
 
-if (data.tideData?.predictions?.length > 0) {
-const tides = data.tideData.predictions;
-const now = new Date();
-const nextTwo = tides.filter(t => new Date(t.t) > now).slice(0,2);
-if (nextTwo.length > 0) {
-nextTideTime = new Date(nextTwo[0].t);
-nextTideType = nextTwo[0].type === "H" ? "High" : "Low";
-document.getElementById("tideTrend").innerHTML =
-nextTwo[0].type === "H"
-? `<span class="rising tide-arrow">↑</span> <span class="rising">Rising</span>`
-: `<span class="falling tide-arrow">↓</span> <span class="falling">Falling</span>`;
-updateCountdown();
-}
-}
+  const b = data.buoyData;
+
+  document.getElementById("windText").innerText =
+    b.windSpeedKnots !== "N/A" ? b.windSpeedKnots + " kts" : "N/A";
+
+  document.getElementById("windCardinal").innerText =
+    degreesToCardinal(parseInt(b.windDirDeg)) +
+    (b.windDirDeg !== "N/A" ? ` (${b.windDirDeg}°)` : "");
+
+  document.getElementById("windSource").innerText = b.windSource;
+  document.getElementById("waveHeight").innerText = `${b.waveHeightFt} ft @ ${b.dominantPeriodSec}s`;
+  document.getElementById("waterTemp").innerText = `${b.waterTempF} °F`;
+  document.getElementById("airTemp").innerText = `${b.airTempF} °F`;
+  document.getElementById("buoyTime").innerText = b.buoyObservationTimeEST;
+
+  const tides = data.tideData.predictions.map(t => ({
+    ...t,
+    parsed: parseEastern(t.t)
+  }));
+
+  const now = new Date();
+
+  const lastTwo = tides.filter(t => t.parsed < now).slice(-2);
+  const nextTwo = tides.filter(t => t.parsed > now).slice(0,2);
+
+  document.getElementById("lastTides").innerHTML =
+    lastTwo.map(t =>
+      `${t.type === "H" ? "High" : "Low"} - ${t.parsed.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`
+    ).join("<br>");
+
+  document.getElementById("nextTides").innerHTML =
+    nextTwo.map(t =>
+      `${t.type === "H" ? "High" : "Low"} - ${t.parsed.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`
+    ).join("<br>");
+
+  if (nextTwo.length > 0) {
+    nextTideTime = nextTwo[0].parsed;
+    nextTideType = nextTwo[0].type === "H" ? "High" : "Low";
+
+    document.getElementById("tideTrend").innerHTML =
+      nextTwo[0].type === "H"
+      ? `<span class="rising tide-arrow">↑</span> Rising`
+      : `<span class="falling tide-arrow">↓</span> Falling`;
+
+    updateCountdown();
+  }
 }
 
 loadMarineData();
