@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin GAR Review - POV SAR 2026</title>
+
+<link rel="icon" href="SAR.png">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body { font-family: system-ui, sans-serif; }
+.card {
+  background:#1e293b;
+  border-radius:16px;
+  padding:18px;
+  box-shadow:0 0 25px rgba(0,0,0,.4);
+}
+iframe {
+  border-radius:12px;
+  width:100%;
+  height:420px;
+}
+</style>
+</head>
+
+<body class="bg-slate-900 text-white">
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center">
+
+<div class="card w-full max-w-md text-center space-y-4">
+
+<img src="SAR.png" class="mx-auto h-16">
+
+<h1 class="text-xl font-bold">GAR Admin Access</h1>
+
+<input type="password" id="passwordInput"
+placeholder="Enter Admin Password"
+class="w-full p-3 rounded bg-slate-700 text-white text-center text-lg">
+
+<button onclick="checkPassword()"
+class="w-full bg-red-700 hover:bg-red-800 p-3 rounded font-bold text-lg">
+LOGIN
+</button>
+
+<a href="index.html"
+class="block text-sm text-slate-400 underline mt-2">
+Back to Dashboard
+</a>
+
+</div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="adminContent" class="hidden p-6 space-y-6">
+
+<div class="flex justify-between items-center">
+<h1 class="text-2xl font-black">GAR Review Dashboard</h1>
+
+<button onclick="logout()"
+class="bg-red-700 hover:bg-red-800 px-4 py-2 rounded font-bold">
+LOGOUT
+</button>
+</div>
+
+<div class="grid md:grid-cols-2 gap-6">
+
+<div class="card">
+<h2 class="font-bold mb-2">Task Force 1</h2>
+<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=462942313&single=true&widget=true&headers=false"></iframe>
+</div>
+
+<div class="card">
+<h2 class="font-bold mb-2">Task Force 2</h2>
+<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=653219596&single=true&widget=true&headers=false"></iframe>
+</div>
+
+<div class="card">
+<h2 class="font-bold mb-2">Task Force 3</h2>
+<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=1655685068&single=true&widget=true&headers=false"></iframe>
+</div>
+
+<div class="card">
+<h2 class="font-bold mb-2">Task Force 4</h2>
+<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=70233464&single=true&widget=true&headers=false"></iframe>
+</div>
+
+<div class="card md:col-span-2">
+<h2 class="font-bold mb-2">Other GAR Submissions</h2>
+<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=477824279&single=true&widget=true&headers=false"></iframe>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const ADMIN_PASSWORD = "POVSAR2026";
+
+function checkPassword() {
+  const entered = document.getElementById("passwordInput").value;
+
+  if (entered === ADMIN_PASSWORD) {
+    sessionStorage.setItem("adminAuth", "true");
+    showAdmin();
+  } else {
+    alert("Incorrect Password");
+  }
+}
+
+function showAdmin() {
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("adminContent").classList.remove("hidden");
+}
+
+function logout() {
+  sessionStorage.removeItem("adminAuth");
+  location.reload();
+}
+
+if (sessionStorage.getItem("adminAuth") === "true") {
+  showAdmin();
+}
+
+</script>
+
+</body>
+</html>
