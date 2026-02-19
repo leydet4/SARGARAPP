@@ -1,44 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SAR Forum – Resources</title>
-  <link rel="stylesheet" href="css/app.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POV SAR GAR App – Resources</title>
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#121212">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SAR GAR">
+  <link rel="apple-touch-icon" href="/assets/icon-192.png">
+
+  <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
 
 <header>
-  <h1>SAR Forum – Resources</h1>
+  <h1>SAR Resources</h1>
   <nav>
-    <a href="index.html">Dashboard</a>
-    <a href="gar.html">GAR Submissions</a>
-    <a href="resources.html">SAR Resources</a>
+    <a href="/index.html">Dashboard</a>
+    <a href="/gar.html">GAR Submissions</a>
+    <a href="/resources.html" class="active">SAR Resources</a>
+    <a href="/install.html">Install</a>
   </nav>
 </header>
 
 <main class="grid">
-
   <div class="card">
-    <h2>Forum Schedule</h2>
-    <a class="button" href="#">Upload Link Here</a>
+    <h2>Resources Placeholder</h2>
+    <p class="muted">
+      Add SAR documents, maps, contact sheets, task force references, and links here.
+    </p>
   </div>
-
-  <div class="card">
-    <h2>Radio Plan</h2>
-    <a class="button" href="#">Upload Link Here</a>
-  </div>
-
-  <div class="card">
-    <h2>Contact List</h2>
-    <a class="button" href="#">Upload Link Here</a>
-  </div>
-
-  <div class="card">
-    <h2>Maps</h2>
-    <a class="button" href="#">Upload Link Here</a>
-  </div>
-
 </main>
+
+<!-- Service Worker Registration -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js", { scope: "/" }).catch(() => {});
+    });
+  }
+</script>
 
 </body>
 </html>
