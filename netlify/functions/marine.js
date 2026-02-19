@@ -62,8 +62,24 @@ const buoyText = await getText(
 );
 
 const lines = buoyText.split("\n").filter(l => l.trim() !== "");
+
+// Line 0 = headers
+// Line 1 = units
+// Line 2 = latest observation
+
 const header = lines[0].trim().split(/\s+/);
-const latest = lines[1].trim().split(/\s+/);
+const latest = lines[2].trim().split(/\s+/);
+
+const col = (name) => header.indexOf(name);
+
+const buoyData = {
+waveHeight: latest[col("WVHT")],
+dominantPeriod: latest[col("DPD")],
+waterTemp: latest[col("WTMP")],
+windSpeed: latest[col("WSPD")],
+windDir: latest[col("WDIR")]
+};
+
 
 // Column positions
 const col = (name) => header.indexOf(name);
