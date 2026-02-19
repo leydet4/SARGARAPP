@@ -19,12 +19,30 @@
 
   <style>
     .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .topbar { display:flex; justify-content:center; flex-wrap:wrap; gap:.75rem; margin: 1rem 0 0; }
+    #installBtn { display:none; }
     .section { margin: 1.5rem 0; text-align:center; }
     .section h2 { margin-bottom: .75rem; font-size: 1.25rem; color:#ffcc00; }
-    .button-row { display:flex; flex-wrap:wrap; justify-content:center; gap:.75rem; }
-    .button-row .button { min-width: 200px; }
-    .topbar { display:flex; justify-content:center; gap:.75rem; margin-bottom:1rem; }
-    #installBtn { display:none; }
+    .debug {
+      text-align:left;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: .85rem;
+      white-space: pre-wrap;
+      background:#141414;
+      border:1px solid #2a2a2a;
+      border-radius:10px;
+      padding:12px;
+      max-width: 900px;
+      margin: 0 auto;
+      color:#d6d6d6;
+    }
+    .hint {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align:left;
+      color:#bdbdbd;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -37,11 +55,15 @@
 
     <div class="topbar">
       <button id="installBtn" class="button">➕ Install App</button>
+      <button id="resetPwaBtn" class="button admin">🧹 Reset PWA Cache</button>
       <a class="button" href="/index.html">⬅ Back to Dashboard</a>
     </div>
+
+    <p class="muted" style="margin-top:10px;">
+      If the install button doesn’t show on Android, Chrome may only show install under the <b>⋮ menu</b>.
+    </p>
   </header>
 
-  <!-- QR Section -->
   <div class="section">
     <h2>Scan to Open the App</h2>
     <div style="display:flex; justify-content:center;">
@@ -54,68 +76,21 @@
     </p>
   </div>
 
-  <!-- Manual Install Instructions -->
   <div class="section">
     <h2>Manual Install Instructions</h2>
-    <div class="button-row">
-      <div class="card" style="max-width:350px;">
-        <h3 style="color:#ffcc00;">iPhone / iPad</h3>
-        <ol style="text-align:left;">
-          <li>Open this page in Safari.</li>
-          <li>Tap the Share button.</li>
-          <li>Select “Add to Home Screen.”</li>
-          <li>Tap Add.</li>
-        </ol>
-      </div>
-
-      <div class="card" style="max-width:350px;">
-        <h3 style="color:#ffcc00;">Android (Chrome)</h3>
-        <ol style="text-align:left;">
-          <li>Open this page in Chrome.</li>
-          <li>Tap the 3-dot menu.</li>
-          <li>Select “Install app” or “Add to Home screen.”</li>
-        </ol>
-      </div>
+    <div class="hint">
+      <b>Android (Chrome):</b> open the <b>⋮ menu</b> → look for <b>Install app</b> or <b>Add to Home screen</b>.<br/>
+      If you don’t see it, the app is not currently “installable.” The diagnostics below will say why.
     </div>
+  </div>
+
+  <div class="section">
+    <h2>PWA Diagnostics (Android Troubleshooting)</h2>
+    <div id="debugOut" class="debug">Loading diagnostics…</div>
   </div>
 
 </div>
 
-<!-- Service Worker Registration (ROOT SCOPE) -->
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/service-worker.js")
-        .then(reg => console.log("SW registered:", reg.scope))
-        .catch(err => console.error("SW registration failed:", err));
-    });
-  }
-</script>
-
-<!-- Android Install Button -->
-<script>
-  let deferredPrompt = null;
-  const installBtn = document.getElementById('installBtn');
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    installBtn.style.display = 'inline-block';
-  });
-
-  installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    installBtn.disabled = true;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    installBtn.style.display = 'none';
-  });
-
-  window.addEventListener('appinstalled', () => {
-    installBtn.style.display = 'none';
-  });
-</script>
-
+<script src="/js/install.js"></script>
 </body>
 </html>
