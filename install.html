@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>POV SAR GAR App – Install</title>
 
-  <!-- PWA Essentials -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#121212">
 
-  <!-- iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SAR GAR">
@@ -60,7 +58,7 @@
     </div>
 
     <p class="muted" style="margin-top:10px;">
-      If the install button doesn’t show on Android, Chrome may only show install under the <b>⋮ menu</b>.
+      If the install button doesn’t show on Android, Chrome may show install under the <b>⋮ menu</b>.
     </p>
   </header>
 
@@ -79,18 +77,27 @@
   <div class="section">
     <h2>Manual Install Instructions</h2>
     <div class="hint">
-      <b>Android (Chrome):</b> open the <b>⋮ menu</b> → look for <b>Install app</b> or <b>Add to Home screen</b>.<br/>
+      <b>Android (Chrome):</b> open the <b>⋮ menu</b> → <b>Install app</b> / <b>Add to Home screen</b>.<br/>
       If you don’t see it, the app is not currently “installable.” The diagnostics below will say why.
     </div>
   </div>
 
   <div class="section">
-    <h2>PWA Diagnostics (Android Troubleshooting)</h2>
+    <h2>PWA Diagnostics</h2>
     <div id="debugOut" class="debug">Loading diagnostics…</div>
   </div>
 
 </div>
 
 <script src="/js/install.js"></script>
+
+<!-- Force correct URL (avoid /install rewrite weirdness) -->
+<script>
+  // If user is on /install (rewritten), push them to /install.html for consistency
+  if (location.pathname === "/install") {
+    location.replace("/install.html");
+  }
+</script>
+
 </body>
 </html>
