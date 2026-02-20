@@ -122,7 +122,7 @@ async function loadResources() {
 
 function openViewer(title, fileName) {
 
-  const fileUrl = `/.netlify/functions/uploadResource/${fileName}`;
+  const fileUrl = `/.netlify/functions/getFile?name=${encodeURIComponent(fileName)}`;
   const extension = fileName.split('.').pop().toLowerCase();
 
   document.getElementById("viewerTitle").innerText = title;
