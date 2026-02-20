@@ -70,27 +70,31 @@ Loading resources...
 <script>
 
 async function loadResources() {
+  try {
+    const res = await fetch("/resources/resources.json");
+    const files = await res.json();
 
-  const res = await fetch("/.netlify/functions/getResources");
-  const files = await res.json();
+    const container = document.getElementById("resourceList");
+    container.innerHTML = "";
 
-  const container = document.getElementById("resourceList");
-  container.innerHTML = "";
+    if (!files.length) {
+      container.innerText = "No resources available.";
+      return;
+    }
 
-  if (!files.length) {
-    container.innerText = "No resources available.";
-    return;
+    files.forEach(file => {
+      const link = document.createElement("a");
+      link.href = `/resources/${file.file}`;
+      link.target = "_blank";
+      link.className = "resource-link";
+      link.innerText = file.name;
+      container.appendChild(link);
+    });
+
+  } catch (err) {
+    document.getElementById("resourceList").innerText =
+      "No resources found.";
   }
-
-  files.forEach(file => {
-    const link = document.createElement("a");
-    link.href = `/.netlify/blobs/resources/${file.file}`;
-    link.target = "_blank";
-    link.className = "resource-link";
-    link.innerText = file.name;
-    container.appendChild(link);
-  });
-
 }
 
 loadResources();
