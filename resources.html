@@ -10,14 +10,12 @@
 
 <style>
 body { font-family: system-ui, sans-serif; }
-
 .card {
   background:#1e293b;
   border-radius:16px;
   padding:20px;
   box-shadow:0 0 25px rgba(0,0,0,.35);
 }
-
 .resource-btn {
   width:100%;
   padding:16px;
@@ -27,21 +25,18 @@ body { font-family: system-ui, sans-serif; }
   transition:.2s;
   text-align:left;
 }
-
 .resource-btn:hover {
   background:#475569;
   transform:scale(1.02);
 }
-
 .modal {
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.92);
-  display:none; /* stays hidden until clicked */
+  display:none;
   flex-direction:column;
   z-index:50;
 }
-
 .modal-header {
   padding:12px;
   background:#0f172a;
@@ -49,7 +44,6 @@ body { font-family: system-ui, sans-serif; }
   justify-content:space-between;
   align-items:center;
 }
-
 .modal iframe {
   flex:1;
   width:100%;
@@ -61,33 +55,23 @@ body { font-family: system-ui, sans-serif; }
 <body class="bg-slate-900 text-white">
 
 <header class="bg-slate-800 py-6 text-center shadow-lg">
-
-<img src="SAR.png" class="mx-auto h-16 mb-3">
-
-<h1 class="text-2xl font-black">Training Resources</h1>
-
-<a href="index.html"
-class="inline-block mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
-← Back to Dashboard
-</a>
-
+  <img src="SAR.png" class="mx-auto h-16 mb-3">
+  <h1 class="text-2xl font-black">Training Resources</h1>
+  <a href="index.html"
+     class="inline-block mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
+     ← Back to Dashboard
+  </a>
 </header>
 
 <section class="p-6 max-w-2xl mx-auto">
-
 <div class="card">
-
 <h2 class="text-xl font-bold mb-4">Available Documents</h2>
-
 <div id="resourceList" class="space-y-3">
 Loading resources...
 </div>
-
 </div>
-
 </section>
 
-<!-- MODAL (Hidden by Default) -->
 <div id="viewerModal" class="modal">
   <div class="modal-header">
     <span id="viewerTitle" class="font-bold"></span>
@@ -103,52 +87,37 @@ Loading resources...
       </button>
     </div>
   </div>
-
   <iframe id="viewerFrame"></iframe>
 </div>
 
 <script>
 
 async function loadResources() {
-  try {
-    const res = await fetch("/resources/resources.json");
-    const files = await res.json();
+  const res = await fetch("/.netlify/functions/getResources");
+  const files = await res.json();
 
-    const container = document.getElementById("resourceList");
-    container.innerHTML = "";
+  const container = document.getElementById("resourceList");
+  container.innerHTML = "";
 
-    if (!files.length) {
-      container.innerText = "No resources available.";
-      return;
-    }
-
-    files.forEach(file => {
-
-      const btn = document.createElement("button");
-      btn.className = "resource-btn";
-      btn.innerText = file.name;
-
-      btn.addEventListener("click", function() {
-        openViewer(file.name, file.file);
-      });
-
-      container.appendChild(btn);
-    });
-
-  } catch (err) {
-    document.getElementById("resourceList").innerText =
-      "Unable to load resources.";
+  if (!files.length) {
+    container.innerText = "No resources available.";
+    return;
   }
+
+  files.forEach(file => {
+    const btn = document.createElement("button");
+    btn.className = "resource-btn";
+    btn.innerText = file.name;
+    btn.onclick = () => openViewer(file.name, file.file);
+    container.appendChild(btn);
+  });
 }
 
-function openViewer(title, filePath) {
-
-  const fullPath = "/resources/" + filePath;
-
+function openViewer(title, fileName) {
+  const fileUrl = `/.netlify/functions/uploadResource/${fileName}`;
   document.getElementById("viewerTitle").innerText = title;
-  document.getElementById("viewerFrame").src = fullPath;
-  document.getElementById("openNewTab").href = fullPath;
-
+  document.getElementById("viewerFrame").src = fileUrl;
+  document.getElementById("openNewTab").href = fileUrl;
   document.getElementById("viewerModal").style.display = "flex";
 }
 

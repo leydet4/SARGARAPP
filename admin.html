@@ -10,172 +10,92 @@
 
 <style>
 body { font-family: system-ui, sans-serif; }
-
 .card {
   background:#1e293b;
   border-radius:16px;
-  padding:20px;
+  padding:24px;
   box-shadow:0 0 25px rgba(0,0,0,.35);
 }
-
-iframe {
-  width:100%;
-  height:380px;
-  border-radius:12px;
-}
-
-input {
-  background:#334155;
+.btn {
+  padding:10px 16px;
   border-radius:10px;
-  padding:10px;
-  width:100%;
+  font-weight:700;
+  transition:.2s;
 }
-
-button {
-  border-radius:12px;
-}
+.btn-primary { background:#2563eb; }
+.btn-primary:hover { background:#1d4ed8; }
+.btn-danger { background:#dc2626; }
+.btn-danger:hover { background:#b91c1c; }
 </style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<!-- LOGIN -->
-<div id="loginScreen" class="min-h-screen flex items-center justify-center">
+<header class="bg-slate-800 py-6 text-center shadow-lg">
+  <img src="SAR.png" class="mx-auto h-16 mb-3">
+  <h1 class="text-2xl font-black">Admin Dashboard</h1>
+  <a href="index.html"
+     class="inline-block mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
+     ← Back to Dashboard
+  </a>
+</header>
 
-<div class="card w-full max-w-md text-center space-y-4">
+<section class="p-6 max-w-2xl mx-auto space-y-6">
 
-<img src="SAR.png" class="mx-auto h-16">
+<div class="card">
+<h2 class="text-xl font-bold mb-4">Upload New Resource</h2>
 
-<h1 class="text-xl font-bold">Admin Login</h1>
+<form id="uploadForm" class="space-y-4">
+  <input type="text"
+         id="title"
+         placeholder="Display Name (Optional)"
+         class="w-full p-3 rounded bg-slate-700">
 
-<input type="password" id="passwordInput"
-placeholder="Enter Admin Password"
-class="text-center text-lg">
+  <input type="file"
+         id="fileInput"
+         required
+         class="w-full p-3 rounded bg-slate-700">
 
-<button onclick="checkPassword()"
-class="w-full bg-red-700 hover:bg-red-800 p-3 font-bold">
-LOGIN
-</button>
-
-<a href="index.html"
-class="block text-sm text-slate-400 underline mt-2">
-Back to Dashboard
-</a>
-
-</div>
-</div>
-
-<!-- ADMIN CONTENT -->
-<div id="adminContent" class="hidden p-6 space-y-6">
-
-<div class="flex justify-between items-center">
-<h1 class="text-2xl font-black">Admin Dashboard</h1>
-
-<button onclick="logout()"
-class="bg-red-700 hover:bg-red-800 px-4 py-2 font-bold">
-LOGOUT
-</button>
-</div>
-
-<!-- RESOURCE UPLOAD -->
-<div class="card space-y-4">
-
-<h2 class="text-xl font-bold">Upload Resource</h2>
-
-<form id="uploadForm" enctype="multipart/form-data" class="space-y-3">
-
-<input type="text" name="title" placeholder="Resource Title" required>
-
-<input type="file" name="file" required>
-
-<button type="submit"
-class="w-full bg-green-600 hover:bg-green-700 p-3 font-bold">
-UPLOAD RESOURCE
-</button>
-
+  <button type="submit"
+          class="btn btn-primary w-full">
+    Upload File
+  </button>
 </form>
 
-<div id="uploadStatus" class="text-sm text-slate-400"></div>
+<div id="status" class="mt-4 font-bold"></div>
 
 </div>
 
-<!-- GAR SHEETS -->
-<div class="grid md:grid-cols-2 gap-6">
-
-<div class="card">
-<h2 class="font-bold mb-2">Task Force 1</h2>
-<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=462942313&single=true&widget=true&headers=false"></iframe>
-</div>
-
-<div class="card">
-<h2 class="font-bold mb-2">Task Force 2</h2>
-<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=653219596&single=true&widget=true&headers=false"></iframe>
-</div>
-
-<div class="card">
-<h2 class="font-bold mb-2">Task Force 3</h2>
-<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=1655685068&single=true&widget=true&headers=false"></iframe>
-</div>
-
-<div class="card">
-<h2 class="font-bold mb-2">Task Force 4</h2>
-<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=70233464&single=true&widget=true&headers=false"></iframe>
-</div>
-
-<div class="card md:col-span-2">
-<h2 class="font-bold mb-2">Other Submissions</h2>
-<iframe src="https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=477824279&single=true&widget=true&headers=false"></iframe>
-</div>
-
-</div>
-
-</div>
+</section>
 
 <script>
-
-const ADMIN_PASSWORD = "POVSAR2026";
-
-function checkPassword() {
-  const entered = document.getElementById("passwordInput").value;
-  if (entered === ADMIN_PASSWORD) {
-    sessionStorage.setItem("adminAuth", "true");
-    showAdmin();
-  } else {
-    alert("Incorrect Password");
-  }
-}
-
-function showAdmin() {
-  document.getElementById("loginScreen").classList.add("hidden");
-  document.getElementById("adminContent").classList.remove("hidden");
-}
-
-function logout() {
-  sessionStorage.removeItem("adminAuth");
-  location.reload();
-}
-
-if (sessionStorage.getItem("adminAuth") === "true") {
-  showAdmin();
-}
 
 document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const formData = new FormData(e.target);
+  const file = document.getElementById("fileInput").files[0];
+  const title = document.getElementById("title").value;
+
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("title", title);
+
+  document.getElementById("status").innerText = "Uploading...";
 
   const res = await fetch("/.netlify/functions/uploadResource", {
     method: "POST",
     body: formData
   });
 
-  const result = await res.json();
+  const data = await res.json();
 
-  if (result.success) {
-    document.getElementById("uploadStatus").innerText = "Upload successful.";
-    e.target.reset();
+  if (data.success) {
+    document.getElementById("status").innerText = "Upload successful.";
+    document.getElementById("uploadForm").reset();
   } else {
-    document.getElementById("uploadStatus").innerText = "Upload failed.";
+    document.getElementById("status").innerText = "Upload failed.";
   }
 });
 
