@@ -1,25 +1,22 @@
 import { getStore } from "@netlify/blobs";
 
-export default async (request) => {
-
+export default async (req) => {
   try {
 
-    const url = new URL(request.url);
+    const url = new URL(req.url);
     const fileName = url.searchParams.get("name");
 
     if (!fileName) {
-      return new Response("Missing file name", { status: 400 });
+      return new Response("File not specified", { status: 400 });
     }
 
     const fileStore = getStore("resources-files");
-
     const file = await fileStore.get(fileName, { type: "arrayBuffer" });
 
     if (!file) {
       return new Response("File not found", { status: 404 });
     }
 
-    // Determine MIME type
     const extension = fileName.split(".").pop().toLowerCase();
 
     const mimeTypes = {
@@ -43,11 +40,11 @@ export default async (request) => {
       status: 200,
       headers: {
         "Content-Type": mimeType,
-        "Content-Disposition": "inline"
+        "Content-Disposition": `inline; filename="${fileName}"`
       }
     });
 
-  } catch (error) {
+  } catch (err) {
     return new Response("Server error", { status: 500 });
   }
 };
