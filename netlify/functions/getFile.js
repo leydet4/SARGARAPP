@@ -19,13 +19,17 @@ export default async (req) => {
 
     const extension = fileName.split(".").pop().toLowerCase();
 
-    let mimeType = "application/octet-stream";
+    const mimeTypes = {
+      pdf: "application/pdf",
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      gif: "image/gif",
+      webp: "image/webp",
+      svg: "image/svg+xml"
+    };
 
-    if (extension === "pdf") mimeType = "application/pdf";
-    if (extension === "png") mimeType = "image/png";
-    if (extension === "jpg" || extension === "jpeg") mimeType = "image/jpeg";
-    if (extension === "gif") mimeType = "image/gif";
-    if (extension === "webp") mimeType = "image/webp";
+    const mimeType = mimeTypes[extension] || "application/octet-stream";
 
     return new Response(file, {
       status: 200,
