@@ -50,13 +50,11 @@ body { font-family: system-ui, sans-serif; }
   align-items:center;
 }
 
-.modal iframe,
-.modal img {
+.modal iframe {
   flex:1;
   width:100%;
   border:none;
   background:white;
-  object-fit:contain;
 }
 </style>
 </head>
@@ -81,7 +79,6 @@ Loading resources...
 </div>
 </section>
 
-<!-- MODAL -->
 <div id="viewerModal" class="modal">
   <div class="modal-header">
     <span id="viewerTitle" class="font-bold"></span>
@@ -91,8 +88,11 @@ Loading resources...
     </button>
   </div>
 
-  <iframe id="viewerFrame" style="display:none;"></iframe>
-  <img id="viewerImage" style="display:none; background:black;" />
+  <iframe
+    id="viewerFrame"
+    sandbox="allow-scripts allow-same-origin allow-forms"
+  ></iframe>
+
 </div>
 
 <script>
@@ -123,35 +123,19 @@ function openViewer(title, fileName) {
   const extension = fileName.split('.').pop().toLowerCase();
   const fileUrl = `/.netlify/functions/getFile?name=${encodeURIComponent(fileName)}`;
 
-  document.getElementById("viewerTitle").innerText = title;
-
-  const iframe = document.getElementById("viewerFrame");
-  const image = document.getElementById("viewerImage");
-
-  iframe.style.display = "none";
-  image.style.display = "none";
-
-  if (extension === "pdf") {
-    iframe.src = fileUrl;
-    iframe.style.display = "block";
-  }
-
-  else if (["png","jpg","jpeg","gif","webp","svg"].includes(extension)) {
-    image.src = fileUrl;
-    image.style.display = "block";
-  }
-
-  else {
+  if (extension !== "pdf" &&
+      !["png","jpg","jpeg","gif","webp","svg"].includes(extension)) {
     alert("This file type cannot be viewed inside the app.");
     return;
   }
 
+  document.getElementById("viewerTitle").innerText = title;
+  document.getElementById("viewerFrame").src = fileUrl;
   document.getElementById("viewerModal").style.display = "flex";
 }
 
 function closeModal() {
   document.getElementById("viewerFrame").src = "";
-  document.getElementById("viewerImage").src = "";
   document.getElementById("viewerModal").style.display = "none";
 }
 
