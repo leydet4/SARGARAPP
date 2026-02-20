@@ -18,18 +18,42 @@ body { font-family: system-ui, sans-serif; }
   box-shadow:0 0 25px rgba(0,0,0,.35);
 }
 
-.resource-link {
+.resource-btn {
   display:block;
+  width:100%;
   padding:16px;
   border-radius:12px;
   background:#334155;
   font-weight:700;
   transition:.2s;
+  text-align:left;
 }
 
-.resource-link:hover {
+.resource-btn:hover {
   background:#475569;
   transform:scale(1.02);
+}
+
+.modal {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;
+  flex-direction:column;
+  z-index:50;
+}
+
+.modal iframe {
+  flex:1;
+  border:none;
+}
+
+.modal-header {
+  padding:10px;
+  background:#0f172a;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 </style>
 </head>
@@ -42,10 +66,6 @@ body { font-family: system-ui, sans-serif; }
 
 <h1 class="text-2xl font-black">Training Resources</h1>
 
-<p class="text-sm text-slate-400">
-Port of Virginia SAR Forum 2026
-</p>
-
 <a href="index.html"
 class="inline-block mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
 ← Back to Dashboard
@@ -57,7 +77,7 @@ class="inline-block mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font
 
 <div class="card">
 
-<h2 class="text-xl font-bold mb-4">Available Downloads</h2>
+<h2 class="text-xl font-bold mb-4">Available Documents</h2>
 
 <div id="resourceList" class="space-y-3">
 Loading resources...
@@ -66,6 +86,17 @@ Loading resources...
 </div>
 
 </section>
+
+<!-- PDF VIEWER MODAL -->
+<div id="pdfModal" class="modal flex">
+  <div class="modal-header">
+    <span id="pdfTitle" class="font-bold"></span>
+    <button onclick="closeModal()" class="bg-red-600 px-3 py-1 rounded">
+      Close
+    </button>
+  </div>
+  <iframe id="pdfFrame"></iframe>
+</div>
 
 <script>
 
@@ -83,18 +114,30 @@ async function loadResources() {
     }
 
     files.forEach(file => {
-      const link = document.createElement("a");
-      link.href = `/resources/${file.file}`;
-      link.target = "_blank";
-      link.className = "resource-link";
-      link.innerText = file.name;
-      container.appendChild(link);
+      const btn = document.createElement("button");
+      btn.className = "resource-btn";
+      btn.innerText = file.name;
+
+      btn.onclick = () => openPDF(file.name, file.file);
+
+      container.appendChild(btn);
     });
 
   } catch (err) {
     document.getElementById("resourceList").innerText =
       "No resources found.";
   }
+}
+
+function openPDF(title, filePath) {
+  document.getElementById("pdfTitle").innerText = title;
+  document.getElementById("pdfFrame").src = "/resources/" + filePath;
+  document.getElementById("pdfModal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("pdfFrame").src = "";
+  document.getElementById("pdfModal").style.display = "none";
 }
 
 loadResources();
