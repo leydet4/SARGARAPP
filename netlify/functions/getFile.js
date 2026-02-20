@@ -19,28 +19,20 @@ export default async (req) => {
 
     const extension = fileName.split(".").pop().toLowerCase();
 
-    const mimeTypes = {
-      pdf: "application/pdf",
-      png: "image/png",
-      jpg: "image/jpeg",
-      jpeg: "image/jpeg",
-      gif: "image/gif",
-      webp: "image/webp",
-      txt: "text/plain",
-      csv: "text/csv",
-      json: "application/json",
-      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      zip: "application/zip"
-    };
+    let mimeType = "application/octet-stream";
 
-    const mimeType = mimeTypes[extension] || "application/octet-stream";
+    if (extension === "pdf") mimeType = "application/pdf";
+    if (extension === "png") mimeType = "image/png";
+    if (extension === "jpg" || extension === "jpeg") mimeType = "image/jpeg";
+    if (extension === "gif") mimeType = "image/gif";
+    if (extension === "webp") mimeType = "image/webp";
 
     return new Response(file, {
       status: 200,
       headers: {
         "Content-Type": mimeType,
-        "Content-Disposition": `inline; filename="${fileName}"`
+        "Content-Disposition": "inline",
+        "X-Content-Type-Options": "nosniff"
       }
     });
 
