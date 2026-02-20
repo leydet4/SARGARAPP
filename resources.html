@@ -10,12 +10,14 @@
 
 <style>
 body { font-family: system-ui, sans-serif; }
+
 .card {
   background:#1e293b;
   border-radius:16px;
   padding:20px;
   box-shadow:0 0 25px rgba(0,0,0,.35);
 }
+
 .resource-btn {
   width:100%;
   padding:16px;
@@ -25,18 +27,21 @@ body { font-family: system-ui, sans-serif; }
   transition:.2s;
   text-align:left;
 }
+
 .resource-btn:hover {
   background:#475569;
   transform:scale(1.02);
 }
+
 .modal {
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.92);
+  background:rgba(0,0,0,.95);
   display:none;
   flex-direction:column;
   z-index:50;
 }
+
 .modal-header {
   padding:12px;
   background:#0f172a;
@@ -44,10 +49,16 @@ body { font-family: system-ui, sans-serif; }
   justify-content:space-between;
   align-items:center;
 }
+
 .modal iframe {
   flex:1;
   width:100%;
   border:none;
+  background:white;
+}
+
+.loading {
+  opacity:.6;
 }
 </style>
 </head>
@@ -72,6 +83,7 @@ Loading resources...
 </div>
 </section>
 
+<!-- MODAL VIEWER -->
 <div id="viewerModal" class="modal">
   <div class="modal-header">
     <span id="viewerTitle" class="font-bold"></span>
@@ -92,39 +104,75 @@ Loading resources...
 
 <script>
 
+// ===============================
+// LOAD RESOURCES
+// ===============================
+
 async function loadResources() {
-  const res = await fetch("/.netlify/functions/getResources");
-  const files = await res.json();
-
   const container = document.getElementById("resourceList");
-  container.innerHTML = "";
+  container.classList.add("loading");
 
-  if (!files.length) {
-    container.innerText = "No resources available.";
-    return;
+  try {
+    const res = await fetch("/.netlify/functions/getResources");
+    const files = await res.json();
+
+    container.innerHTML = "";
+
+    if (!files.length) {
+      container.innerText = "No resources available.";
+      container.classList.remove("loading");
+      return;
+    }
+
+    files.forEach(file => {
+      const btn = document.createElement("button");
+      btn.className = "resource-btn";
+      btn.innerText = file.name;
+      btn.onclick = () => openViewer(file.name, file.file);
+      container.appendChild(btn);
+    });
+
+  } catch (err) {
+    container.innerText = "Error loading resources.";
   }
 
-  files.forEach(file => {
-    const btn = document.createElement("button");
-    btn.className = "resource-btn";
-    btn.innerText = file.name;
-    btn.onclick = () => openViewer(file.name, file.file);
-    container.appendChild(btn);
-  });
+  container.classList.remove("loading");
 }
 
+// ===============================
+// OPEN VIEWER
+// ===============================
+
 function openViewer(title, fileName) {
-  const fileUrl = `/.netlify/functions/uploadResource/${fileName}`;
+
+  const fileUrl = `/.netlify/functions/getFile?name=${encodeURIComponent(fileName)}`;
+  const extension = fileName.split('.').pop().toLowerCase();
+
   document.getElementById("viewerTitle").innerText = title;
-  document.getElementById("viewerFrame").src = fileUrl;
   document.getElementById("openNewTab").href = fileUrl;
-  document.getElementById("viewerModal").style.display = "flex";
+
+  // File types allowed inside modal
+  const viewableTypes = ["pdf","png","jpg","jpeg","gif","webp"];
+
+  if (viewableTypes.includes(extension)) {
+    document.getElementById("viewerFrame").src = fileUrl;
+    document.getElementById("viewerModal").style.display = "flex";
+  } else {
+    // Force download/open for non-viewable types
+    window.open(fileUrl, "_blank");
+  }
 }
+
+// ===============================
+// CLOSE MODAL
+// ===============================
 
 function closeModal() {
   document.getElementById("viewerFrame").src = "";
   document.getElementById("viewerModal").style.display = "none";
 }
+
+// ===============================
 
 loadResources();
 
