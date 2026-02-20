@@ -24,10 +24,30 @@ export default async (req) => {
         return new Response("File not found", { status: 404 });
       }
 
+      // Detect MIME type from extension
+      const extension = fileName.split(".").pop().toLowerCase();
+
+      const mimeTypes = {
+        pdf: "application/pdf",
+        png: "image/png",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        gif: "image/gif",
+        webp: "image/webp",
+        txt: "text/plain",
+        csv: "text/csv",
+        json: "application/json",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        zip: "application/zip"
+      };
+
+      const mimeType = mimeTypes[extension] || "application/octet-stream";
+
       return new Response(file, {
         status: 200,
         headers: {
-          "Content-Type": "application/octet-stream",
+          "Content-Type": mimeType,
           "Content-Disposition": `inline; filename="${fileName}"`
         }
       });
