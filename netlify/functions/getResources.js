@@ -1,16 +1,15 @@
-import { Blob } from "@netlify/blobs";
+import { getStore } from "@netlify/blobs";
 
 export default async () => {
 
-  const metaStore = new Blob("resource-metadata");
-  const existing = await metaStore.get("list.json");
+  const metaStore = getStore("resources-meta");
+  const list = await metaStore.get("list.json", { type: "json" });
 
-  if (!existing) {
-    return new Response(JSON.stringify([]), { status: 200 });
-  }
-
-  return new Response(existing.toString(), {
-    status: 200,
-    headers: { "Content-Type": "application/json" }
-  });
+  return new Response(
+    JSON.stringify(list || []),
+    {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    }
+  );
 };

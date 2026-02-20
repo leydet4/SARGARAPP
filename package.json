@@ -1,0 +1,24 @@
+{
+  "name": "sargarapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "service-worker.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leydet4/SARGARAPP.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/leydet4/SARGARAPP/issues"
+  },
+  "homepage": "https://github.com/leydet4/SARGARAPP#readme",
+  "dependencies": {
+    "@netlify/blobs": "^10.7.0"
+  }
+}
