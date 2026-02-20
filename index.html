@@ -26,28 +26,10 @@ body { font-family: system-ui, sans-serif; }
   box-shadow:0 0 25px rgba(0,0,0,.35);
 }
 
-.section-title {
-  font-size:16px;
-  font-weight:700;
-  letter-spacing:.5px;
-}
-
-.source {
-  color:#64748b;
-  font-size:11px;
-  margin-top:3px;
-}
-
-.primary-value {
-  font-size:22px;
-  font-weight:900;
-  margin-top:6px;
-}
-
-.secondary-value {
-  font-size:15px;
-  color:#94a3b8;
-}
+.section-title { font-size:16px; font-weight:700; }
+.source { color:#64748b; font-size:11px; margin-top:3px; }
+.primary-value { font-size:22px; font-weight:900; margin-top:6px; }
+.secondary-value { font-size:15px; color:#94a3b8; }
 
 .tide-trend {
   font-size:32px;
@@ -60,7 +42,6 @@ body { font-family: system-ui, sans-serif; }
 }
 
 .tide-arrow { font-size:52px; }
-
 .rising { color:#22c55e; }
 .falling { color:#38bdf8; }
 
@@ -81,16 +62,11 @@ body { font-family: system-ui, sans-serif; }
   padding:12px 20px;
   border-radius:12px;
   font-weight:800;
-  letter-spacing:.5px;
   transition:.2s;
 }
 
 .big-btn:hover { transform:scale(1.05); }
-
-.subtitle {
-  font-size:13px;
-  color:#94a3b8;
-}
+.subtitle { font-size:13px; color:#94a3b8; }
 </style>
 </head>
 
@@ -111,20 +87,9 @@ HRBT Marine Operations Dashboard (All Times Eastern)
 
 <div class="flex justify-center gap-3 mt-5 flex-wrap">
 
-<a href="gar.html"
-class="big-btn bg-blue-600 hover:bg-blue-700">
-GAR
-</a>
-
-<a href="admin.html"
-class="big-btn bg-red-700 hover:bg-red-800">
-ADMIN
-</a>
-
-<a href="resources.html"
-class="big-btn bg-slate-600 hover:bg-slate-700">
-RESOURCES
-</a>
+<a href="gar.html" class="big-btn bg-blue-600 hover:bg-blue-700">GAR</a>
+<a href="admin.html" class="big-btn bg-red-700 hover:bg-red-800">ADMIN</a>
+<a href="resources.html" class="big-btn bg-slate-600 hover:bg-slate-700">RESOURCES</a>
 
 <button id="installBtn"
 class="big-btn bg-green-600 hover:bg-green-700 hidden">
@@ -157,19 +122,19 @@ Last Updated (Eastern): <span id="lastUpdated">--</span>
 
 <div class="card text-center">
 <div class="section-title">WAVE HEIGHT</div>
-<div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)</div>
+<div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance</div>
 <div id="waveHeight" class="primary-value">--</div>
 </div>
 
 <div class="card text-center">
 <div class="section-title">WATER TEMP</div>
-<div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)</div>
+<div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance</div>
 <div id="waterTemp" class="primary-value">--</div>
 </div>
 
 <div class="card text-center">
 <div class="section-title">AIR TEMP</div>
-<div class="source">NOAA Weather Station KORF — Norfolk International Airport</div>
+<div class="source">NOAA Weather Station KORF</div>
 <div id="airTemp" class="primary-value">--</div>
 </div>
 
@@ -208,32 +173,10 @@ Buoy Observation (Eastern): <span id="buoyTime">--</span>
 
 <script>
 
-let deferredPrompt;
-const installBtn = document.getElementById("installBtn");
-
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.classList.remove("hidden");
-});
-
-installBtn.addEventListener("click", async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  installBtn.classList.add("hidden");
-});
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js');
-}
-
+// FIXED TIME PARSER (NO FORCED OFFSET)
 function parseEastern(str) {
   const [date, time] = str.split(" ");
-  const [y,m,d] = date.split("-");
-  const [hh,mm] = time.split(":");
-  return new Date(`${y}-${m}-${d}T${hh}:${mm}:00-05:00`);
+  return new Date(date + "T" + time);
 }
 
 function formatTideDisplay(dateObj) {
@@ -247,25 +190,24 @@ function formatTideDisplay(dateObj) {
   });
 }
 
-function degreesToCardinal(deg) {
-  if (!deg || deg === "N/A" || isNaN(deg)) return "";
-  const dirs = ["N","NE","E","SE","S","SW","W","NW"];
-  return dirs[Math.round(deg / 45) % 8];
-}
-
 let nextTideTime = null;
 let nextTideType = null;
 
 function updateCountdown() {
   if (!nextTideTime) return;
+
   const now = new Date();
   const diff = nextTideTime - now;
+
   if (diff <= 0) {
-    document.getElementById("tideCountdown").innerText = "Tide change occurring now";
+    document.getElementById("tideCountdown").innerText =
+      "Tide change occurring now";
     return;
   }
+
   const hours = Math.floor(diff / 3600000);
   const minutes = Math.floor((diff % 3600000) / 60000);
+
   document.getElementById("tideCountdown").innerText =
     `${hours}h ${minutes}m until ${nextTideType} tide (${formatTideDisplay(nextTideTime)})`;
 }
@@ -277,20 +219,6 @@ async function loadMarineData() {
 
   document.getElementById("lastUpdated").innerText = data.serverTimeEST;
 
-  const b = data.buoyData;
-
-  document.getElementById("windText").innerText = b.windSpeedKnots;
-  document.getElementById("windCardinal").innerText =
-    b.windDirDeg !== "N/A"
-    ? degreesToCardinal(parseInt(b.windDirDeg)) + ` (${b.windDirDeg}°)`
-    : "";
-
-  document.getElementById("windSource").innerText = b.windSource;
-  document.getElementById("waveHeight").innerText = `${b.waveHeightFt} ft @ ${b.dominantPeriodSec}s`;
-  document.getElementById("waterTemp").innerText = `${b.waterTempF} °F`;
-  document.getElementById("airTemp").innerText = `${b.airTempF} °F`;
-  document.getElementById("buoyTime").innerText = b.buoyObservationTimeEST;
-
   const tides = data.tideData.predictions.map(t => ({
     ...t,
     parsed: parseEastern(t.t)
@@ -298,18 +226,25 @@ async function loadMarineData() {
 
   const now = new Date();
 
-  const lastTwo = tides.filter(t => t.parsed < now).slice(-2);
-  const nextTwo = tides.filter(t => t.parsed > now).slice(0,2);
+  const past = tides.filter(t => t.parsed <= now);
+  const future = tides.filter(t => t.parsed > now);
+
+  const lastTwo = past.slice(-2);
+  const nextTwo = future.slice(0,2);
 
   document.getElementById("lastTides").innerHTML =
-    lastTwo.map(t =>
-      `${t.type === "H" ? "High" : "Low"} — ${formatTideDisplay(t.parsed)}`
-    ).join("<br>");
+    lastTwo.length
+      ? lastTwo.map(t =>
+          `${t.type === "H" ? "High" : "Low"} — ${formatTideDisplay(t.parsed)}`
+        ).join("<br>")
+      : "No previous tides yet";
 
   document.getElementById("nextTides").innerHTML =
-    nextTwo.map(t =>
-      `${t.type === "H" ? "High" : "Low"} — ${formatTideDisplay(t.parsed)}`
-    ).join("<br>");
+    nextTwo.length
+      ? nextTwo.map(t =>
+          `${t.type === "H" ? "High" : "Low"} — ${formatTideDisplay(t.parsed)}`
+        ).join("<br>")
+      : "No upcoming tides";
 
   if (nextTwo.length > 0) {
     nextTideTime = nextTwo[0].parsed;
