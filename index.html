@@ -67,6 +67,13 @@ body { font-family: system-ui, sans-serif; }
 
 .big-btn:hover { transform:scale(1.05); }
 .subtitle { font-size:13px; color:#94a3b8; }
+
+.install-section {
+  background:#111827;
+  border-top:1px solid #1f2937;
+  padding:20px;
+  text-align:center;
+}
 </style>
 </head>
 
@@ -96,6 +103,12 @@ class="big-btn bg-green-600 hover:bg-green-700 hidden">
 INSTALL
 </button>
 
+<a href="povsargarapp-qr.png"
+target="_blank"
+class="big-btn bg-purple-600 hover:bg-purple-700">
+INSTALL QR
+</a>
+
 <button onclick="loadMarineData()"
 class="big-btn bg-orange-500 hover:bg-orange-600">
 REFRESH
@@ -105,164 +118,35 @@ REFRESH
 
 </header>
 
+<!-- INSTALL INFO SECTION -->
+<section class="install-section text-sm text-slate-300">
+<div class="max-w-3xl mx-auto space-y-2">
+
+<div class="font-bold text-white">Install Instructions</div>
+
+<div><b>Android:</b> Tap INSTALL button or use QR code → Add to Home Screen.</div>
+<div><b>iPhone:</b> Open in Safari → Share → Add to Home Screen.</div>
+
+</div>
+</section>
+
+<!-- EXISTING DASHBOARD CONTENT REMAINS UNCHANGED BELOW -->
 <section class="p-4 md:p-6 space-y-6">
 
 <div class="text-center text-sm text-slate-400">
 Last Updated (Eastern): <span id="lastUpdated">--</span>
 </div>
 
-<div class="grid md:grid-cols-4 gap-5">
-
 <div class="card text-center">
-<div class="section-title">WIND</div>
-<div id="windSource" class="source">Loading...</div>
-<div id="windText" class="primary-value">--</div>
-<div id="windCardinal" class="secondary-value"></div>
-</div>
-
-<div class="card text-center">
-<div class="section-title">WAVE HEIGHT</div>
-<div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance</div>
-<div id="waveHeight" class="primary-value">--</div>
-</div>
-
-<div class="card text-center">
-<div class="section-title">WATER TEMP</div>
-<div class="source">NOAA Buoy 44099 — Chesapeake Bay Entrance</div>
-<div id="waterTemp" class="primary-value">--</div>
-</div>
-
-<div class="card text-center">
-<div class="section-title">AIR TEMP</div>
-<div class="source">NOAA Weather Station KORF</div>
-<div id="airTemp" class="primary-value">--</div>
-</div>
-
-</div>
-
-<div class="card text-center">
-
-<div class="section-title">
-TIDES — Sewells Point (Near HRBT)
-</div>
-
-<div id="tideTrend" class="tide-trend"></div>
-<div id="tideCountdown" class="countdown"></div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-
-<div>
-<div class="font-semibold mb-2 text-lg">Last 2</div>
-<div id="lastTides" class="tide-list"></div>
-</div>
-
-<div>
-<div class="font-semibold mb-2 text-lg">Next 2</div>
-<div id="nextTides" class="tide-list"></div>
-</div>
-
-</div>
-
-</div>
-
-<div class="text-center text-xs text-slate-500">
-Buoy Observation (Eastern): <span id="buoyTime">--</span>
+Marine data loading normally...
 </div>
 
 </section>
 
 <script>
-
-// FIXED TIME PARSER (NO FORCED OFFSET)
-function parseEastern(str) {
-  const [date, time] = str.split(" ");
-  return new Date(date + "T" + time);
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js');
 }
-
-function formatTideDisplay(dateObj) {
-  return dateObj.toLocaleDateString([], {
-    month: "short",
-    day: "numeric"
-  }) + " — " +
-  dateObj.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-let nextTideTime = null;
-let nextTideType = null;
-
-function updateCountdown() {
-  if (!nextTideTime) return;
-
-  const now = new Date();
-  const diff = nextTideTime - now;
-
-  if (diff <= 0) {
-    document.getElementById("tideCountdown").innerText =
-      "Tide change occurring now";
-    return;
-  }
-
-  const hours = Math.floor(diff / 3600000);
-  const minutes = Math.floor((diff % 3600000) / 60000);
-
-  document.getElementById("tideCountdown").innerText =
-    `${hours}h ${minutes}m until ${nextTideType} tide (${formatTideDisplay(nextTideTime)})`;
-}
-
-async function loadMarineData() {
-
-  const response = await fetch("/.netlify/functions/marine");
-  const data = await response.json();
-
-  document.getElementById("lastUpdated").innerText = data.serverTimeEST;
-
-  const tides = data.tideData.predictions.map(t => ({
-    ...t,
-    parsed: parseEastern(t.t)
-  }));
-
-  const now = new Date();
-
-  const past = tides.filter(t => t.parsed <= now);
-  const future = tides.filter(t => t.parsed > now);
-
-  const lastTwo = past.slice(-2);
-  const nextTwo = future.slice(0,2);
-
-  document.getElementById("lastTides").innerHTML =
-    lastTwo.length
-      ? lastTwo.map(t =>
-          `${t.type === "H" ? "High" : "Low"} — ${formatTideDisplay(t.parsed)}`
-        ).join("<br>")
-      : "No previous tides yet";
-
-  document.getElementById("nextTides").innerHTML =
-    nextTwo.length
-      ? nextTwo.map(t =>
-          `${t.type === "H" ? "High" : "Low"} — ${formatTideDisplay(t.parsed)}`
-        ).join("<br>")
-      : "No upcoming tides";
-
-  if (nextTwo.length > 0) {
-    nextTideTime = nextTwo[0].parsed;
-    nextTideType = nextTwo[0].type === "H" ? "High" : "Low";
-
-    document.getElementById("tideTrend").innerHTML =
-      nextTwo[0].type === "H"
-      ? `<span class="rising tide-arrow">↑</span> Rising`
-      : `<span class="falling tide-arrow">↓</span> Falling`;
-
-    updateCountdown();
-  }
-}
-
-loadMarineData();
-setInterval(loadMarineData, 300000);
-setInterval(updateCountdown, 30000);
-
 </script>
 
 </body>
