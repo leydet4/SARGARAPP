@@ -50,11 +50,13 @@ body { font-family: system-ui, sans-serif; }
   align-items:center;
 }
 
-.modal iframe {
+.modal iframe,
+.modal img {
   flex:1;
   width:100%;
   border:none;
   background:white;
+  object-fit:contain;
 }
 </style>
 </head>
@@ -79,22 +81,18 @@ Loading resources...
 </div>
 </section>
 
+<!-- MODAL -->
 <div id="viewerModal" class="modal">
   <div class="modal-header">
     <span id="viewerTitle" class="font-bold"></span>
-    <div class="space-x-2">
-      <a id="openNewTab"
-         target="_blank"
-         class="bg-blue-600 px-3 py-1 rounded text-sm font-bold">
-         Open in New Tab
-      </a>
-      <button onclick="closeModal()"
-              class="bg-red-600 px-3 py-1 rounded text-sm font-bold">
-         Close
-      </button>
-    </div>
+    <button onclick="closeModal()"
+            class="bg-red-600 px-3 py-1 rounded text-sm font-bold">
+       Close
+    </button>
   </div>
-  <iframe id="viewerFrame"></iframe>
+
+  <iframe id="viewerFrame" style="display:none;"></iframe>
+  <img id="viewerImage" style="display:none; background:black;" />
 </div>
 
 <script>
@@ -122,24 +120,38 @@ async function loadResources() {
 
 function openViewer(title, fileName) {
 
-  const fileUrl = `/.netlify/functions/getFile?name=${encodeURIComponent(fileName)}`;
   const extension = fileName.split('.').pop().toLowerCase();
+  const fileUrl = `/.netlify/functions/getFile?name=${encodeURIComponent(fileName)}`;
 
   document.getElementById("viewerTitle").innerText = title;
-  document.getElementById("openNewTab").href = fileUrl;
 
-  const viewableTypes = ["pdf","png","jpg","jpeg","gif","webp"];
+  const iframe = document.getElementById("viewerFrame");
+  const image = document.getElementById("viewerImage");
 
-  if (viewableTypes.includes(extension)) {
-    document.getElementById("viewerFrame").src = fileUrl;
-    document.getElementById("viewerModal").style.display = "flex";
-  } else {
-    window.open(fileUrl, "_blank");
+  iframe.style.display = "none";
+  image.style.display = "none";
+
+  if (extension === "pdf") {
+    iframe.src = fileUrl;
+    iframe.style.display = "block";
   }
+
+  else if (["png","jpg","jpeg","gif","webp","svg"].includes(extension)) {
+    image.src = fileUrl;
+    image.style.display = "block";
+  }
+
+  else {
+    alert("This file type cannot be viewed inside the app.");
+    return;
+  }
+
+  document.getElementById("viewerModal").style.display = "flex";
 }
 
 function closeModal() {
   document.getElementById("viewerFrame").src = "";
+  document.getElementById("viewerImage").src = "";
   document.getElementById("viewerModal").style.display = "none";
 }
 
