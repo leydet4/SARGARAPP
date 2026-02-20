@@ -56,10 +56,6 @@ body { font-family: system-ui, sans-serif; }
   border:none;
   background:white;
 }
-
-.loading {
-  opacity:.6;
-}
 </style>
 </head>
 
@@ -83,7 +79,6 @@ Loading resources...
 </div>
 </section>
 
-<!-- MODAL VIEWER -->
 <div id="viewerModal" class="modal">
   <div class="modal-header">
     <span id="viewerTitle" class="font-bold"></span>
@@ -104,75 +99,49 @@ Loading resources...
 
 <script>
 
-// ===============================
-// LOAD RESOURCES
-// ===============================
-
 async function loadResources() {
+  const res = await fetch("/.netlify/functions/getResources");
+  const files = await res.json();
+
   const container = document.getElementById("resourceList");
-  container.classList.add("loading");
+  container.innerHTML = "";
 
-  try {
-    const res = await fetch("/.netlify/functions/getResources");
-    const files = await res.json();
-
-    container.innerHTML = "";
-
-    if (!files.length) {
-      container.innerText = "No resources available.";
-      container.classList.remove("loading");
-      return;
-    }
-
-    files.forEach(file => {
-      const btn = document.createElement("button");
-      btn.className = "resource-btn";
-      btn.innerText = file.name;
-      btn.onclick = () => openViewer(file.name, file.file);
-      container.appendChild(btn);
-    });
-
-  } catch (err) {
-    container.innerText = "Error loading resources.";
+  if (!files.length) {
+    container.innerText = "No resources available.";
+    return;
   }
 
-  container.classList.remove("loading");
+  files.forEach(file => {
+    const btn = document.createElement("button");
+    btn.className = "resource-btn";
+    btn.innerText = file.name;
+    btn.onclick = () => openViewer(file.name, file.file);
+    container.appendChild(btn);
+  });
 }
-
-// ===============================
-// OPEN VIEWER
-// ===============================
 
 function openViewer(title, fileName) {
 
-  const fileUrl = `/.netlify/functions/getFile?name=${encodeURIComponent(fileName)}`;
+  const fileUrl = `/.netlify/functions/uploadResource/${fileName}`;
   const extension = fileName.split('.').pop().toLowerCase();
 
   document.getElementById("viewerTitle").innerText = title;
   document.getElementById("openNewTab").href = fileUrl;
 
-  // File types allowed inside modal
   const viewableTypes = ["pdf","png","jpg","jpeg","gif","webp"];
 
   if (viewableTypes.includes(extension)) {
     document.getElementById("viewerFrame").src = fileUrl;
     document.getElementById("viewerModal").style.display = "flex";
   } else {
-    // Force download/open for non-viewable types
     window.open(fileUrl, "_blank");
   }
 }
-
-// ===============================
-// CLOSE MODAL
-// ===============================
 
 function closeModal() {
   document.getElementById("viewerFrame").src = "";
   document.getElementById("viewerModal").style.display = "none";
 }
-
-// ===============================
 
 loadResources();
 
