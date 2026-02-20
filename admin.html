@@ -26,6 +26,19 @@ body { font-family: system-ui, sans-serif; }
 .btn-primary:hover { background:#1d4ed8; }
 .btn-danger { background:#dc2626; }
 .btn-danger:hover { background:#b91c1c; }
+.select {
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  background:#334155;
+  font-weight:600;
+}
+iframe {
+  width:100%;
+  height:600px;
+  border:none;
+  border-radius:12px;
+}
 </style>
 </head>
 
@@ -40,7 +53,33 @@ body { font-family: system-ui, sans-serif; }
   </a>
 </header>
 
-<section class="p-6 max-w-2xl mx-auto space-y-6">
+<section class="p-6 max-w-4xl mx-auto space-y-8">
+
+<!-- ========================= -->
+<!-- GAR SHEET VIEWER SECTION -->
+<!-- ========================= -->
+
+<div class="card">
+<h2 class="text-xl font-bold mb-4">GAR Sheet Viewer</h2>
+
+<select id="sheetSelector" class="select mb-4">
+  <option value="">Select GAR Sheet...</option>
+  <option value="TF1">Task Force 1</option>
+  <option value="TF2">Task Force 2</option>
+  <option value="TF3">Task Force 3</option>
+  <option value="TF4">Task Force 4</option>
+  <option value="ADMIN">Admin / Other</option>
+</select>
+
+<div id="sheetContainer" class="hidden">
+  <iframe id="sheetFrame"></iframe>
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- RESOURCE UPLOAD SECTION -->
+<!-- ========================= -->
 
 <div class="card">
 <h2 class="text-xl font-bold mb-4">Upload New Resource</h2>
@@ -69,6 +108,38 @@ body { font-family: system-ui, sans-serif; }
 </section>
 
 <script>
+
+// =========================
+// GAR SHEET LINKS (REPLACE THESE)
+// =========================
+
+const sheetLinks = {
+  TF1: "PASTE_TF1_EMBED_LINK_HERE",
+  TF2: "PASTE_TF2_EMBED_LINK_HERE",
+  TF3: "PASTE_TF3_EMBED_LINK_HERE",
+  TF4: "PASTE_TF4_EMBED_LINK_HERE",
+  ADMIN: "PASTE_ADMIN_EMBED_LINK_HERE"
+};
+
+// Sheet selector logic
+document.getElementById("sheetSelector").addEventListener("change", function() {
+  const selected = this.value;
+  const frame = document.getElementById("sheetFrame");
+  const container = document.getElementById("sheetContainer");
+
+  if (!selected) {
+    container.classList.add("hidden");
+    frame.src = "";
+    return;
+  }
+
+  frame.src = sheetLinks[selected];
+  container.classList.remove("hidden");
+});
+
+// =========================
+// FILE UPLOAD FUNCTION
+// =========================
 
 document.getElementById("uploadForm").addEventListener("submit", async (e) => {
   e.preventDefault();
