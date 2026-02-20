@@ -19,7 +19,6 @@ body { font-family: system-ui, sans-serif; }
 }
 
 .resource-btn {
-  display:block;
   width:100%;
   padding:16px;
   border-radius:12px;
@@ -37,23 +36,24 @@ body { font-family: system-ui, sans-serif; }
 .modal {
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.85);
+  background:rgba(0,0,0,.92);
   display:none;
   flex-direction:column;
   z-index:50;
 }
 
-.modal iframe {
-  flex:1;
-  border:none;
-}
-
 .modal-header {
-  padding:10px;
+  padding:12px;
   background:#0f172a;
   display:flex;
   justify-content:space-between;
   align-items:center;
+}
+
+.modal iframe {
+  flex:1;
+  width:100%;
+  border:none;
 }
 </style>
 </head>
@@ -87,15 +87,24 @@ Loading resources...
 
 </section>
 
-<!-- PDF VIEWER MODAL -->
-<div id="pdfModal" class="modal flex">
+<!-- MODAL -->
+<div id="viewerModal" class="modal flex">
   <div class="modal-header">
-    <span id="pdfTitle" class="font-bold"></span>
-    <button onclick="closeModal()" class="bg-red-600 px-3 py-1 rounded">
-      Close
-    </button>
+    <span id="viewerTitle" class="font-bold"></span>
+    <div class="space-x-2">
+      <a id="openNewTab"
+         target="_blank"
+         class="bg-blue-600 px-3 py-1 rounded text-sm font-bold">
+         Open in New Tab
+      </a>
+      <button onclick="closeModal()"
+              class="bg-red-600 px-3 py-1 rounded text-sm font-bold">
+         Close
+      </button>
+    </div>
   </div>
-  <iframe id="pdfFrame"></iframe>
+
+  <iframe id="viewerFrame"></iframe>
 </div>
 
 <script>
@@ -114,30 +123,36 @@ async function loadResources() {
     }
 
     files.forEach(file => {
+
       const btn = document.createElement("button");
       btn.className = "resource-btn";
       btn.innerText = file.name;
 
-      btn.onclick = () => openPDF(file.name, file.file);
+      btn.onclick = () => openViewer(file.name, file.file);
 
       container.appendChild(btn);
     });
 
   } catch (err) {
     document.getElementById("resourceList").innerText =
-      "No resources found.";
+      "Unable to load resources.";
   }
 }
 
-function openPDF(title, filePath) {
-  document.getElementById("pdfTitle").innerText = title;
-  document.getElementById("pdfFrame").src = "/resources/" + filePath;
-  document.getElementById("pdfModal").style.display = "flex";
+function openViewer(title, filePath) {
+
+  const fullPath = "/resources/" + filePath;
+
+  document.getElementById("viewerTitle").innerText = title;
+  document.getElementById("viewerFrame").src = fullPath;
+  document.getElementById("openNewTab").href = fullPath;
+
+  document.getElementById("viewerModal").style.display = "flex";
 }
 
 function closeModal() {
-  document.getElementById("pdfFrame").src = "";
-  document.getElementById("pdfModal").style.display = "none";
+  document.getElementById("viewerFrame").src = "";
+  document.getElementById("viewerModal").style.display = "none";
 }
 
 loadResources();
