@@ -37,7 +37,7 @@ body { font-family: system-ui, sans-serif; }
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.92);
-  display:none;
+  display:none; /* stays hidden until clicked */
   flex-direction:column;
   z-index:50;
 }
@@ -87,8 +87,8 @@ Loading resources...
 
 </section>
 
-<!-- MODAL -->
-<div id="viewerModal" class="modal flex">
+<!-- MODAL (Hidden by Default) -->
+<div id="viewerModal" class="modal">
   <div class="modal-header">
     <span id="viewerTitle" class="font-bold"></span>
     <div class="space-x-2">
@@ -128,7 +128,9 @@ async function loadResources() {
       btn.className = "resource-btn";
       btn.innerText = file.name;
 
-      btn.onclick = () => openViewer(file.name, file.file);
+      btn.addEventListener("click", function() {
+        openViewer(file.name, file.file);
+      });
 
       container.appendChild(btn);
     });
