@@ -5,141 +5,76 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SAR Forum Resources</title>
 
-<link rel="manifest" href="manifest.json">
 <link rel="icon" href="SAR.png">
 <meta name="theme-color" content="#0f172a">
 
 <script src="https://cdn.tailwindcss.com"></script>
-
-<style>
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.92);
-  z-index: 1000;
-}
-
-.modal-content {
-  position: absolute;
-  top: 2%;
-  left: 2%;
-  width: 96%;
-  height: 96%;
-  background: #000;
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.modal iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.close-btn {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  font-size: 26px;
-  cursor: pointer;
-  color: white;
-}
-</style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<header class="bg-slate-800 py-8 text-center shadow-xl">
-<img src="SAR.png" class="mx-auto h-20 mb-4">
-<h1 class="text-3xl font-black">SAR Forum Resources</h1>
+<header class="bg-slate-800 py-4 text-center shadow-xl">
 
-<div class="mt-4">
+<img src="SAR.png" class="mx-auto h-14 mb-2">
+
+<h1 class="text-lg font-black">
+SAR Forum Resources
+</h1>
+
+<div class="mt-3">
 <a href="/index.html"
-class="px-6 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 transition">
+class="px-4 py-2 rounded-lg font-bold bg-blue-600 hover:bg-blue-700 text-sm">
 ← Back to Dashboard
 </a>
 </div>
+
 </header>
 
-<section class="max-w-5xl mx-auto p-6">
-<div id="resourceGrid" class="grid md:grid-cols-2 gap-6"></div>
-<div id="errorMsg" class="text-center text-red-400 mt-6 hidden font-semibold"></div>
-</section>
+<section class="max-w-4xl mx-auto p-6 space-y-6">
 
-<div id="viewerModal" class="modal">
-  <div class="modal-content">
-    <span class="close-btn" onclick="closeModal()">✖</span>
-    <iframe id="viewerFrame"></iframe>
-  </div>
-</div>
+<div id="resourceGrid" class="grid md:grid-cols-2 gap-4"></div>
+
+</section>
 
 <script>
 
 async function loadResources() {
-  try {
-    const res = await fetch('/resources/resources.json');
-    if (!res.ok) throw new Error("resources.json not found");
+  const res = await fetch('/resources/resources.json');
+  const files = await res.json();
 
-    const files = await res.json();
-    const grid = document.getElementById('resourceGrid');
-    grid.innerHTML = "";
+  const grid = document.getElementById('resourceGrid');
+  grid.innerHTML = "";
 
-    if (!files.length) {
-      showError("No resources found.");
-      return;
-    }
+  files.forEach(resource => {
 
-    files.forEach(resource => {
-      const filePath = `/resources/${resource.file}`;
+    const filePath = `/resources/${resource.file}`;
 
-      const card = document.createElement('div');
-      card.className =
-        "bg-slate-800 rounded-2xl p-6 shadow-xl";
+    const card = document.createElement('div');
+    card.className = "bg-slate-800 rounded-xl p-5 shadow-lg";
 
-      card.innerHTML = `
-        <h3 class="text-lg font-bold mb-4">
-          ${resource.name}
-        </h3>
+    card.innerHTML = `
+      <h3 class="font-bold mb-4">${resource.name}</h3>
 
-        <div class="flex gap-3">
-          <button onclick="viewFile('${filePath}')"
-            class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-xl transition">
-            View
+      <div class="flex gap-3">
+        <button onclick="viewFile('${filePath}')"
+        class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-lg">
+        View
+        </button>
+
+        <a href="${filePath}" download class="flex-1">
+          <button class="w-full bg-slate-600 hover:bg-slate-500 font-bold py-2 rounded-lg">
+          Download
           </button>
+        </a>
+      </div>
+    `;
 
-          <a href="${filePath}" download class="flex-1">
-            <button class="w-full bg-slate-600 hover:bg-slate-500 font-bold py-2 rounded-xl transition">
-              Download
-            </button>
-          </a>
-        </div>
-      `;
-
-      grid.appendChild(card);
-    });
-
-  } catch (err) {
-    console.error(err);
-    showError("Failed to load resources. Check resources.json.");
-  }
+    grid.appendChild(card);
+  });
 }
 
 function viewFile(relativeUrl) {
-  document.getElementById("viewerFrame").src =
-    relativeUrl + "#toolbar=1&navpanes=0&scrollbar=1";
-  document.getElementById("viewerModal").style.display = "block";
-}
-
-function closeModal() {
-  document.getElementById("viewerModal").style.display = "none";
-  document.getElementById("viewerFrame").src = "";
-}
-
-function showError(msg) {
-  const box = document.getElementById("errorMsg");
-  box.innerText = msg;
-  box.classList.remove("hidden");
+  window.open(relativeUrl, "_blank");
 }
 
 loadResources();
