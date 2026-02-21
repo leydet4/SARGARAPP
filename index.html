@@ -62,7 +62,9 @@ body { font-family: system-ui, sans-serif; }
 }
 
 .big-btn:hover { transform:scale(1.05); }
+
 .subtitle { font-size:13px; color:#94a3b8; }
+
 .install-section {
   background:#111827;
   padding:16px;
@@ -91,8 +93,8 @@ HRBT Marine Operations Dashboard (All Times Eastern)
 <div class="flex justify-center gap-3 mt-5 flex-wrap">
 
 <a href="gar.html" class="big-btn bg-blue-600 hover:bg-blue-700">GAR</a>
+
 <a href="admin.html" class="big-btn bg-red-700 hover:bg-red-800">ADMIN</a>
-<a href="resources.html" class="big-btn bg-slate-600 hover:bg-slate-700">RESOURCES</a>
 
 <a href="povsargarapp-qr.png" target="_blank"
 class="big-btn bg-purple-600 hover:bg-purple-700">INSTALL QR</a>
@@ -225,7 +227,6 @@ async function loadMarineData() {
     parsed: parseEastern(t.t)
   }));
 
-  // Sort chronologically
   tides.sort((a,b) => a.parsed - b.parsed);
 
   const past = tides.filter(t => t.parsed <= serverNow);
@@ -234,7 +235,6 @@ async function loadMarineData() {
   let lastTwo = past.slice(-2);
   let nextTwo = future.slice(0,2);
 
-  // Fallback if no past tides returned
   if (past.length === 0 && tides.length >= 2) {
     lastTwo = tides.slice(0,2);
   }
@@ -261,7 +261,6 @@ async function loadMarineData() {
     updateCountdown();
   }
 
-  // Populate buoy
   document.getElementById("waveHeight").innerText =
     data.buoyData.waveHeightFt + " ft @ " + data.buoyData.dominantPeriodSec + "s";
 
