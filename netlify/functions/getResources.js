@@ -1,20 +1,46 @@
-import { getStore } from "@netlify/blobs";
+const { getStore } = require("@netlify/blobs");
 
-export default async () => {
+exports.handler = async function () {
 
-  const metaStore = getStore("resources-meta");
-  const list = await metaStore.get("list.json", { type: "json" });
+  try {
 
-  return new Response(
-    JSON.stringify(list || []),
-    {
-      status: 200,
+    const metaStore = getStore("resources-meta");
+
+    const raw = await metaStore.get("list.json");
+
+    if (!raw) {
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([])
+      };
+    }
+
+    let list;
+
+    try {
+      list = JSON.parse(raw);
+    } catch (err) {
+      // If corrupted, reset it
+      await metaStore.set("list.json", JSON.stringify([]));
+      list = [];
+    }
+
+    return {
+      statusCode: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0"
-      }
-    }
-  );
+        "Cache-Control": "no-store"
+      },
+      body: JSON.stringify(list)
+    };
+
+  } catch (err) {
+
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: err.message })
+    };
+  }
 };
