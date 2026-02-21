@@ -16,7 +16,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.92);
   z-index: 1000;
 }
 
@@ -39,12 +39,11 @@
 
 .close-btn {
   position: absolute;
-  top: 14px;
-  right: 18px;
+  top: 16px;
+  right: 20px;
   font-size: 26px;
   cursor: pointer;
   color: white;
-  z-index: 1001;
 }
 </style>
 </head>
@@ -53,11 +52,14 @@
 
 <header class="bg-slate-800 py-8 text-center shadow-xl">
 <img src="SAR.png" class="mx-auto h-20 mb-4">
-<h1 class="text-3xl font-black">SAR Forum Resources</h1>
+
+<h1 class="text-3xl font-black">
+SAR Forum Resources
+</h1>
 
 <div class="mt-4">
-<a href="index.html"
-class="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 transition">
+<a href="/index.html"
+class="px-6 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 transition">
 ← Back to Dashboard
 </a>
 </div>
@@ -65,9 +67,13 @@ class="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 transition">
 
 <section class="max-w-5xl mx-auto p-6">
 <div id="resourceGrid" class="grid md:grid-cols-2 gap-6"></div>
+
+<div id="errorMsg"
+class="text-center text-red-400 mt-6 hidden font-semibold">
+</div>
 </section>
 
-<!-- Modal -->
+<!-- Modal Viewer -->
 <div id="viewerModal" class="modal">
   <div class="modal-content">
     <span class="close-btn" onclick="closeModal()">✖</span>
@@ -80,28 +86,39 @@ class="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 transition">
 async function loadResources() {
   try {
     const res = await fetch('/resources/resources.json');
-    const files = await res.json();
+    if (!res.ok) throw new Error("resources.json not found");
 
+    const files = await res.json();
     const grid = document.getElementById('resourceGrid');
-    grid.innerHTML = '';
+    grid.innerHTML = "";
+
+    if (!files.length) {
+      showError("No resources found.");
+      return;
+    }
 
     files.forEach(resource => {
+
       const filePath = `/resources/${resource.file}`;
 
       const card = document.createElement('div');
-      card.className = "bg-slate-800 rounded-2xl p-6 shadow-xl";
+      card.className =
+        "bg-slate-800 rounded-2xl p-6 shadow-xl";
 
       card.innerHTML = `
-        <h3 class="text-lg font-bold mb-4">${resource.name}</h3>
+        <h3 class="text-lg font-bold mb-4">
+          ${resource.name}
+        </h3>
+
         <div class="flex gap-3">
           <button onclick="viewFile('${filePath}')"
-          class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-xl transition">
-          View
+            class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-xl transition">
+            View
           </button>
 
           <a href="${filePath}" download class="flex-1">
             <button class="w-full bg-slate-600 hover:bg-slate-500 font-bold py-2 rounded-xl transition">
-            Download
+              Download
             </button>
           </a>
         </div>
@@ -111,19 +128,33 @@ async function loadResources() {
     });
 
   } catch (err) {
-    console.error("Failed loading resources:", err);
+    console.error(err);
+    showError("Failed to load resources. Check /resources/resources.json.");
   }
 }
 
-function viewFile(url) {
-  // Force inline display
-  document.getElementById("viewerFrame").src = url + "#toolbar=1&navpanes=0";
+function viewFile(relativeUrl) {
+
+  const fullUrl = window.location.origin + relativeUrl;
+
+  // Force inline rendering using Google viewer (works everywhere)
+  const viewerUrl =
+    "https://docs.google.com/gview?embedded=1&url=" +
+    encodeURIComponent(fullUrl);
+
+  document.getElementById("viewerFrame").src = viewerUrl;
   document.getElementById("viewerModal").style.display = "block";
 }
 
 function closeModal() {
   document.getElementById("viewerModal").style.display = "none";
   document.getElementById("viewerFrame").src = "";
+}
+
+function showError(msg) {
+  const box = document.getElementById("errorMsg");
+  box.innerText = msg;
+  box.classList.remove("hidden");
 }
 
 loadResources();
