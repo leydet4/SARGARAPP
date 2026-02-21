@@ -16,16 +16,16 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0,0,0,0.9);
   z-index: 1000;
 }
 
 .modal-content {
   position: absolute;
-  top: 3%;
-  left: 3%;
-  width: 94%;
-  height: 94%;
+  top: 2%;
+  left: 2%;
+  width: 96%;
+  height: 96%;
   background: #000;
   border-radius: 16px;
   overflow: hidden;
@@ -39,70 +39,35 @@
 
 .close-btn {
   position: absolute;
-  top: 12px;
+  top: 14px;
   right: 18px;
-  font-size: 24px;
+  font-size: 26px;
   cursor: pointer;
   color: white;
   z-index: 1001;
 }
 </style>
-
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<header class="bg-slate-800 py-6 text-center shadow-lg">
+<header class="bg-slate-800 py-8 text-center shadow-xl">
+<img src="SAR.png" class="mx-auto h-20 mb-4">
+<h1 class="text-3xl font-black">SAR Forum Resources</h1>
 
-<img src="SAR.png" class="mx-auto h-20 mb-3">
-
-<h1 class="text-2xl font-black">
-SAR Forum Resources
-</h1>
-
-<div class="mt-4 flex justify-center gap-3 flex-wrap">
+<div class="mt-4">
 <a href="index.html"
 class="px-5 py-2 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 transition">
-← BACK TO DASHBOARD
+← Back to Dashboard
 </a>
 </div>
-
 </header>
 
-<section class="max-w-4xl mx-auto p-6">
-
-<div class="grid md:grid-cols-2 gap-6">
-
-<!-- Resource Card -->
-<div class="bg-slate-800 rounded-2xl p-6 shadow-xl">
-
-<h3 class="text-lg font-bold mb-4">
-2026 SAR Forum Agenda
-</h3>
-
-<div class="flex gap-3">
-
-<button onclick="viewFile('/resources/2026 SAR Forum Agenda.pdf')"
-class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-xl transition">
-View
-</button>
-
-<a href="/resources/2026 SAR Forum Agenda.pdf" download class="flex-1">
-<button class="w-full bg-slate-600 hover:bg-slate-500 font-bold py-2 rounded-xl transition">
-Download
-</button>
-</a>
-
-</div>
-
-</div>
-<!-- End Card -->
-
-</div>
-
+<section class="max-w-5xl mx-auto p-6">
+<div id="resourceGrid" class="grid md:grid-cols-2 gap-6"></div>
 </section>
 
-<!-- Modal Viewer -->
+<!-- Modal -->
 <div id="viewerModal" class="modal">
   <div class="modal-content">
     <span class="close-btn" onclick="closeModal()">✖</span>
@@ -111,8 +76,48 @@ Download
 </div>
 
 <script>
+
+async function loadResources() {
+  try {
+    const res = await fetch('/resources/resources.json');
+    const files = await res.json();
+
+    const grid = document.getElementById('resourceGrid');
+    grid.innerHTML = '';
+
+    files.forEach(resource => {
+      const filePath = `/resources/${resource.file}`;
+
+      const card = document.createElement('div');
+      card.className = "bg-slate-800 rounded-2xl p-6 shadow-xl";
+
+      card.innerHTML = `
+        <h3 class="text-lg font-bold mb-4">${resource.name}</h3>
+        <div class="flex gap-3">
+          <button onclick="viewFile('${filePath}')"
+          class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-xl transition">
+          View
+          </button>
+
+          <a href="${filePath}" download class="flex-1">
+            <button class="w-full bg-slate-600 hover:bg-slate-500 font-bold py-2 rounded-xl transition">
+            Download
+            </button>
+          </a>
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error("Failed loading resources:", err);
+  }
+}
+
 function viewFile(url) {
-  document.getElementById("viewerFrame").src = url;
+  // Force inline display
+  document.getElementById("viewerFrame").src = url + "#toolbar=1&navpanes=0";
   document.getElementById("viewerModal").style.display = "block";
 }
 
@@ -120,6 +125,9 @@ function closeModal() {
   document.getElementById("viewerModal").style.display = "none";
   document.getElementById("viewerFrame").src = "";
 }
+
+loadResources();
+
 </script>
 
 </body>
