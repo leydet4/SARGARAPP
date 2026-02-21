@@ -6,50 +6,46 @@ export default async (req) => {
     const fileStore = getStore("resources-files");
     const metaStore = getStore("resources-meta");
 
-    // ===============================
-    // SERVE FILE (GET)
-    // ===============================
-    if (req.method === "GET") {
+    // =========================
+    // DELETE FILE
+    // =========================
+    if (req.method === "DELETE") {
 
       const url = new URL(req.url);
-      const fileName = url.pathname.split("/").pop();
+      const fileName = url.searchParams.get("name");
 
       if (!fileName) {
-        return new Response("File not specified", { status: 400 });
+        return new Response(
+          JSON.stringify({ error: "File name required" }),
+          { status: 400 }
+        );
       }
 
-      const file = await fileStore.get(fileName, { type: "arrayBuffer" });
+      // Delete file blob
+      await fileStore.delete(fileName);
 
-      if (!file) {
-        return new Response("File not found", { status: 404 });
-      }
+      // Get metadata list
+      let list = await metaStore.get("list.json", { type: "json" });
+      if (!list) list = [];
 
-      const extension = fileName.split(".").pop().toLowerCase();
+      // Remove deleted file from list
+      const updatedList = list.filter(item => item.file !== fileName);
 
-      const mimeTypes = {
-        pdf: "application/pdf",
-        png: "image/png",
-        jpg: "image/jpeg",
-        jpeg: "image/jpeg",
-        gif: "image/gif",
-        webp: "image/webp",
-        svg: "image/svg+xml"
-      };
+      // Save updated list
+      await metaStore.set("list.json", updatedList);
 
-      const mimeType = mimeTypes[extension] || "application/octet-stream";
-
-      return new Response(file, {
-        status: 200,
-        headers: {
-          "Content-Type": mimeType,
-          "Content-Disposition": "inline"
+      return new Response(
+        JSON.stringify({ success: true }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
         }
-      });
+      );
     }
 
-    // ===============================
-    // UPLOAD FILE (POST)
-    // ===============================
+    // =========================
+    // UPLOAD FILE
+    // =========================
     if (req.method === "POST") {
 
       const formData = await req.formData();
@@ -70,9 +66,8 @@ export default async (req) => {
         contentType: file.type
       });
 
-      let list = [];
-      const existing = await metaStore.get("list.json", { type: "json" });
-      if (existing) list = existing;
+      let list = await metaStore.get("list.json", { type: "json" });
+      if (!list) list = [];
 
       list.unshift({
         name: title || file.name,
@@ -80,42 +75,14 @@ export default async (req) => {
         uploaded: new Date().toISOString()
       });
 
-      await metaStore.set("list.json", JSON.stringify(list));
+      await metaStore.set("list.json", list);
 
       return new Response(
         JSON.stringify({ success: true }),
-        { status: 200 }
-      );
-    }
-
-    // ===============================
-    // DELETE FILE (DELETE)
-    // ===============================
-    if (req.method === "DELETE") {
-
-      const url = new URL(req.url);
-      const fileName = url.searchParams.get("name");
-
-      if (!fileName) {
-        return new Response(
-          JSON.stringify({ error: "File name required" }),
-          { status: 400 }
-        );
-      }
-
-      await fileStore.delete(fileName);
-
-      let list = [];
-      const existing = await metaStore.get("list.json", { type: "json" });
-      if (existing) list = existing;
-
-      list = list.filter(item => item.file !== fileName);
-
-      await metaStore.set("list.json", JSON.stringify(list));
-
-      return new Response(
-        JSON.stringify({ success: true }),
-        { status: 200 }
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        }
       );
     }
 
