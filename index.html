@@ -97,6 +97,12 @@ body { font-family: system-ui, sans-serif; }
   border-top:1px solid #1f2937;
   border-bottom:1px solid #1f2937;
 }
+
+.refresh-status {
+  font-size:13px;
+  margin-top:6px;
+  color:#94a3b8;
+}
 </style>
 </head>
 
@@ -118,13 +124,13 @@ HRBT Marine Operations Dashboard (All Times Eastern)
 
 <a href="gar.html" class="big-btn bg-blue-600 hover:bg-blue-700">Submit GAR</a>
 
-<a href="sar-resources.html" class="big-btn bg-emerald-600 hover:bg-emerald-700">RESOURCES</a>
+<a href="sar-resources.html" class="big-btn bg-emerald-600 hover:bg-emerald-700">Resources</a>
 
-<a href="admin.html" class="big-btn bg-red-700 hover:bg-red-800">ADMIN</a>
+<a href="admin.html" class="big-btn bg-red-700 hover:bg-red-800">Admin</a>
 
 <button id="installBtn"
 class="big-btn bg-indigo-600 hover:bg-indigo-700 hidden">
-INSTALL APP
+Install App
 </button>
 
 <a href="povsargarapp-qr.png" target="_blank"
@@ -132,16 +138,17 @@ class="big-btn bg-purple-600 hover:bg-purple-700">
 Install QR
 </a>
 
-<button onclick="loadMarineData()"
+<button id="refreshBtn"
 class="big-btn bg-orange-500 hover:bg-orange-600">
-REFRESH
+Refresh Data
 </button>
 
 </div>
 
+<div id="refreshStatus" class="refresh-status"></div>
+
 </header>
 
-<!-- INSTALL BANNER -->
 <section id="installBanner" class="install-banner hidden">
 <strong>Install This App</strong><br>
 📱 Android: Tap <strong>Install App</strong> or use browser menu.<br>
@@ -215,12 +222,11 @@ TIDES — Sewells Point (Near HRBT)
 
 <script>
 
-// ===== INSTALL AUTO LOGIC =====
+// INSTALL AUTO-HIDE
 let deferredPrompt;
 const installBtn = document.getElementById('installBtn');
 const installBanner = document.getElementById('installBanner');
 
-// Detect standalone (installed)
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches ||
          window.navigator.standalone === true;
@@ -245,7 +251,27 @@ installBtn.addEventListener('click', async () => {
   deferredPrompt = null;
 });
 
-// ===== MARINE DATA =====
+// REFRESH LOGIC
+const refreshBtn = document.getElementById('refreshBtn');
+const refreshStatus = document.getElementById('refreshStatus');
+
+refreshBtn.addEventListener('click', async () => {
+  refreshBtn.disabled = true;
+  refreshBtn.innerText = "Refreshing...";
+  refreshStatus.innerText = "";
+
+  await loadMarineData();
+
+  refreshBtn.disabled = false;
+  refreshBtn.innerText = "Refresh Data";
+  refreshStatus.innerText = "Updated ✓";
+
+  setTimeout(() => {
+    refreshStatus.innerText = "";
+  }, 3000);
+});
+
+// MARINE DATA FUNCTIONS
 
 function degToCardinal(deg) {
   if (deg === null || deg === undefined) return "--";
@@ -285,6 +311,7 @@ function updateCountdown() {
 async function loadMarineData() {
   const res = await fetch("/.netlify/functions/marine");
   const data = await res.json();
+
   document.getElementById("lastUpdated").innerText = data.serverTimeEST;
 
   const wind = data.windData;
@@ -350,4 +377,3 @@ setInterval(updateCountdown, 30000);
 
 </body>
 </html>
-
