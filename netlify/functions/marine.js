@@ -1,301 +1,98 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POV SAR Forum 2026</title>
+const fetch = require("node-fetch");
 
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="SAR.png">
-<meta name="theme-color" content="#0f172a">
+exports.handler = async function () {
+  try {
 
-<script src="https://cdn.tailwindcss.com"></script>
+    const STATIONS = {
+      wind: { id: "CHBV2", name: "Chesapeake Bay Bridge-Tunnel, VA (NOAA CHBV2)" },
+      waves: { id: "44099", name: "Cape Henry, VA (NOAA 44099)" },
+      tides: { id: "8638610", name: "Sewells Point, VA" }
+    };
 
-<style>
-body { font-family: system-ui, sans-serif; }
+    const nowEST = new Date().toLocaleString("en-US", {
+      timeZone: "America/New_York"
+    });
 
-.card {
-  background:#1e293b;
-  border-radius:20px;
-  padding:18px;
-  box-shadow:0 0 30px rgba(0,0,0,.4);
-}
+    // ---------- Fetch Wind ----------
+    const windRes = await fetch(
+      `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.wind.id}.txt`
+    );
+    const windText = await windRes.text();
 
-.section-title { font-size:14px; font-weight:700; }
-.source { color:#64748b; font-size:11px; margin-top:4px; }
-.primary-value { font-size:22px; font-weight:900; margin-top:6px; }
-.secondary-value { font-size:15px; color:#94a3b8; }
+    const wavesRes = await fetch(
+      `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.waves.id}.txt`
+    );
+    const wavesText = await wavesRes.text();
 
-.tide-trend {
-  font-size:26px;
-  font-weight:900;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  margin-top:12px;
-}
+    function parseNDBC(text) {
+      const lines = text.trim().split("\n");
+      if (lines.length < 3) return null;
 
-.tide-arrow { font-size:36px; }
-.rising { color:#22c55e; }
-.falling { color:#38bdf8; }
+      const headers = lines[0].split(/\s+/);
+      const values = lines[2].split(/\s+/);
 
-.countdown {
-  font-size:18px;
-  font-weight:900;
-  margin-top:8px;
-  color:#facc15;
-}
+      const row = {};
+      headers.forEach((h, i) => row[h] = values[i]);
 
-.tide-list {
-  font-size:15px;
-  font-weight:700;
-  line-height:1.6;
-}
+      function num(v) {
+        if (!v || v === "MM") return null;
+        const n = Number(v);
+        return isNaN(n) ? null : n;
+      }
 
-.subtitle { font-size:12px; color:#94a3b8; }
+      function msToKts(ms) {
+        return ms ? Math.round(ms * 1.94384) : null;
+      }
 
-.wind-warning { color:#ef4444; }
-.wind-caution { color:#f59e0b; }
-</style>
-</head>
+      function mToFt(m) {
+        return m ? (m * 3.28084).toFixed(1) : null;
+      }
 
-<body class="bg-slate-900 text-white">
+      function cToF(c) {
+        return c ? Math.round((c * 9) / 5 + 32) : null;
+      }
 
-<header class="bg-slate-800 py-4 text-center shadow-xl">
+      return {
+        windDirDeg: num(row.WDIR),
+        windSpeedKnots: msToKts(num(row.WSPD)),
+        windGustKnots: msToKts(num(row.GST)),
+        waveHeightFt: mToFt(num(row.WVHT)),
+        dominantPeriodSec: num(row.DPD),
+        waterTempF: cToF(num(row.WTMP)),
+        airTempF: cToF(num(row.ATMP))
+      };
+    }
 
-<img src="SAR.png" class="mx-auto h-14 mb-2">
+    const windData = parseNDBC(windText);
+    const waveData = parseNDBC(wavesText);
 
-<h1 class="text-lg font-black leading-tight">
-Todd Dooley SAR Forum 2026
-</h1>
+    // ---------- Fetch Tides ----------
+    const tideRes = await fetch(
+      `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&station=${STATIONS.tides.id}&datum=MLLW&interval=hilo&units=english&time_zone=lst_ldt&format=json`
+    );
+    const tideData = await tideRes.json();
 
-<div class="subtitle mt-1">
-HRBT Marine Operations Dashboard
-</div>
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        serverTimeEST: nowEST,
+        windData: {
+          stationName: STATIONS.wind.name,
+          ...windData
+        },
+        buoyData: {
+          stationName: STATIONS.waves.name,
+          ...waveData
+        },
+        tideStationName: STATIONS.tides.name,
+        tideData
+      })
+    };
 
-<div class="flex flex-wrap justify-center gap-2 mt-4">
-
-<a href="/gar.html"
-class="px-4 py-2 rounded-lg font-bold bg-blue-600 hover:bg-blue-700 text-sm">
-GAR
-</a>
-
-<a href="/sar-resources.html"
-class="px-4 py-2 rounded-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-sm">
-RESOURCES
-</a>
-
-<a href="/admin.html"
-class="px-4 py-2 rounded-lg font-bold bg-red-700 hover:bg-red-800 text-sm">
-ADMIN
-</a>
-
-<button onclick="loadMarineData()"
-class="px-4 py-2 rounded-lg font-bold bg-orange-500 hover:bg-orange-600 text-sm">
-REFRESH
-</button>
-
-</div>
-
-<div class="mt-3 text-xs text-slate-400 animate-bounce">
-↓ Marine Conditions Below ↓
-</div>
-
-</header>
-
-<section class="max-w-6xl mx-auto p-4 space-y-6">
-
-<div class="text-center text-xs text-slate-400">
-Last Updated (Eastern): <span id="lastUpdated">--</span>
-</div>
-
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-<div class="card text-center">
-<div class="section-title">WIND</div>
-<div id="windText" class="primary-value">--</div>
-<div id="windCardinal" class="secondary-value"></div>
-<div id="windGust" class="secondary-value"></div>
-<div class="source">
-Wind data from NOAA Buoy 44099 (Chesapeake Bay Entrance)
-</div>
-</div>
-
-<div class="card text-center">
-<div class="section-title">WAVE HEIGHT</div>
-<div id="waveHeight" class="primary-value">--</div>
-<div class="source">
-Wave data from NOAA Buoy 44099
-</div>
-</div>
-
-<div class="card text-center">
-<div class="section-title">WATER TEMP</div>
-<div id="waterTemp" class="primary-value">--</div>
-<div class="source">
-Water temperature from NOAA Buoy 44099
-</div>
-</div>
-
-<div class="card text-center">
-<div class="section-title">AIR TEMP</div>
-<div id="airTemp" class="primary-value">--</div>
-<div class="source">
-Air temperature from NOAA Weather Station KORF (Norfolk)
-</div>
-</div>
-
-</div>
-
-<div class="card text-center">
-
-<div class="section-title">
-TIDES — Sewells Point (Near HRBT)
-</div>
-
-<div id="tideTrend" class="tide-trend"></div>
-<div id="tideCountdown" class="countdown"></div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-
-<div>
-<div class="font-semibold mb-1">Last 2</div>
-<div id="lastTides" class="tide-list"></div>
-</div>
-
-<div>
-<div class="font-semibold mb-1">Next 2</div>
-<div id="nextTides" class="tide-list"></div>
-</div>
-
-</div>
-
-<div class="source mt-4">
-Tide predictions from NOAA Sewells Point Station 8638610
-</div>
-
-</div>
-
-</section>
-
-<script>
-
-function degToCardinal(deg) {
-  if (!deg && deg !== 0) return "--";
-  const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE",
-                "S","SSW","SW","WSW","W","WNW","NW","NNW"];
-  return dirs[Math.round(deg / 22.5) % 16];
-}
-
-function parseEastern(str) {
-  const [date, time] = str.split(" ");
-  return new Date(date + "T" + time);
-}
-
-function formatTide(dateObj, type, height) {
-  const label = type === "H" ? "High" : "Low";
-  const time = dateObj.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit"});
-  return `${label} — ${time} — ${height} ft`;
-}
-
-let nextTideTime = null;
-let nextTideType = null;
-
-function updateCountdown() {
-  if (!nextTideTime) return;
-
-  const now = new Date();
-  const diff = nextTideTime - now;
-
-  if (diff <= 0) {
-    document.getElementById("tideCountdown").innerText =
-      "Tide change occurring now";
-    return;
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.toString() })
+    };
   }
-
-  const h = Math.floor(diff / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-
-  document.getElementById("tideCountdown").innerText =
-    `${h}h ${m}m until ${nextTideType} tide`;
-}
-
-async function loadMarineData() {
-
-  const res = await fetch("/.netlify/functions/marine");
-  const data = await res.json();
-
-  document.getElementById("lastUpdated").innerText = data.serverTimeEST;
-
-  const serverNow = new Date(data.serverTimeEST);
-
-  const tides = data.tideData.predictions.map(t => ({
-    ...t,
-    parsed: parseEastern(t.t)
-  }));
-
-  tides.sort((a,b) => a.parsed - b.parsed);
-
-  const past = tides.filter(t => t.parsed <= serverNow).slice(-2);
-  const future = tides.filter(t => t.parsed > serverNow).slice(0,2);
-
-  document.getElementById("lastTides").innerHTML =
-    past.length
-      ? past.map(t => formatTide(t.parsed, t.type, t.v)).join("<br>")
-      : "--";
-
-  document.getElementById("nextTides").innerHTML =
-    future.length
-      ? future.map(t => formatTide(t.parsed, t.type, t.v)).join("<br>")
-      : "--";
-
-  if (future.length > 0) {
-    nextTideTime = future[0].parsed;
-    nextTideType = future[0].type === "H" ? "High" : "Low";
-
-    document.getElementById("tideTrend").innerHTML =
-      future[0].type === "H"
-      ? `<span class="rising tide-arrow">↑</span> Rising`
-      : `<span class="falling tide-arrow">↓</span> Falling`;
-
-    updateCountdown();
-  }
-
-  const windSpeed = data.buoyData.windSpeedKnots;
-  const windDeg = data.buoyData.windDirDeg;
-  const windGust = data.buoyData.windGustKnots;
-
-  const windEl = document.getElementById("windText");
-
-  windEl.innerText = windSpeed + " kts";
-
-  windEl.classList.remove("wind-warning","wind-caution");
-
-  if (windSpeed >= 25) windEl.classList.add("wind-warning");
-  else if (windSpeed >= 15) windEl.classList.add("wind-caution");
-
-  document.getElementById("windCardinal").innerText =
-    degToCardinal(windDeg) + " (" + windDeg + "°)";
-
-  document.getElementById("windGust").innerText =
-    windGust ? "Gusts: " + windGust + " kts" : "";
-
-  document.getElementById("waveHeight").innerText =
-    data.buoyData.waveHeightFt + " ft @ " +
-    data.buoyData.dominantPeriodSec + "s";
-
-  document.getElementById("waterTemp").innerText =
-    data.buoyData.waterTempF + " °F";
-
-  document.getElementById("airTemp").innerText =
-    data.buoyData.airTempF + " °F";
-}
-
-loadMarineData();
-setInterval(updateCountdown, 30000);
-
-</script>
-
-</body>
-</html>
+};
