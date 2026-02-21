@@ -1,4 +1,4 @@
-const CACHE_NAME = "pov-sar-v1";
+const CACHE_NAME = "pov-sar-v2";
 
 const urlsToCache = [
   "/",
@@ -28,6 +28,14 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
+
+  const url = new URL(event.request.url);
+
+  // NEVER cache Netlify functions
+  if (url.pathname.startsWith("/.netlify/functions/")) {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .catch(() => caches.match(event.request))
