@@ -1,16 +1,13 @@
 const { getStore } = require("@netlify/blobs");
 
-exports.handler = async function (req) {
-
+exports.handler = async function (event) {
   try {
-
     const fileStore = getStore("resources-files");
     const metaStore = getStore("resources-meta");
 
     // DELETE
-    if (req.httpMethod === "DELETE") {
-
-      const fileName = req.queryStringParameters.name;
+    if (event.httpMethod === "DELETE") {
+      const fileName = event.queryStringParameters.name;
 
       if (!fileName) {
         return {
@@ -24,9 +21,9 @@ exports.handler = async function (req) {
       let raw = await metaStore.get("list.json");
       let list = raw ? JSON.parse(raw) : [];
 
-      const updatedList = list.filter(item => item.file !== fileName);
+      list = list.filter(item => item.file !== fileName);
 
-      await metaStore.set("list.json", JSON.stringify(updatedList));
+      await metaStore.set("list.json", JSON.stringify(list));
 
       return {
         statusCode: 200,
@@ -34,41 +31,22 @@ exports.handler = async function (req) {
       };
     }
 
-    // POST
-    if (req.httpMethod === "POST") {
+    // UPLOAD
+    if (event.httpMethod === "POST") {
 
-      const busboy = require("@fastify/busboy");
-      const { Readable } = require("stream");
+      const buffer = Buffer.from(event.body, "base64");
 
-      const bb = busboy({ headers: req.headers });
+      const fileName = event.headers["x-file-name"];
+      const title = event.headers["x-file-title"];
 
-      let fileBuffer;
-      let fileName;
-      let title;
+      if (!fileName) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: "File name missing" })
+        };
+      }
 
-      await new Promise((resolve, reject) => {
-
-        bb.on("file", (name, file, info) => {
-          fileName = `${Date.now()}-${info.filename}`;
-          const chunks = [];
-
-          file.on("data", chunk => chunks.push(chunk));
-          file.on("end", () => {
-            fileBuffer = Buffer.concat(chunks);
-          });
-        });
-
-        bb.on("field", (name, value) => {
-          if (name === "title") title = value;
-        });
-
-        bb.on("finish", resolve);
-        bb.on("error", reject);
-
-        Readable.from(req.body).pipe(bb);
-      });
-
-      await fileStore.set(fileName, fileBuffer);
+      await fileStore.set(fileName, buffer);
 
       let raw = await metaStore.get("list.json");
       let list = raw ? JSON.parse(raw) : [];
