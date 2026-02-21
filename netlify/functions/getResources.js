@@ -5,25 +5,34 @@ exports.handler = async function () {
   try {
 
     const metaStore = getStore("resources-meta");
+    const fileStore = getStore("resources-files");
 
-    const raw = await metaStore.get("list.json");
+    let raw = await metaStore.get("list.json");
 
-    if (!raw) {
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([])
-      };
+    let list = [];
+
+    // 🔍 If raw exists, try parsing
+    if (raw) {
+      try {
+        list = JSON.parse(raw);
+      } catch (err) {
+        // Corrupted metadata (ex: "[object Object]")
+        list = [];
+      }
     }
 
-    let list;
+    // 🔥 If metadata empty, rebuild from file store
+    if (!Array.isArray(list) || list.length === 0) {
 
-    try {
-      list = JSON.parse(raw);
-    } catch (err) {
-      // If corrupted, reset it
-      await metaStore.set("list.json", JSON.stringify([]));
-      list = [];
+      const files = await fileStore.list();
+
+      list = files.blobs.map(file => ({
+        name: file.key,
+        file: file.key,
+        uploaded: new Date().toISOString()
+      }));
+
+      await metaStore.set("list.json", JSON.stringify(list));
     }
 
     return {
@@ -39,7 +48,6 @@ exports.handler = async function () {
 
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ error: err.message })
     };
   }
