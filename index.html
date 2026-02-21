@@ -25,7 +25,7 @@ body { font-family: system-ui, sans-serif; }
 .section-title { font-size:16px; font-weight:700; }
 .source { color:#64748b; font-size:11px; margin-top:3px; }
 .primary-value { font-size:24px; font-weight:900; margin-top:6px; }
-.secondary-value { font-size:15px; color:#94a3b8; }
+.secondary-value { font-size:16px; color:#94a3b8; }
 
 .tide-trend {
   font-size:34px;
@@ -92,18 +92,15 @@ HRBT Marine Operations Dashboard (All Times Eastern)
 
 <div class="flex justify-center gap-3 mt-6 flex-wrap">
 
-<a href="gar.html"
-class="big-btn bg-blue-600 hover:bg-blue-700">
+<a href="gar.html" class="big-btn bg-blue-600 hover:bg-blue-700">
 GAR Submission
 </a>
 
-<a href="resources.html"
-class="big-btn bg-emerald-600 hover:bg-emerald-700">
+<a href="resources.html" class="big-btn bg-emerald-600 hover:bg-emerald-700">
 RESOURCES
 </a>
 
-<a href="admin.html"
-class="big-btn bg-red-700 hover:bg-red-800">
+<a href="admin.html" class="big-btn bg-red-700 hover:bg-red-800">
 ADMIN
 </a>
 
@@ -194,7 +191,12 @@ Buoy Observation (Eastern): <span id="buoyTime">--</span>
 
 <script>
 
-// 🔹 Your marine logic remains unchanged
+function degToCardinal(deg) {
+  if (deg === null || deg === undefined) return "--";
+  const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE",
+                "S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
 
 function parseEastern(str) {
   const [date, time] = str.split(" ");
@@ -249,30 +251,29 @@ async function loadMarineData() {
   const past = tides.filter(t => t.parsed <= serverNow);
   const future = tides.filter(t => t.parsed > serverNow);
 
-  let lastTwo = past.slice(-2);
-  let nextTwo = future.slice(0,2);
+  const lastTwo = past.slice(-2);
+  const nextTwo = future.slice(0,2);
 
   document.getElementById("lastTides").innerHTML =
-    lastTwo.length
-      ? lastTwo.map(t => formatTide(t.parsed, t.type)).join("<br>")
-      : "Unavailable";
+    lastTwo.length ? lastTwo.map(t => formatTide(t.parsed, t.type)).join("<br>") : "--";
 
   document.getElementById("nextTides").innerHTML =
-    nextTwo.length
-      ? nextTwo.map(t => formatTide(t.parsed, t.type)).join("<br>")
-      : "Unavailable";
+    nextTwo.length ? nextTwo.map(t => formatTide(t.parsed, t.type)).join("<br>") : "--";
 
   if (nextTwo.length > 0) {
     nextTideTime = nextTwo[0].parsed;
     nextTideType = nextTwo[0].type === "H" ? "High" : "Low";
-
-    document.getElementById("tideTrend").innerHTML =
-      nextTwo[0].type === "H"
-      ? `<span class="rising tide-arrow">↑</span> Rising`
-      : `<span class="falling tide-arrow">↓</span> Falling`;
-
     updateCountdown();
   }
+
+  const windDeg = data.buoyData.windDirDeg;
+  const windCard = degToCardinal(windDeg);
+
+  document.getElementById("windText").innerText =
+    data.buoyData.windSpeedKnots + " kts";
+
+  document.getElementById("windCardinal").innerText =
+    windCard + " (" + windDeg + "°)";
 
   document.getElementById("waveHeight").innerText =
     data.buoyData.waveHeightFt + " ft @ " + data.buoyData.dominantPeriodSec + "s";
@@ -282,12 +283,6 @@ async function loadMarineData() {
 
   document.getElementById("airTemp").innerText =
     data.buoyData.airTempF + " °F";
-
-  document.getElementById("windText").innerText =
-    data.buoyData.windSpeedKnots + " kts";
-
-  document.getElementById("windCardinal").innerText =
-    data.buoyData.windDirDeg + "°";
 
   document.getElementById("windSource").innerText =
     data.buoyData.windSource;
