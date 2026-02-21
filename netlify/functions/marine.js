@@ -1,206 +1,301 @@
-const https = require("https");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POV SAR Forum 2026</title>
 
-function getText(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, { headers: { "User-Agent": "POV-SAR-Forum-2026" } }, res => {
-      let data = "";
-      res.on("data", chunk => data += chunk);
-      res.on("end", () => resolve(data));
-    }).on("error", reject);
-  });
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="SAR.png">
+<meta name="theme-color" content="#0f172a">
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body { font-family: system-ui, sans-serif; }
+
+.card {
+  background:#1e293b;
+  border-radius:20px;
+  padding:18px;
+  box-shadow:0 0 30px rgba(0,0,0,.4);
 }
 
-function getJSON(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, { headers: { "User-Agent": "POV-SAR-Forum-2026" } }, res => {
-      let data = "";
-      res.on("data", chunk => data += chunk);
-      res.on("end", () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch {
-          reject("Invalid JSON from " + url);
-        }
-      });
-    }).on("error", reject);
-  });
+.section-title { font-size:14px; font-weight:700; }
+.source { color:#64748b; font-size:11px; margin-top:4px; }
+.primary-value { font-size:22px; font-weight:900; margin-top:6px; }
+.secondary-value { font-size:15px; color:#94a3b8; }
+
+.tide-trend {
+  font-size:26px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin-top:12px;
 }
 
-function metersToFeet(m) {
-  return (parseFloat(m) * 3.28084).toFixed(1);
+.tide-arrow { font-size:36px; }
+.rising { color:#22c55e; }
+.falling { color:#38bdf8; }
+
+.countdown {
+  font-size:18px;
+  font-weight:900;
+  margin-top:8px;
+  color:#facc15;
 }
 
-function mpsToKnots(ms) {
-  return (parseFloat(ms) * 1.94384).toFixed(1);
+.tide-list {
+  font-size:15px;
+  font-weight:700;
+  line-height:1.6;
 }
 
-function cToF(c) {
-  return ((parseFloat(c) * 9/5) + 32).toFixed(1);
+.subtitle { font-size:12px; color:#94a3b8; }
+
+.wind-warning { color:#ef4444; }
+.wind-caution { color:#f59e0b; }
+</style>
+</head>
+
+<body class="bg-slate-900 text-white">
+
+<header class="bg-slate-800 py-4 text-center shadow-xl">
+
+<img src="SAR.png" class="mx-auto h-14 mb-2">
+
+<h1 class="text-lg font-black leading-tight">
+Todd Dooley SAR Forum 2026
+</h1>
+
+<div class="subtitle mt-1">
+HRBT Marine Operations Dashboard
+</div>
+
+<div class="flex flex-wrap justify-center gap-2 mt-4">
+
+<a href="/gar.html"
+class="px-4 py-2 rounded-lg font-bold bg-blue-600 hover:bg-blue-700 text-sm">
+GAR
+</a>
+
+<a href="/sar-resources.html"
+class="px-4 py-2 rounded-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-sm">
+RESOURCES
+</a>
+
+<a href="/admin.html"
+class="px-4 py-2 rounded-lg font-bold bg-red-700 hover:bg-red-800 text-sm">
+ADMIN
+</a>
+
+<button onclick="loadMarineData()"
+class="px-4 py-2 rounded-lg font-bold bg-orange-500 hover:bg-orange-600 text-sm">
+REFRESH
+</button>
+
+</div>
+
+<div class="mt-3 text-xs text-slate-400 animate-bounce">
+↓ Marine Conditions Below ↓
+</div>
+
+</header>
+
+<section class="max-w-6xl mx-auto p-4 space-y-6">
+
+<div class="text-center text-xs text-slate-400">
+Last Updated (Eastern): <span id="lastUpdated">--</span>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+<div class="card text-center">
+<div class="section-title">WIND</div>
+<div id="windText" class="primary-value">--</div>
+<div id="windCardinal" class="secondary-value"></div>
+<div id="windGust" class="secondary-value"></div>
+<div class="source">
+Wind data from NOAA Buoy 44099 (Chesapeake Bay Entrance)
+</div>
+</div>
+
+<div class="card text-center">
+<div class="section-title">WAVE HEIGHT</div>
+<div id="waveHeight" class="primary-value">--</div>
+<div class="source">
+Wave data from NOAA Buoy 44099
+</div>
+</div>
+
+<div class="card text-center">
+<div class="section-title">WATER TEMP</div>
+<div id="waterTemp" class="primary-value">--</div>
+<div class="source">
+Water temperature from NOAA Buoy 44099
+</div>
+</div>
+
+<div class="card text-center">
+<div class="section-title">AIR TEMP</div>
+<div id="airTemp" class="primary-value">--</div>
+<div class="source">
+Air temperature from NOAA Weather Station KORF (Norfolk)
+</div>
+</div>
+
+</div>
+
+<div class="card text-center">
+
+<div class="section-title">
+TIDES — Sewells Point (Near HRBT)
+</div>
+
+<div id="tideTrend" class="tide-trend"></div>
+<div id="tideCountdown" class="countdown"></div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+<div>
+<div class="font-semibold mb-1">Last 2</div>
+<div id="lastTides" class="tide-list"></div>
+</div>
+
+<div>
+<div class="font-semibold mb-1">Next 2</div>
+<div id="nextTides" class="tide-list"></div>
+</div>
+
+</div>
+
+<div class="source mt-4">
+Tide predictions from NOAA Sewells Point Station 8638610
+</div>
+
+</div>
+
+</section>
+
+<script>
+
+function degToCardinal(deg) {
+  if (!deg && deg !== 0) return "--";
+  const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE",
+                "S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  return dirs[Math.round(deg / 22.5) % 16];
 }
 
-function formatEastern(date) {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(date);
+function parseEastern(str) {
+  const [date, time] = str.split(" ");
+  return new Date(date + "T" + time);
 }
 
-function todayYYYYMMDD() {
+function formatTide(dateObj, type, height) {
+  const label = type === "H" ? "High" : "Low";
+  const time = dateObj.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit"});
+  return `${label} — ${time} — ${height} ft`;
+}
+
+let nextTideTime = null;
+let nextTideType = null;
+
+function updateCountdown() {
+  if (!nextTideTime) return;
+
   const now = new Date();
-  const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(now.getUTCDate()).padStart(2, "0");
-  return `${y}${m}${d}`;
-}
+  const diff = nextTideTime - now;
 
-exports.handler = async function () {
-
-try {
-
-// ======================
-// TIDES
-// ======================
-const beginDate = todayYYYYMMDD();
-
-const tideUrl =
-`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=POV_SAR&begin_date=${beginDate}&range=36&datum=MLLW&station=8638610&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
-
-const tideData = await getJSON(tideUrl);
-
-// ======================
-// BUOY 44099
-// ======================
-const buoyText = await getText(
-"https://www.ndbc.noaa.gov/data/realtime2/44099.txt"
-);
-
-const lines = buoyText.split("\n").filter(l => l.trim() !== "");
-const header = lines[0].trim().split(/\s+/);
-const latest = lines[2].trim().split(/\s+/);
-
-const col = name => header.indexOf(name);
-
-const rawWave = latest[col("WVHT")];
-const rawPeriod = latest[col("DPD")];
-const rawWaterTemp = latest[col("WTMP")];
-const rawWindSpeed = latest[col("WSPD")];
-const rawWindDir = latest[col("WDIR")];
-
-const utcDate = new Date(Date.UTC(
-  latest[0], latest[1] - 1, latest[2], latest[3], latest[4]
-));
-
-const easternObservation = formatEastern(utcDate);
-
-// ======================
-// WEATHER KORF (PRIMARY)
-// ======================
-const latestWeather = await getJSON(
-"https://api.weather.gov/stations/KORF/observations/latest"
-);
-
-const weatherProps = latestWeather.properties;
-
-const airTempF = weatherProps.temperature?.value !== null
-  ? cToF(weatherProps.temperature.value)
-  : "N/A";
-
-// ======================
-// WIND FALLBACK LOGIC
-// ======================
-
-let windSpeedKnots = null;
-let windDirDeg = null;
-let windSource = null;
-
-function validWind(speed) {
-  return speed !== null && !isNaN(speed) && speed > 1;
-}
-
-// 1️⃣ Buoy
-if (rawWindSpeed !== "MM" && rawWindDir !== "MM") {
-  const buoyKnots = parseFloat(mpsToKnots(rawWindSpeed));
-  if (validWind(buoyKnots)) {
-    windSpeedKnots = buoyKnots.toFixed(1);
-    windDirDeg = rawWindDir;
-    windSource = "NOAA Buoy 44099 — Chesapeake Bay Entrance (Near HRBT)";
+  if (diff <= 0) {
+    document.getElementById("tideCountdown").innerText =
+      "Tide change occurring now";
+    return;
   }
+
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+
+  document.getElementById("tideCountdown").innerText =
+    `${h}h ${m}m until ${nextTideType} tide`;
 }
 
-// 2️⃣ KORF latest
-if (!windSpeedKnots && weatherProps.windSpeed?.value !== null) {
-  const korfKnots = parseFloat(mpsToKnots(weatherProps.windSpeed.value));
-  if (validWind(korfKnots)) {
-    windSpeedKnots = korfKnots.toFixed(1);
-    windDirDeg = weatherProps.windDirection?.value?.toString() || "N/A";
-    windSource = "NOAA Weather Station KORF — Norfolk Airport";
+async function loadMarineData() {
+
+  const res = await fetch("/.netlify/functions/marine");
+  const data = await res.json();
+
+  document.getElementById("lastUpdated").innerText = data.serverTimeEST;
+
+  const serverNow = new Date(data.serverTimeEST);
+
+  const tides = data.tideData.predictions.map(t => ({
+    ...t,
+    parsed: parseEastern(t.t)
+  }));
+
+  tides.sort((a,b) => a.parsed - b.parsed);
+
+  const past = tides.filter(t => t.parsed <= serverNow).slice(-2);
+  const future = tides.filter(t => t.parsed > serverNow).slice(0,2);
+
+  document.getElementById("lastTides").innerHTML =
+    past.length
+      ? past.map(t => formatTide(t.parsed, t.type, t.v)).join("<br>")
+      : "--";
+
+  document.getElementById("nextTides").innerHTML =
+    future.length
+      ? future.map(t => formatTide(t.parsed, t.type, t.v)).join("<br>")
+      : "--";
+
+  if (future.length > 0) {
+    nextTideTime = future[0].parsed;
+    nextTideType = future[0].type === "H" ? "High" : "Low";
+
+    document.getElementById("tideTrend").innerHTML =
+      future[0].type === "H"
+      ? `<span class="rising tide-arrow">↑</span> Rising`
+      : `<span class="falling tide-arrow">↓</span> Falling`;
+
+    updateCountdown();
   }
+
+  const windSpeed = data.buoyData.windSpeedKnots;
+  const windDeg = data.buoyData.windDirDeg;
+  const windGust = data.buoyData.windGustKnots;
+
+  const windEl = document.getElementById("windText");
+
+  windEl.innerText = windSpeed + " kts";
+
+  windEl.classList.remove("wind-warning","wind-caution");
+
+  if (windSpeed >= 25) windEl.classList.add("wind-warning");
+  else if (windSpeed >= 15) windEl.classList.add("wind-caution");
+
+  document.getElementById("windCardinal").innerText =
+    degToCardinal(windDeg) + " (" + windDeg + "°)";
+
+  document.getElementById("windGust").innerText =
+    windGust ? "Gusts: " + windGust + " kts" : "";
+
+  document.getElementById("waveHeight").innerText =
+    data.buoyData.waveHeightFt + " ft @ " +
+    data.buoyData.dominantPeriodSec + "s";
+
+  document.getElementById("waterTemp").innerText =
+    data.buoyData.waterTempF + " °F";
+
+  document.getElementById("airTemp").innerText =
+    data.buoyData.airTempF + " °F";
 }
 
-// 3️⃣ KORF recent observations (backup sweep)
-if (!windSpeedKnots) {
-  const recent = await getJSON(
-    "https://api.weather.gov/stations/KORF/observations?limit=5"
-  );
+loadMarineData();
+setInterval(updateCountdown, 30000);
 
-  for (let obs of recent.features) {
-    const props = obs.properties;
-    if (props.windSpeed?.value !== null) {
-      const knots = parseFloat(mpsToKnots(props.windSpeed.value));
-      if (validWind(knots)) {
-        windSpeedKnots = knots.toFixed(1);
-        windDirDeg = props.windDirection?.value?.toString() || "N/A";
-        windSource = "NOAA Weather Station KORF — Recent Observation";
-        break;
-      }
-    }
-  }
-}
+</script>
 
-if (!windSpeedKnots) {
-  windSpeedKnots = "Calm / Unavailable";
-  windDirDeg = "N/A";
-  windSource = "NOAA Data Unavailable";
-}
-
-const buoyData = {
-  waveHeightFt: rawWave !== "MM" ? metersToFeet(rawWave) : "N/A",
-  dominantPeriodSec: rawPeriod !== "MM" ? rawPeriod : "N/A",
-  waterTempF: rawWaterTemp !== "MM" ? cToF(rawWaterTemp) : "N/A",
-  airTempF,
-  windSpeedKnots,
-  windDirDeg,
-  windSource,
-  buoyObservationTimeEST: easternObservation
-};
-
-return {
-  statusCode: 200,
-  headers: {
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    serverTimeEST: formatEastern(new Date()),
-    tideData,
-    buoyData
-  })
-};
-
-} catch (error) {
-
-return {
-  statusCode: 500,
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    error: error.toString()
-  })
-};
-
-}
-
-};
+</body>
+</html>
