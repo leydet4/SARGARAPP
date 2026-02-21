@@ -17,18 +17,18 @@ body { font-family: system-ui, sans-serif; }
 
 .card {
   background:#1e293b;
-  border-radius:16px;
-  padding:18px;
-  box-shadow:0 0 25px rgba(0,0,0,.35);
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 0 30px rgba(0,0,0,.4);
 }
 
 .section-title { font-size:16px; font-weight:700; }
 .source { color:#64748b; font-size:11px; margin-top:3px; }
-.primary-value { font-size:22px; font-weight:900; margin-top:6px; }
+.primary-value { font-size:24px; font-weight:900; margin-top:6px; }
 .secondary-value { font-size:15px; color:#94a3b8; }
 
 .tide-trend {
-  font-size:32px;
+  font-size:34px;
   font-weight:900;
   display:flex;
   align-items:center;
@@ -55,8 +55,8 @@ body { font-family: system-ui, sans-serif; }
 }
 
 .big-btn {
-  padding:12px 20px;
-  border-radius:12px;
+  padding:12px 22px;
+  border-radius:14px;
   font-weight:800;
   transition:.2s;
 }
@@ -77,32 +77,45 @@ body { font-family: system-ui, sans-serif; }
 
 <body class="bg-slate-900 text-white">
 
-<header class="bg-slate-800 py-6 text-center shadow-lg">
+<header class="bg-slate-800 py-8 text-center shadow-xl">
 
-<img src="SAR.png" class="mx-auto h-20 mb-3">
+<img src="SAR.png" class="mx-auto h-20 mb-4">
 
-<h1 class="text-2xl font-black">
+<h1 class="text-3xl font-black leading-tight">
 Port of Virginia Todd Dooley<br>
 Search and Rescue Forum 2026
 </h1>
 
-<div class="subtitle mt-1">
+<div class="subtitle mt-2">
 HRBT Marine Operations Dashboard (All Times Eastern)
 </div>
 
-<div class="flex justify-center gap-3 mt-5 flex-wrap">
+<div class="flex justify-center gap-3 mt-6 flex-wrap">
 
-<a href="gar.html" class="big-btn bg-blue-600 hover:bg-blue-700">GAR Submission</a>
+<a href="gar.html"
+class="big-btn bg-blue-600 hover:bg-blue-700">
+GAR Submission
+</a>
 
-<a href="resources.html" class="big-btn bg-emerald-600 hover:bg-emerald-700">RESOURCES</a>
+<a href="resources.html"
+class="big-btn bg-emerald-600 hover:bg-emerald-700">
+RESOURCES
+</a>
 
-<a href="admin.html" class="big-btn bg-red-700 hover:bg-red-800">ADMIN</a>
+<a href="admin.html"
+class="big-btn bg-red-700 hover:bg-red-800">
+ADMIN
+</a>
 
 <a href="povsargarapp-qr.png" target="_blank"
-class="big-btn bg-purple-600 hover:bg-purple-700">INSTALL QR</a>
+class="big-btn bg-purple-600 hover:bg-purple-700">
+INSTALL QR
+</a>
 
 <button onclick="loadMarineData()"
-class="big-btn bg-orange-500 hover:bg-orange-600">REFRESH</button>
+class="big-btn bg-orange-500 hover:bg-orange-600">
+REFRESH
+</button>
 
 </div>
 
@@ -113,13 +126,13 @@ Android: Tap INSTALL or scan QR → Add to Home Screen.<br>
 iPhone: Open in Safari → Share → Add to Home Screen.
 </section>
 
-<section class="p-4 md:p-6 space-y-6">
+<section class="max-w-6xl mx-auto p-6 space-y-8">
 
 <div class="text-center text-sm text-slate-400">
 Last Updated (Eastern): <span id="lastUpdated">--</span>
 </div>
 
-<div class="grid md:grid-cols-4 gap-5">
+<div class="grid md:grid-cols-4 gap-6">
 
 <div class="card text-center">
 <div class="section-title">WIND</div>
@@ -157,7 +170,7 @@ TIDES — Sewells Point (Near HRBT)
 <div id="tideTrend" class="tide-trend"></div>
 <div id="tideCountdown" class="countdown"></div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
 
 <div>
 <div class="font-semibold mb-2 text-lg">Last 2</div>
@@ -181,7 +194,7 @@ Buoy Observation (Eastern): <span id="buoyTime">--</span>
 
 <script>
 
-// (No changes below — your marine logic remains untouched)
+// 🔹 Your marine logic remains unchanged
 
 function parseEastern(str) {
   const [date, time] = str.split(" ");
@@ -238,10 +251,6 @@ async function loadMarineData() {
 
   let lastTwo = past.slice(-2);
   let nextTwo = future.slice(0,2);
-
-  if (past.length === 0 && tides.length >= 2) {
-    lastTwo = tides.slice(0,2);
-  }
 
   document.getElementById("lastTides").innerHTML =
     lastTwo.length
