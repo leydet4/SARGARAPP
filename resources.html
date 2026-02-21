@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAR Resources</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+  .resource-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .resource-card {
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #333;
+  }
+
+  .resource-card h4 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .view-btn { background: #ffcc00; color: black; }
+  .download-btn { background: #444; color: white; }
+
+  /* Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+  }
+
+  .modal-content {
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    width: 90%;
+    height: 90%;
+    background: #000;
+    border-radius: 8px;
+  }
+
+  .modal iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    cursor: pointer;
+    color: white;
+  }
+</style>
+</head>
+<body>
+
+<h2>SAR Forum Resources</h2>
+
+<div id="resourceList" class="resource-grid"></div>
+
+<!-- Modal -->
+<div id="viewerModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeModal()">✖</span>
+    <iframe id="viewerFrame"></iframe>
+  </div>
+</div>
+
+<script>
+async function loadResources() {
+  const res = await fetch('/.netlify/functions/getResources');
+  const files = await res.json();
+
+  const container = document.getElementById('resourceList');
+  container.innerHTML = '';
+
+  files.forEach(file => {
+    const card = document.createElement('div');
+    card.className = 'resource-card';
+
+    card.innerHTML = `
+      <h4>${file.name}</h4>
+      <div class="btn-row">
+        <button class="btn view-btn" onclick="viewFile('${file.url}')">View</button>
+        <a href="${file.url}" download>
+          <button class="btn download-btn">Download</button>
+        </a>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function viewFile(url) {
+  document.getElementById('viewerFrame').src = url;
+  document.getElementById('viewerModal').style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('viewerModal').style.display = 'none';
+  document.getElementById('viewerFrame').src = '';
+}
+
+loadResources();
+</script>
+
+</body>
+</html>
