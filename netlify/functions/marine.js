@@ -2,9 +2,18 @@ exports.handler = async function () {
   try {
 
     const STATIONS = {
-      wind: { id: "CHBV2", name: "Chesapeake Bay Bridge-Tunnel, VA" },
-      waves: { id: "44099", name: "Cape Henry, VA" },
-      tides: { id: "8638610", name: "Sewells Point, VA" }
+      nws: {
+        id: "KORF",
+        name: "Norfolk International Airport (NWS KORF)"
+      },
+      buoy: {
+        id: "44099",
+        name: "Cape Henry, VA (NOAA Buoy 44099)"
+      },
+      tides: {
+        id: "8638610",
+        name: "Sewells Point, VA"
+      }
     };
 
     const now = new Date();
@@ -12,7 +21,44 @@ exports.handler = async function () {
       timeZone: "America/New_York"
     });
 
-    // ---------- Helpers ----------
+    // ------------------------------------------------
+    // NWS OBSERVATION (Wind + Air Temp)
+    // ------------------------------------------------
+    const nwsRes = await fetch(
+      `https://api.weather.gov/stations/${STATIONS.nws.id}/observations/latest`
+    );
+
+    const nwsJson = await nwsRes.json();
+
+    const windSpeedMps = nwsJson.properties.windSpeed?.value;
+    const windDirDeg = nwsJson.properties.windDirection?.value;
+    const airTempC = nwsJson.properties.temperature?.value;
+    const windGustMps = nwsJson.properties.windGust?.value;
+
+    function mpsToKts(mps) {
+      return mps ? Math.round(mps * 1.94384) : null;
+    }
+
+    function cToF(c) {
+      return c ? Math.round((c * 9) / 5 + 32) : null;
+    }
+
+    const windData = {
+      windSpeedKnots: mpsToKts(windSpeedMps),
+      windDirDeg,
+      windGustKnots: mpsToKts(windGustMps),
+      airTempF: cToF(airTempC)
+    };
+
+    // ------------------------------------------------
+    // NOAA BUOY (Waves + Water Temp)
+    // ------------------------------------------------
+    const buoyRes = await fetch(
+      `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.buoy.id}.txt`
+    );
+
+    const buoyText = await buoyRes.text();
+
     function parseNDBC(text) {
       const lines = text.trim().split("\n");
       if (lines.length < 3) return null;
@@ -29,10 +75,6 @@ exports.handler = async function () {
         return isNaN(n) ? null : n;
       }
 
-      function msToKts(ms) {
-        return ms ? Math.round(ms * 1.94384) : null;
-      }
-
       function mToFt(m) {
         return m ? (m * 3.28084).toFixed(1) : null;
       }
@@ -42,31 +84,17 @@ exports.handler = async function () {
       }
 
       return {
-        windDirDeg: num(row.WDIR),
-        windSpeedKnots: msToKts(num(row.WSPD)),
-        windGustKnots: msToKts(num(row.GST)),
         waveHeightFt: mToFt(num(row.WVHT)),
         dominantPeriodSec: num(row.DPD),
-        waterTempF: cToF(num(row.WTMP)),
-        airTempF: cToF(num(row.ATMP))
+        waterTempF: cToF(num(row.WTMP))
       };
     }
 
-    // ---------- Wind ----------
-    const windRes = await fetch(
-      `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.wind.id}.txt`
-    );
-    const windText = await windRes.text();
-    const windData = parseNDBC(windText);
+    const buoyData = parseNDBC(buoyText);
 
-    // ---------- Waves ----------
-    const wavesRes = await fetch(
-      `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.waves.id}.txt`
-    );
-    const wavesText = await wavesRes.text();
-    const buoyData = parseNDBC(wavesText);
-
-    // ---------- Tides (48hr range) ----------
+    // ------------------------------------------------
+    // TIDES (48hr Window)
+    // ------------------------------------------------
     const end = new Date();
     const start = new Date(end.getTime() - 48 * 60 * 60 * 1000);
 
@@ -95,25 +123,18 @@ exports.handler = async function () {
 
     const tideData = await tideRes.json();
 
-    // ---------- Air Temp Fallback ----------
-    // CHBV2 sometimes doesn't provide ATMP
-    const airTempF =
-      windData?.airTempF ??
-      buoyData?.airTempF ??
-      null;
-
+    // ------------------------------------------------
     return {
       statusCode: 200,
       body: JSON.stringify({
         serverTimeEST: nowEST,
         windData: {
-          stationName: STATIONS.wind.name,
+          stationName: STATIONS.nws.name,
           ...windData
         },
         buoyData: {
-          stationName: STATIONS.waves.name,
-          ...buoyData,
-          airTempF
+          stationName: STATIONS.buoy.name,
+          ...buoyData
         },
         tideStationName: STATIONS.tides.name,
         tideData
