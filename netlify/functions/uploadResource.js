@@ -17,29 +17,26 @@ export default async (req) => {
       if (!fileName) {
         return new Response(
           JSON.stringify({ error: "File name required" }),
-          { status: 400 }
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
 
-      // Delete file blob
+      // Delete actual file
       await fileStore.delete(fileName);
 
-      // Get metadata list
+      // Get metadata
       let list = await metaStore.get("list.json", { type: "json" });
       if (!list) list = [];
 
-      // Remove deleted file from list
+      // Remove file entry
       const updatedList = list.filter(item => item.file !== fileName);
 
-      // Save updated list
-      await metaStore.set("list.json", updatedList);
+      // IMPORTANT: stringify before saving
+      await metaStore.set("list.json", JSON.stringify(updatedList));
 
       return new Response(
         JSON.stringify({ success: true }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" }
-        }
+        { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -55,7 +52,7 @@ export default async (req) => {
       if (!file) {
         return new Response(
           JSON.stringify({ error: "No file uploaded" }),
-          { status: 400 }
+          { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
 
@@ -75,14 +72,11 @@ export default async (req) => {
         uploaded: new Date().toISOString()
       });
 
-      await metaStore.set("list.json", list);
+      await metaStore.set("list.json", JSON.stringify(list));
 
       return new Response(
         JSON.stringify({ success: true }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" }
-        }
+        { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -91,7 +85,7 @@ export default async (req) => {
   } catch (err) {
     return new Response(
       JSON.stringify({ error: err.message }),
-      { status: 500 }
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 };
