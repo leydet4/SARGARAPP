@@ -22,11 +22,36 @@ body { font-family: system-ui, sans-serif; }
 }
 
 .section-title { font-size:14px; font-weight:700; }
-.source { color:#64748b; font-size:11px; margin-top:3px; }
+.source { color:#64748b; font-size:11px; margin-top:4px; }
 .primary-value { font-size:22px; font-weight:900; margin-top:6px; }
 .secondary-value { font-size:15px; color:#94a3b8; }
 
-.tide-list { font-size:16px; font-weight:700; line-height:1.6; }
+.tide-trend {
+  font-size:26px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin-top:12px;
+}
+
+.tide-arrow { font-size:36px; }
+.rising { color:#22c55e; }
+.falling { color:#38bdf8; }
+
+.countdown {
+  font-size:18px;
+  font-weight:900;
+  margin-top:8px;
+  color:#facc15;
+}
+
+.tide-list {
+  font-size:16px;
+  font-weight:700;
+  line-height:1.6;
+}
 
 .subtitle { font-size:12px; color:#94a3b8; }
 </style>
@@ -63,11 +88,6 @@ class="px-4 py-2 rounded-lg font-bold bg-red-700 hover:bg-red-800 text-sm">
 ADMIN
 </a>
 
-<a href="/povsargarapp-qr.png" target="_blank"
-class="px-4 py-2 rounded-lg font-bold bg-purple-600 hover:bg-purple-700 text-sm">
-INSTALL
-</a>
-
 <button onclick="loadMarineData()"
 class="px-4 py-2 rounded-lg font-bold bg-orange-500 hover:bg-orange-600 text-sm">
 REFRESH
@@ -93,30 +113,47 @@ Last Updated (Eastern): <span id="lastUpdated">--</span>
 <div class="section-title">WIND</div>
 <div id="windText" class="primary-value">--</div>
 <div id="windCardinal" class="secondary-value"></div>
+<div class="source">
+Wind data from NOAA Buoy 44099 (Chesapeake Bay Entrance)
+</div>
 </div>
 
 <div class="card text-center">
 <div class="section-title">WAVE HEIGHT</div>
 <div id="waveHeight" class="primary-value">--</div>
+<div class="source">
+Wave data from NOAA Buoy 44099
+</div>
 </div>
 
 <div class="card text-center">
 <div class="section-title">WATER TEMP</div>
 <div id="waterTemp" class="primary-value">--</div>
+<div class="source">
+Water temperature from NOAA Buoy 44099
+</div>
 </div>
 
 <div class="card text-center">
 <div class="section-title">AIR TEMP</div>
 <div id="airTemp" class="primary-value">--</div>
+<div class="source">
+Air temperature from NOAA Weather Station KORF (Norfolk)
+</div>
 </div>
 
 </div>
 
 <div class="card text-center">
 
-<div class="section-title">TIDES — Sewells Point</div>
+<div class="section-title">
+TIDES — Sewells Point (Near HRBT)
+</div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+<div id="tideTrend" class="tide-trend"></div>
+<div id="tideCountdown" class="countdown"></div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
 
 <div>
 <div class="font-semibold mb-1">Last 2</div>
@@ -128,6 +165,10 @@ Last Updated (Eastern): <span id="lastUpdated">--</span>
 <div id="nextTides" class="tide-list"></div>
 </div>
 
+</div>
+
+<div class="source mt-4">
+Tide predictions from NOAA Sewells Point Station 8638610
 </div>
 
 </div>
@@ -154,6 +195,28 @@ function formatTide(dateObj, type) {
   return `${label} — ${time}`;
 }
 
+let nextTideTime = null;
+let nextTideType = null;
+
+function updateCountdown() {
+  if (!nextTideTime) return;
+
+  const now = new Date();
+  const diff = nextTideTime - now;
+
+  if (diff <= 0) {
+    document.getElementById("tideCountdown").innerText =
+      "Tide change occurring now";
+    return;
+  }
+
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+
+  document.getElementById("tideCountdown").innerText =
+    `${h}h ${m}m until ${nextTideType} tide`;
+}
+
 async function loadMarineData() {
 
   const res = await fetch("/.netlify/functions/marine");
@@ -174,10 +237,22 @@ async function loadMarineData() {
   const future = tides.filter(t => t.parsed > serverNow).slice(0,2);
 
   document.getElementById("lastTides").innerHTML =
-    past.map(t => formatTide(t.parsed, t.type)).join("<br>");
+    past.length ? past.map(t => formatTide(t.parsed, t.type)).join("<br>") : "--";
 
   document.getElementById("nextTides").innerHTML =
-    future.map(t => formatTide(t.parsed, t.type)).join("<br>");
+    future.length ? future.map(t => formatTide(t.parsed, t.type)).join("<br>") : "--";
+
+  if (future.length > 0) {
+    nextTideTime = future[0].parsed;
+    nextTideType = future[0].type === "H" ? "High" : "Low";
+
+    document.getElementById("tideTrend").innerHTML =
+      future[0].type === "H"
+      ? `<span class="rising tide-arrow">↑</span> Rising`
+      : `<span class="falling tide-arrow">↓</span> Falling`;
+
+    updateCountdown();
+  }
 
   const windDeg = data.buoyData.windDirDeg;
 
@@ -188,7 +263,8 @@ async function loadMarineData() {
     degToCardinal(windDeg) + " (" + windDeg + "°)";
 
   document.getElementById("waveHeight").innerText =
-    data.buoyData.waveHeightFt + " ft";
+    data.buoyData.waveHeightFt + " ft @ " +
+    data.buoyData.dominantPeriodSec + "s";
 
   document.getElementById("waterTemp").innerText =
     data.buoyData.waterTempF + " °F";
@@ -198,6 +274,7 @@ async function loadMarineData() {
 }
 
 loadMarineData();
+setInterval(updateCountdown, 30000);
 
 </script>
 
