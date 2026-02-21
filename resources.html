@@ -8,7 +8,7 @@
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- PDF.js CDN -->
+<!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
@@ -85,10 +85,18 @@ Loading resources...
 <div id="viewerModal" class="modal">
   <div class="modal-header">
     <span id="viewerTitle" class="font-bold"></span>
-    <button onclick="closeModal()"
-            class="bg-red-600 px-3 py-1 rounded text-sm font-bold">
-       Close
-    </button>
+
+    <div class="space-x-2">
+      <button id="downloadBtn"
+              class="bg-blue-600 px-3 py-1 rounded text-sm font-bold">
+        Download
+      </button>
+
+      <button onclick="closeModal()"
+              class="bg-red-600 px-3 py-1 rounded text-sm font-bold">
+        Close
+      </button>
+    </div>
   </div>
 
   <div id="pdfContainer"></div>
@@ -99,6 +107,9 @@ Loading resources...
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let currentFileUrl = "";
+let currentFileName = "";
 
 async function loadResources() {
   const res = await fetch("/.netlify/functions/getResources");
@@ -125,6 +136,9 @@ async function openViewer(title, fileName) {
 
   const extension = fileName.split('.').pop().toLowerCase();
   const fileUrl = `/.netlify/functions/getFile?name=${encodeURIComponent(fileName)}`;
+
+  currentFileUrl = fileUrl;
+  currentFileName = fileName;
 
   document.getElementById("viewerTitle").innerText = title;
   document.getElementById("viewerModal").style.display = "flex";
@@ -167,10 +181,28 @@ async function openViewer(title, fileName) {
   }
 }
 
+// DOWNLOAD WITHOUT NAVIGATION
+document.getElementById("downloadBtn").addEventListener("click", async () => {
+
+  if (!currentFileUrl) return;
+
+  const response = await fetch(currentFileUrl);
+  const blob = await response.blob();
+
+  const link = document.createElement("a");
+  link.href = window.URL.createObjectURL(blob);
+  link.download = currentFileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+
 function closeModal() {
   document.getElementById("viewerModal").style.display = "none";
   document.getElementById("pdfContainer").innerHTML = "";
   document.getElementById("imageViewer").src = "";
+  currentFileUrl = "";
+  currentFileName = "";
 }
 
 loadResources();
