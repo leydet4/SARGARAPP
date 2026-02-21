@@ -1,11 +1,9 @@
-const fetch = require("node-fetch");
-
 exports.handler = async function () {
   try {
 
     const STATIONS = {
-      wind: { id: "CHBV2", name: "Chesapeake Bay Bridge-Tunnel, VA (NOAA CHBV2)" },
-      waves: { id: "44099", name: "Cape Henry, VA (NOAA 44099)" },
+      wind: { id: "CHBV2", name: "Chesapeake Bay Bridge-Tunnel, VA" },
+      waves: { id: "44099", name: "Cape Henry, VA" },
       tides: { id: "8638610", name: "Sewells Point, VA" }
     };
 
@@ -13,17 +11,7 @@ exports.handler = async function () {
       timeZone: "America/New_York"
     });
 
-    // ---------- Fetch Wind ----------
-    const windRes = await fetch(
-      `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.wind.id}.txt`
-    );
-    const windText = await windRes.text();
-
-    const wavesRes = await fetch(
-      `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.waves.id}.txt`
-    );
-    const wavesText = await wavesRes.text();
-
+    // -------- Parse NDBC Text --------
     function parseNDBC(text) {
       const lines = text.trim().split("\n");
       if (lines.length < 3) return null;
@@ -63,10 +51,21 @@ exports.handler = async function () {
       };
     }
 
+    // -------- Fetch Wind (HRBT) --------
+    const windRes = await fetch(
+      `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.wind.id}.txt`
+    );
+    const windText = await windRes.text();
     const windData = parseNDBC(windText);
-    const waveData = parseNDBC(wavesText);
 
-    // ---------- Fetch Tides ----------
+    // -------- Fetch Waves --------
+    const wavesRes = await fetch(
+      `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.waves.id}.txt`
+    );
+    const wavesText = await wavesRes.text();
+    const buoyData = parseNDBC(wavesText);
+
+    // -------- Fetch Tides --------
     const tideRes = await fetch(
       `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&station=${STATIONS.tides.id}&datum=MLLW&interval=hilo&units=english&time_zone=lst_ldt&format=json`
     );
@@ -82,7 +81,7 @@ exports.handler = async function () {
         },
         buoyData: {
           stationName: STATIONS.waves.name,
-          ...waveData
+          ...buoyData
         },
         tideStationName: STATIONS.tides.name,
         tideData
