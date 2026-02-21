@@ -5,12 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SAR Resources</title>
 <link rel="stylesheet" href="/app.css">
+
 <style>
+  body {
+    padding: 20px;
+  }
+
+  h2 {
+    margin-bottom: 15px;
+  }
+
   .resource-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 15px;
-    margin-top: 20px;
   }
 
   .resource-card {
@@ -23,6 +31,7 @@
   .resource-card h4 {
     margin: 0 0 10px 0;
     font-size: 16px;
+    word-break: break-word;
   }
 
   .btn-row {
@@ -32,33 +41,41 @@
 
   .btn {
     flex: 1;
-    padding: 6px;
+    padding: 8px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: bold;
   }
 
-  .view-btn { background: #ffcc00; color: black; }
-  .download-btn { background: #444; color: white; }
+  .view-btn {
+    background: #ffcc00;
+    color: black;
+  }
 
-  /* Modal */
+  .download-btn {
+    background: #444;
+    color: white;
+  }
+
+  /* Modal Viewer */
   .modal {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.85);
     z-index: 1000;
   }
 
   .modal-content {
     position: absolute;
-    top: 5%;
-    left: 5%;
-    width: 90%;
-    height: 90%;
-    background: #000;
+    top: 4%;
+    left: 4%;
+    width: 92%;
+    height: 92%;
+    background: black;
     border-radius: 8px;
+    overflow: hidden;
   }
 
   .modal iframe {
@@ -71,19 +88,21 @@
     position: absolute;
     top: 10px;
     right: 15px;
-    font-size: 20px;
+    font-size: 22px;
     cursor: pointer;
     color: white;
+    z-index: 1001;
   }
 </style>
 </head>
+
 <body>
 
-<h2>SAR Forum Resources</h2>
+<h2>📚 SAR Forum Resources</h2>
 
 <div id="resourceList" class="resource-grid"></div>
 
-<!-- Modal -->
+<!-- Viewer Modal -->
 <div id="viewerModal" class="modal">
   <div class="modal-content">
     <span class="close-btn" onclick="closeModal()">✖</span>
@@ -92,22 +111,31 @@
 </div>
 
 <script>
-async function loadResources() {
-  const res = await fetch('/.netlify/functions/getResources');
-  const files = await res.json();
 
-  const container = document.getElementById('resourceList');
-  container.innerHTML = '';
+// 🔹 Just add files here when you upload them
+const resources = [
+  {
+    name: "2026 SAR Forum Agenda",
+    file: "2026 SAR Forum Agenda.pdf"
+  }
+  // Add more like this:
+  // { name: "GAR Reference Sheet", file: "GAR Reference.pdf" }
+];
 
-  files.forEach(file => {
-    const card = document.createElement('div');
-    card.className = 'resource-card';
+function loadResources() {
+  const container = document.getElementById("resourceList");
+
+  resources.forEach(resource => {
+    const filePath = `/resources/${resource.file}`;
+
+    const card = document.createElement("div");
+    card.className = "resource-card";
 
     card.innerHTML = `
-      <h4>${file.name}</h4>
+      <h4>${resource.name}</h4>
       <div class="btn-row">
-        <button class="btn view-btn" onclick="viewFile('${file.url}')">View</button>
-        <a href="${file.url}" download>
+        <button class="btn view-btn" onclick="viewFile('${filePath}')">View</button>
+        <a href="${filePath}" download>
           <button class="btn download-btn">Download</button>
         </a>
       </div>
@@ -118,16 +146,17 @@ async function loadResources() {
 }
 
 function viewFile(url) {
-  document.getElementById('viewerFrame').src = url;
-  document.getElementById('viewerModal').style.display = 'block';
+  document.getElementById("viewerFrame").src = url;
+  document.getElementById("viewerModal").style.display = "block";
 }
 
 function closeModal() {
-  document.getElementById('viewerModal').style.display = 'none';
-  document.getElementById('viewerFrame').src = '';
+  document.getElementById("viewerModal").style.display = "none";
+  document.getElementById("viewerFrame").src = "";
 }
 
 loadResources();
+
 </script>
 
 </body>
