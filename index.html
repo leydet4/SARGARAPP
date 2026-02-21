@@ -48,12 +48,15 @@ body { font-family: system-ui, sans-serif; }
 }
 
 .tide-list {
-  font-size:16px;
+  font-size:15px;
   font-weight:700;
   line-height:1.6;
 }
 
 .subtitle { font-size:12px; color:#94a3b8; }
+
+.wind-warning { color:#ef4444; }
+.wind-caution { color:#f59e0b; }
 </style>
 </head>
 
@@ -113,6 +116,7 @@ Last Updated (Eastern): <span id="lastUpdated">--</span>
 <div class="section-title">WIND</div>
 <div id="windText" class="primary-value">--</div>
 <div id="windCardinal" class="secondary-value"></div>
+<div id="windGust" class="secondary-value"></div>
 <div class="source">
 Wind data from NOAA Buoy 44099 (Chesapeake Bay Entrance)
 </div>
@@ -189,10 +193,10 @@ function parseEastern(str) {
   return new Date(date + "T" + time);
 }
 
-function formatTide(dateObj, type) {
+function formatTide(dateObj, type, height) {
   const label = type === "H" ? "High" : "Low";
   const time = dateObj.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit"});
-  return `${label} — ${time}`;
+  return `${label} — ${time} — ${height} ft`;
 }
 
 let nextTideTime = null;
@@ -237,10 +241,14 @@ async function loadMarineData() {
   const future = tides.filter(t => t.parsed > serverNow).slice(0,2);
 
   document.getElementById("lastTides").innerHTML =
-    past.length ? past.map(t => formatTide(t.parsed, t.type)).join("<br>") : "--";
+    past.length
+      ? past.map(t => formatTide(t.parsed, t.type, t.v)).join("<br>")
+      : "--";
 
   document.getElementById("nextTides").innerHTML =
-    future.length ? future.map(t => formatTide(t.parsed, t.type)).join("<br>") : "--";
+    future.length
+      ? future.map(t => formatTide(t.parsed, t.type, t.v)).join("<br>")
+      : "--";
 
   if (future.length > 0) {
     nextTideTime = future[0].parsed;
@@ -254,13 +262,24 @@ async function loadMarineData() {
     updateCountdown();
   }
 
+  const windSpeed = data.buoyData.windSpeedKnots;
   const windDeg = data.buoyData.windDirDeg;
+  const windGust = data.buoyData.windGustKnots;
 
-  document.getElementById("windText").innerText =
-    data.buoyData.windSpeedKnots + " kts";
+  const windEl = document.getElementById("windText");
+
+  windEl.innerText = windSpeed + " kts";
+
+  windEl.classList.remove("wind-warning","wind-caution");
+
+  if (windSpeed >= 25) windEl.classList.add("wind-warning");
+  else if (windSpeed >= 15) windEl.classList.add("wind-caution");
 
   document.getElementById("windCardinal").innerText =
     degToCardinal(windDeg) + " (" + windDeg + "°)";
+
+  document.getElementById("windGust").innerText =
+    windGust ? "Gusts: " + windGust + " kts" : "";
 
   document.getElementById("waveHeight").innerText =
     data.buoyData.waveHeightFt + " ft @ " +
