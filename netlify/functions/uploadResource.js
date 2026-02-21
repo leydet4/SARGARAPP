@@ -7,7 +7,7 @@ export default async (req) => {
     const metaStore = getStore("resources-meta");
 
     // ===============================
-    // SERVE FILE (GET REQUEST)
+    // SERVE FILE (GET)
     // ===============================
     if (req.method === "GET") {
 
@@ -24,7 +24,6 @@ export default async (req) => {
         return new Response("File not found", { status: 404 });
       }
 
-      // Detect MIME type from extension
       const extension = fileName.split(".").pop().toLowerCase();
 
       const mimeTypes = {
@@ -34,12 +33,7 @@ export default async (req) => {
         jpeg: "image/jpeg",
         gif: "image/gif",
         webp: "image/webp",
-        txt: "text/plain",
-        csv: "text/csv",
-        json: "application/json",
-        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        zip: "application/zip"
+        svg: "image/svg+xml"
       };
 
       const mimeType = mimeTypes[extension] || "application/octet-stream";
@@ -48,13 +42,13 @@ export default async (req) => {
         status: 200,
         headers: {
           "Content-Type": mimeType,
-          "Content-Disposition": `inline; filename="${fileName}"`
+          "Content-Disposition": "inline"
         }
       });
     }
 
     // ===============================
-    // UPLOAD FILE (POST REQUEST)
+    // UPLOAD FILE (POST)
     // ===============================
     if (req.method === "POST") {
 
@@ -85,6 +79,37 @@ export default async (req) => {
         file: fileName,
         uploaded: new Date().toISOString()
       });
+
+      await metaStore.set("list.json", JSON.stringify(list));
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200 }
+      );
+    }
+
+    // ===============================
+    // DELETE FILE (DELETE)
+    // ===============================
+    if (req.method === "DELETE") {
+
+      const url = new URL(req.url);
+      const fileName = url.searchParams.get("name");
+
+      if (!fileName) {
+        return new Response(
+          JSON.stringify({ error: "File name required" }),
+          { status: 400 }
+        );
+      }
+
+      await fileStore.delete(fileName);
+
+      let list = [];
+      const existing = await metaStore.get("list.json", { type: "json" });
+      if (existing) list = existing;
+
+      list = list.filter(item => item.file !== fileName);
 
       await metaStore.set("list.json", JSON.stringify(list));
 
