@@ -1,27 +1,21 @@
 const { getStore } = require("@netlify/blobs");
 
 exports.handler = async function () {
-
   try {
-
     const metaStore = getStore("resources-meta");
 
-    let raw = await metaStore.get("list.json");
+    const raw = await metaStore.get("list.json");
 
     if (!raw) {
       await metaStore.set("list.json", JSON.stringify([]));
-      raw = "[]";
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([])
+      };
     }
 
-    let list;
-
-    try {
-      list = JSON.parse(raw);
-    } catch (err) {
-      // Reset if corrupted
-      list = [];
-      await metaStore.set("list.json", JSON.stringify([]));
-    }
+    let list = JSON.parse(raw);
 
     return {
       statusCode: 200,
@@ -33,7 +27,6 @@ exports.handler = async function () {
     };
 
   } catch (err) {
-
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
