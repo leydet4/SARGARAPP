@@ -88,9 +88,9 @@ body { font-family: system-ui, sans-serif; }
   color:#94a3b8;
 }
 
-.install-box {
+.install-banner {
   background:#111827;
-  padding:18px;
+  padding:16px;
   text-align:center;
   font-size:13px;
   color:#cbd5e1;
@@ -114,7 +114,7 @@ Todd Dooley SAR Forum 2026
 HRBT Marine Operations Dashboard (All Times Eastern)
 </div>
 
-<div class="flex justify-center gap-3 mt-5 flex-wrap">
+<div class="flex justify-center gap-3 mt-6 flex-wrap">
 
 <a href="gar.html" class="big-btn bg-blue-600 hover:bg-blue-700">GAR</a>
 
@@ -122,7 +122,6 @@ HRBT Marine Operations Dashboard (All Times Eastern)
 
 <a href="admin.html" class="big-btn bg-red-700 hover:bg-red-800">ADMIN</a>
 
-<!-- REAL INSTALL BUTTON -->
 <button id="installBtn"
 class="big-btn bg-indigo-600 hover:bg-indigo-700 hidden">
 INSTALL APP
@@ -130,7 +129,7 @@ INSTALL APP
 
 <a href="povsargarapp-qr.png" target="_blank"
 class="big-btn bg-purple-600 hover:bg-purple-700">
-QR
+Install QR
 </a>
 
 <button onclick="loadMarineData()"
@@ -142,12 +141,11 @@ REFRESH
 
 </header>
 
-<!-- INSTALL INSTRUCTIONS -->
-<section class="install-box">
-<strong>Install This App</strong><br><br>
-📱 <strong>Android:</strong> Tap INSTALL APP or browser menu → “Install App.”<br>
-🍎 <strong>iPhone:</strong> Open in Safari → Share → “Add to Home Screen.”<br><br>
-Or scan the QR button above.
+<!-- INSTALL BANNER -->
+<section id="installBanner" class="install-banner hidden">
+<strong>Install This App</strong><br>
+📱 Android: Tap <strong>Install App</strong> or use browser menu.<br>
+🍎 iPhone: Open in Safari → Share → Add to Home Screen.
 </section>
 
 <section class="p-5 md:p-8 space-y-8">
@@ -217,9 +215,20 @@ TIDES — Sewells Point (Near HRBT)
 
 <script>
 
-// ===== PWA INSTALL LOGIC =====
+// ===== INSTALL AUTO LOGIC =====
 let deferredPrompt;
 const installBtn = document.getElementById('installBtn');
+const installBanner = document.getElementById('installBanner');
+
+// Detect standalone (installed)
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+if (!isStandalone()) {
+  installBanner.classList.remove('hidden');
+}
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -231,8 +240,9 @@ installBtn.addEventListener('click', async () => {
   if (!deferredPrompt) return;
   deferredPrompt.prompt();
   await deferredPrompt.userChoice;
-  deferredPrompt = null;
   installBtn.classList.add('hidden');
+  installBanner.classList.add('hidden');
+  deferredPrompt = null;
 });
 
 // ===== MARINE DATA =====
