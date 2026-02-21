@@ -31,6 +31,11 @@ body { font-family: system-ui, sans-serif; }
 .btn-danger { background:#dc2626; }
 .btn-danger:hover { background:#b91c1c; }
 
+.btn-disabled {
+  background:#555 !important;
+  cursor:not-allowed;
+}
+
 .select {
   width:100%;
   padding:12px;
@@ -53,7 +58,14 @@ iframe {
   background:#334155;
   padding:12px;
   border-radius:10px;
+  transition:opacity .3s ease, transform .3s ease;
 }
+
+.fade-out {
+  opacity:0;
+  transform:scale(.95);
+}
+
 #adminContent { display:none; }
 </style>
 </head>
@@ -93,49 +105,6 @@ iframe {
 
 <section class="p-6 max-w-4xl mx-auto space-y-8">
 
-<!-- GAR SHEET VIEWER -->
-<div class="card">
-<h2 class="text-xl font-bold mb-4">GAR Sheet Viewer</h2>
-
-<select id="sheetSelector" class="select mb-4">
-  <option value="">Select GAR Sheet...</option>
-  <option value="TF1">Task Force 1</option>
-  <option value="TF2">Task Force 2</option>
-  <option value="TF3">Task Force 3</option>
-  <option value="TF4">Task Force 4</option>
-  <option value="ADMIN">Admin / Other</option>
-</select>
-
-<div id="sheetContainer" class="hidden">
-  <iframe id="sheetFrame"></iframe>
-</div>
-</div>
-
-<!-- UPLOAD SECTION -->
-<div class="card">
-<h2 class="text-xl font-bold mb-4">Upload New Resource</h2>
-
-<form id="uploadForm" class="space-y-4">
-  <input type="text"
-         id="title"
-         placeholder="Display Name (Optional)"
-         class="w-full p-3 rounded bg-slate-700">
-
-  <input type="file"
-         id="fileInput"
-         required
-         class="w-full p-3 rounded bg-slate-700">
-
-  <button type="submit"
-          class="btn btn-primary w-full">
-    Upload File
-  </button>
-</form>
-
-<div id="status" class="mt-4 font-bold"></div>
-</div>
-
-<!-- RESOURCE MANAGEMENT -->
 <div class="card">
 <h2 class="text-xl font-bold mb-4">Manage Uploaded Files</h2>
 <div id="adminResourceList" class="space-y-3">
@@ -161,61 +130,6 @@ function checkPassword() {
     document.getElementById("loginError").classList.remove("hidden");
   }
 }
-
-// GAR SHEET LINKS
-const sheetLinks = {
-  TF1: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=462942313&single=true&widget=true&headers=false",
-  TF2: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=653219596&single=true&widget=true&headers=false",
-  TF3: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=1655685068&single=true&widget=true&headers=false",
-  TF4: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=70233464&single=true&widget=true&headers=false",
-  ADMIN: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=477824279&single=true&widget=true&headers=false"
-};
-
-document.getElementById("sheetSelector").addEventListener("change", function() {
-  const selected = this.value;
-  const frame = document.getElementById("sheetFrame");
-  const container = document.getElementById("sheetContainer");
-
-  if (!selected) {
-    container.classList.add("hidden");
-    frame.src = "";
-    return;
-  }
-
-  frame.src = sheetLinks[selected];
-  container.classList.remove("hidden");
-});
-
-// UPLOAD
-document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const file = document.getElementById("fileInput").files[0];
-  const title = document.getElementById("title").value;
-
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("title", title);
-
-  document.getElementById("status").innerText = "Uploading...";
-
-  const res = await fetch("/.netlify/functions/uploadResource", {
-    method: "POST",
-    body: formData
-  });
-
-  const data = await res.json();
-
-  if (data.success) {
-    document.getElementById("status").innerText = "Upload successful.";
-    document.getElementById("uploadForm").reset();
-    loadAdminResources();
-  } else {
-    document.getElementById("status").innerText = "Upload failed.";
-  }
-});
 
 // LOAD FILES
 async function loadAdminResources() {
@@ -244,14 +158,35 @@ async function loadAdminResources() {
     delBtn.innerText = "Delete";
 
     delBtn.onclick = async () => {
+
       const confirmDelete = confirm(`Delete "${file.name}"?`);
       if (!confirmDelete) return;
 
-      await fetch(`/.netlify/functions/uploadResource?name=${encodeURIComponent(file.file)}`, {
-        method: "DELETE"
-      });
+      delBtn.innerText = "Deleting...";
+      delBtn.classList.add("btn-disabled");
+      delBtn.disabled = true;
 
-      loadAdminResources();
+      try {
+        const res = await fetch(
+          `/.netlify/functions/uploadResource?name=${encodeURIComponent(file.file)}`,
+          { method: "DELETE" }
+        );
+
+        const result = await res.json();
+
+        if (result.success) {
+          row.classList.add("fade-out");
+          setTimeout(() => row.remove(), 300);
+        } else {
+          throw new Error("Delete failed");
+        }
+
+      } catch (err) {
+        delBtn.innerText = "Error";
+        delBtn.classList.remove("btn-disabled");
+        delBtn.disabled = false;
+        alert("Failed to delete file.");
+      }
     };
 
     row.appendChild(name);
