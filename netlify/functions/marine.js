@@ -7,11 +7,12 @@ exports.handler = async function () {
       tides: { id: "8638610", name: "Sewells Point, VA" }
     };
 
-    const nowEST = new Date().toLocaleString("en-US", {
+    const now = new Date();
+    const nowEST = now.toLocaleString("en-US", {
       timeZone: "America/New_York"
     });
 
-    // -------- Parse NDBC Text --------
+    // ---------- Helpers ----------
     function parseNDBC(text) {
       const lines = text.trim().split("\n");
       if (lines.length < 3) return null;
@@ -51,25 +52,55 @@ exports.handler = async function () {
       };
     }
 
-    // -------- Fetch Wind (HRBT) --------
+    // ---------- Wind ----------
     const windRes = await fetch(
       `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.wind.id}.txt`
     );
     const windText = await windRes.text();
     const windData = parseNDBC(windText);
 
-    // -------- Fetch Waves --------
+    // ---------- Waves ----------
     const wavesRes = await fetch(
       `https://www.ndbc.noaa.gov/data/realtime2/${STATIONS.waves.id}.txt`
     );
     const wavesText = await wavesRes.text();
     const buoyData = parseNDBC(wavesText);
 
-    // -------- Fetch Tides --------
+    // ---------- Tides (48hr range) ----------
+    const end = new Date();
+    const start = new Date(end.getTime() - 48 * 60 * 60 * 1000);
+
+    function fmt(d) {
+      const pad = (n) => String(n).padStart(2, "0");
+      return (
+        d.getFullYear() +
+        pad(d.getMonth() + 1) +
+        pad(d.getDate())
+      );
+    }
+
     const tideRes = await fetch(
-      `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&station=${STATIONS.tides.id}&datum=MLLW&interval=hilo&units=english&time_zone=lst_ldt&format=json`
+      `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?` +
+      `product=predictions` +
+      `&application=POV_SAR` +
+      `&begin_date=${fmt(start)}` +
+      `&end_date=${fmt(end)}` +
+      `&datum=MLLW` +
+      `&station=${STATIONS.tides.id}` +
+      `&time_zone=lst_ldt` +
+      `&units=english` +
+      `&interval=hilo` +
+      `&format=json`
     );
+
     const tideData = await tideRes.json();
+
+    // ---------- Air Temp Fallback ----------
+    // CHBV2 sometimes doesn't provide ATMP
+    const airTempF =
+      windData?.airTempF ??
+      buoyData?.airTempF ??
+      null;
 
     return {
       statusCode: 200,
@@ -81,7 +112,8 @@ exports.handler = async function () {
         },
         buoyData: {
           stationName: STATIONS.waves.name,
-          ...buoyData
+          ...buoyData,
+          airTempF
         },
         tideStationName: STATIONS.tides.name,
         tideData
