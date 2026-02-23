@@ -27,9 +27,10 @@ body { font-family: system-ui, sans-serif; }
   color:white;
 }
 
+/* Sheet scroll container */
 #sheetContainer {
   width:100%;
-  height:85vh;
+  height:80vh;
   overflow:auto;
   border-radius:16px;
   background:white;
@@ -37,7 +38,7 @@ body { font-family: system-ui, sans-serif; }
   -webkit-overflow-scrolling: touch;
 }
 
-/* Force zoom-out effect */
+/* Slight zoom-out effect */
 #sheetFrame {
   width:1400px;
   height:100%;
@@ -52,7 +53,7 @@ body { font-family: system-ui, sans-serif; }
 
 <body class="bg-slate-900 text-white">
 
-<!-- LOGIN -->
+<!-- LOGIN SCREEN -->
 <div id="loginScreen" class="min-h-screen flex items-center justify-center">
   <div class="card w-full max-w-md text-center">
     <img src="SAR.png" class="mx-auto h-14 mb-4">
@@ -71,7 +72,7 @@ body { font-family: system-ui, sans-serif; }
   </div>
 </div>
 
-<!-- ADMIN -->
+<!-- ADMIN CONTENT -->
 <div id="adminContent">
 
 <header class="bg-slate-800 py-6 text-center shadow-lg">
@@ -83,30 +84,43 @@ body { font-family: system-ui, sans-serif; }
   </a>
 </header>
 
-<section class="p-6 max-w-7xl mx-auto space-y-8">
+<section class="p-6 max-w-7xl mx-auto space-y-10">
 
+<!-- GAR VIEWER -->
 <div class="card">
-<h2 class="text-xl font-bold mb-4">GAR Submissions</h2>
+  <h2 class="text-xl font-bold mb-4">GAR Submissions</h2>
 
-<select id="sheetSelector" class="select mb-6">
-  <option value="">Select GAR Sheet...</option>
-  <option value="462942313">Task Force 1</option>
-  <option value="653219596">Task Force 2</option>
-  <option value="1655685068">Task Force 3</option>
-  <option value="70233464">Task Force 4</option>
-  <option value="477824279">Admin / Other</option>
-</select>
+  <div class="text-sm text-slate-400 mb-4">
+    🔄 Rotate device to landscape for best viewing.
+  </div>
 
-<div id="sheetContainer" class="hidden">
-  <iframe id="sheetFrame"></iframe>
+  <select id="sheetSelector" class="select mb-6">
+    <option value="">Select GAR Sheet...</option>
+    <option value="462942313">Task Force 1</option>
+    <option value="653219596">Task Force 2</option>
+    <option value="1655685068">Task Force 3</option>
+    <option value="70233464">Task Force 4</option>
+    <option value="477824279">Admin / Other</option>
+  </select>
+
+  <div id="sheetContainer" class="hidden">
+    <iframe id="sheetFrame"></iframe>
+  </div>
 </div>
 
+<!-- ADMIN ONLY DOCUMENTS -->
+<div class="card">
+  <h2 class="text-xl font-bold mb-6">Admin Documents</h2>
+
+  <div id="adminDocs" class="space-y-4"></div>
 </div>
+
 </section>
 </div>
 
 <script>
 
+// 🔐 PASSWORD
 const ADMIN_PASSWORD = "SAR2026";
 
 function checkPassword() {
@@ -114,11 +128,13 @@ function checkPassword() {
   if (input === ADMIN_PASSWORD) {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("adminContent").style.display = "block";
+    loadAdminPDFs();
   } else {
     document.getElementById("loginError").classList.remove("hidden");
   }
 }
 
+// 📊 GAR SHEET LINKS (gviz HTML output)
 const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
 const base =
   `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:html&gid=`;
@@ -137,6 +153,47 @@ document.getElementById("sheetSelector").addEventListener("change", function() {
   frame.src = base + gid;
   container.classList.remove("hidden");
 });
+
+// 📁 ADMIN-ONLY PDFs (edit here to add more)
+const adminPDFs = [
+  {
+    name: "2026 SAR Forum ICS 203",
+    file: "2026 SAR Forum ICS 203.pdf"
+  },
+  {
+    name: "SAR Staff Registration",
+    file: "SAR Staff Registration.pdf"
+  }
+];
+
+function loadAdminPDFs() {
+  const container = document.getElementById("adminDocs");
+  container.innerHTML = "";
+
+  adminPDFs.forEach(doc => {
+    const row = document.createElement("div");
+    row.className =
+      "flex justify-between items-center bg-slate-700 p-4 rounded-lg";
+
+    row.innerHTML = `
+      <div class="font-semibold">${doc.name}</div>
+      <div class="flex gap-3">
+        <a href="resources/${doc.file}"
+           target="_blank"
+           class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold">
+           View
+        </a>
+        <a href="resources/${doc.file}"
+           download
+           class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-sm font-bold">
+           Download
+        </a>
+      </div>
+    `;
+
+    container.appendChild(row);
+  });
+}
 
 </script>
 
