@@ -13,6 +13,9 @@ content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable
 
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
 <style>
 #pdfModal {
   position:fixed;
@@ -31,13 +34,16 @@ content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable
   align-items:center;
 }
 
-#pdfFrame {
+#pdfContainer {
   flex:1;
-  width:100%;
-  height:100%;
-  border:none;
-  background:white;
-  touch-action:auto;
+  overflow:auto;
+  background:#e5e7eb;
+  padding:20px;
+}
+
+canvas {
+  margin-bottom:24px;
+  box-shadow:0 10px 25px rgba(0,0,0,.3);
 }
 </style>
 </head>
@@ -69,10 +75,15 @@ content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable
       Close
     </button>
   </div>
-  <iframe id="pdfFrame"></iframe>
+
+  <div id="pdfContainer"></div>
 </div>
 
 <script>
+
+// Required worker setup
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 async function loadResources() {
   const res = await fetch('/resources/resources.json');
@@ -109,16 +120,48 @@ async function loadResources() {
   });
 }
 
-function openPDF(path, title) {
-  document.getElementById("pdfFrame").src =
-    window.location.origin + path;
+async function openPDF(path, title) {
 
   document.getElementById("pdfTitle").innerText = title;
   document.getElementById("pdfModal").style.display = "flex";
+
+  const container = document.getElementById("pdfContainer");
+  container.innerHTML = "";
+
+  try {
+    const loadingTask = pdfjsLib.getDocument(path);
+    const pdf = await loadingTask.promise;
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+
+      const page = await pdf.getPage(pageNum);
+
+      const scale = 1.2; // adjust default zoom here
+      const viewport = page.getViewport({ scale });
+
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      container.appendChild(canvas);
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport
+      }).promise;
+    }
+
+  } catch (error) {
+    container.innerHTML =
+      "<div class='text-red-600 font-bold p-4'>Unable to load document.</div>";
+    console.error(error);
+  }
 }
 
 function closePDF() {
-  document.getElementById("pdfFrame").src = "";
+  document.getElementById("pdfContainer").innerHTML = "";
   document.getElementById("pdfModal").style.display = "none";
 }
 
