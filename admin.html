@@ -2,11 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
 <title>Admin Dashboard - POV SAR 2026</title>
 
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
@@ -27,7 +32,6 @@ body { font-family: system-ui, sans-serif; }
   color:white;
 }
 
-/* Sheet scroll container */
 #sheetContainer {
   width:100%;
   height:80vh;
@@ -35,10 +39,8 @@ body { font-family: system-ui, sans-serif; }
   border-radius:16px;
   background:white;
   box-shadow:0 0 25px rgba(0,0,0,.35);
-  -webkit-overflow-scrolling: touch;
 }
 
-/* Slight zoom-out effect */
 #sheetFrame {
   width:1400px;
   height:100%;
@@ -67,11 +69,16 @@ body { font-family: system-ui, sans-serif; }
   align-items:center;
 }
 
-#pdfFrame {
+#pdfContainer {
   flex:1;
-  width:100%;
-  border:none;
-  background:white;
+  overflow:auto;
+  background:#e5e7eb;
+  padding:20px;
+}
+
+canvas {
+  margin-bottom:24px;
+  box-shadow:0 10px 25px rgba(0,0,0,.3);
 }
 </style>
 </head>
@@ -97,7 +104,6 @@ body { font-family: system-ui, sans-serif; }
   </div>
 </div>
 
-<!-- ADMIN CONTENT -->
 <div id="adminContent">
 
 <header class="bg-slate-800 py-6 text-center shadow-lg">
@@ -111,13 +117,9 @@ body { font-family: system-ui, sans-serif; }
 
 <section class="p-6 max-w-7xl mx-auto space-y-10">
 
-<!-- GAR VIEWER -->
+<!-- GAR Viewer -->
 <div class="card">
   <h2 class="text-xl font-bold mb-4">GAR Submissions</h2>
-
-  <div class="text-sm text-slate-400 mb-4">
-    🔄 Rotate device to landscape for best viewing.
-  </div>
 
   <select id="sheetSelector" class="select mb-6">
     <option value="">Select GAR Sheet...</option>
@@ -133,7 +135,7 @@ body { font-family: system-ui, sans-serif; }
   </div>
 </div>
 
-<!-- ADMIN DOCUMENTS -->
+<!-- Admin PDFs -->
 <div class="card">
   <h2 class="text-xl font-bold mb-6">Admin Documents</h2>
   <div id="adminDocs" class="space-y-4"></div>
@@ -146,17 +148,26 @@ body { font-family: system-ui, sans-serif; }
 <div id="pdfModal">
   <div id="pdfHeader">
     <div id="pdfTitle" class="font-bold">Document Viewer</div>
-    <button onclick="closePDF()"
-            class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-bold">
-      Close
-    </button>
+
+    <div class="flex gap-2">
+      <button onclick="zoomOut()" class="bg-gray-600 px-3 py-1 rounded font-bold">−</button>
+      <button onclick="zoomIn()" class="bg-gray-600 px-3 py-1 rounded font-bold">+</button>
+      <button onclick="fitToWidth()" class="bg-blue-600 px-3 py-1 rounded font-bold">Fit</button>
+      <button onclick="closePDF()" class="bg-red-600 px-4 py-1 rounded font-bold">Close</button>
+    </div>
   </div>
-  <iframe id="pdfFrame"></iframe>
+
+  <div id="pdfContainer"></div>
 </div>
 
 <script>
 
-// PASSWORD
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let currentPDF = null;
+let currentScale = 1.2;
+
 const ADMIN_PASSWORD = "SAR2026";
 
 function checkPassword() {
@@ -172,7 +183,8 @@ function checkPassword() {
 
 // GAR SHEETS
 const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
-const base = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:html&gid=`;
+const base =
+`https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:html&gid=`;
 
 document.getElementById("sheetSelector").addEventListener("change", function() {
   const gid = this.value;
@@ -189,7 +201,7 @@ document.getElementById("sheetSelector").addEventListener("change", function() {
   container.classList.remove("hidden");
 });
 
-// ADMIN PDFs
+// Admin PDFs
 const adminPDFs = [
   { name: "SAR Staff Registration", file: "SAR Staff Registration.pdf" },
   { name: "SAR 2026 ICS 203", file: "SAR 2026 ICS 203.pdf" },
@@ -206,37 +218,65 @@ function loadAdminPDFs() {
 
     row.innerHTML = `
       <div class="font-semibold">${doc.name}</div>
-      <div class="flex gap-3">
-        <button onclick="openPDF('resources/${doc.file}', '${doc.name}')"
-          class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold">
-          View
-        </button>
-        <a href="resources/${doc.file}" download
-          class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-sm font-bold">
-          Download
-        </a>
-      </div>
+      <button onclick="openPDF('/resources/${doc.file}', '${doc.name}')"
+        class="bg-yellow-400 text-black px-4 py-2 rounded font-bold">
+        View
+      </button>
     `;
 
     container.appendChild(row);
   });
 }
 
-// OPEN PDF INSIDE APP
-function openPDF(path, title) {
-  const absoluteURL = window.location.origin + "/" + path;
-  const viewerURL =
-    "https://docs.google.com/gview?embedded=true&url=" +
-    encodeURIComponent(absoluteURL);
-
-  document.getElementById("pdfFrame").src = viewerURL;
+async function openPDF(path, title) {
   document.getElementById("pdfTitle").innerText = title;
   document.getElementById("pdfModal").style.display = "flex";
+
+  const loadingTask = pdfjsLib.getDocument(path);
+  currentPDF = await loadingTask.promise;
+
+  fitToWidth();
+}
+
+async function renderPDF() {
+  const container = document.getElementById("pdfContainer");
+  container.innerHTML = "";
+
+  for (let i = 1; i <= currentPDF.numPages; i++) {
+    const page = await currentPDF.getPage(i);
+    const viewport = page.getViewport({ scale: currentScale });
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    container.appendChild(canvas);
+
+    await page.render({
+      canvasContext: context,
+      viewport: viewport
+    }).promise;
+  }
+}
+
+function zoomIn() { currentScale += 0.2; renderPDF(); }
+function zoomOut() { if (currentScale > 0.4) { currentScale -= 0.2; renderPDF(); } }
+
+function fitToWidth() {
+  const containerWidth = document.getElementById("pdfContainer").clientWidth;
+  currentPDF.getPage(1).then(page => {
+    const viewport = page.getViewport({ scale: 1 });
+    currentScale = containerWidth / viewport.width;
+    renderPDF();
+  });
 }
 
 function closePDF() {
-  document.getElementById("pdfFrame").src = "";
+  document.getElementById("pdfContainer").innerHTML = "";
   document.getElementById("pdfModal").style.display = "none";
+  currentPDF = null;
 }
 
 </script>
