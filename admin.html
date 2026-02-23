@@ -39,6 +39,7 @@ body { font-family: system-ui, sans-serif; }
   border-radius:16px;
   background:white;
   box-shadow:0 0 25px rgba(0,0,0,.35);
+  -webkit-overflow-scrolling: touch;
 }
 
 #sheetFrame {
@@ -51,7 +52,7 @@ body { font-family: system-ui, sans-serif; }
 
 #adminContent { display:none; }
 
-/* PDF Modal */
+/* PDF MODAL */
 #pdfModal {
   position:fixed;
   inset:0;
@@ -59,14 +60,18 @@ body { font-family: system-ui, sans-serif; }
   display:none;
   flex-direction:column;
   z-index:100;
+  padding-top: env(safe-area-inset-top);
 }
 
 #pdfHeader {
   background:#0f172a;
-  padding:14px;
+  padding:16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
   display:flex;
   justify-content:space-between;
   align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
 }
 
 #pdfContainer {
@@ -125,7 +130,7 @@ canvas {
 
 <section class="p-6 max-w-7xl mx-auto space-y-10">
 
-<!-- GAR Viewer -->
+<!-- GAR VIEWER -->
 <div class="card">
   <h2 class="text-xl font-bold mb-4">GAR Submissions</h2>
 
@@ -143,7 +148,7 @@ canvas {
   </div>
 </div>
 
-<!-- Admin PDFs -->
+<!-- ADMIN DOCUMENTS -->
 <div class="card">
   <h2 class="text-xl font-bold mb-6">Admin Documents</h2>
   <div id="adminDocs" class="space-y-4"></div>
@@ -152,15 +157,16 @@ canvas {
 </section>
 </div>
 
-<!-- PDF MODAL -->
+<!-- PDF VIEWER -->
 <div id="pdfModal">
   <div id="pdfHeader">
     <div id="pdfTitle" class="font-bold">Document Viewer</div>
 
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-wrap">
       <button onclick="zoomOut()" class="bg-gray-600 px-3 py-1 rounded font-bold">−</button>
       <button onclick="zoomIn()" class="bg-gray-600 px-3 py-1 rounded font-bold">+</button>
       <button onclick="fitToWidth()" class="bg-blue-600 px-3 py-1 rounded font-bold">Fit</button>
+      <button onclick="downloadPDF()" class="bg-slate-600 px-3 py-1 rounded font-bold">Download</button>
       <button onclick="closePDF()" class="bg-red-600 px-4 py-1 rounded font-bold">Close</button>
     </div>
   </div>
@@ -170,14 +176,14 @@ canvas {
 
 <script>
 
-// PDF.js Worker
 pdfjsLib.GlobalWorkerOptions.workerSrc =
 "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 let currentPDF = null;
 let currentScale = 1.2;
+let currentPath = null;
 
-// Persistent Login
+// 🔐 Persistent Login
 const ADMIN_PASSWORD = "SAR2026";
 
 window.addEventListener("load", () => {
@@ -239,21 +245,27 @@ function loadAdminPDFs() {
   container.innerHTML = "";
 
   adminPDFs.forEach(doc => {
+
     const row = document.createElement("div");
-    row.className =
-      "flex justify-between items-center bg-slate-700 p-4 rounded-lg";
+    row.className = "bg-slate-700 p-4 rounded-lg";
 
     row.innerHTML = `
-      <div class="font-semibold">${doc.name}</div>
-      <div class="flex gap-3">
-        <button onclick="openPDF('/resources/${doc.file}', '${doc.name}')"
-          class="bg-yellow-400 text-black px-4 py-2 rounded font-bold">
-          View
-        </button>
-        <a href="/resources/${doc.file}" download
-          class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded font-bold">
-          Download
-        </a>
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="font-semibold break-words">${doc.name}</div>
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <button onclick="openPDF('/resources/${doc.file}', '${doc.name}')"
+            class="w-full sm:w-auto bg-yellow-400 text-black px-4 py-2 rounded font-bold text-center">
+            View
+          </button>
+
+          <a href="/resources/${doc.file}" download
+            class="w-full sm:w-auto">
+            <div class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded font-bold text-center">
+              Download
+            </div>
+          </a>
+        </div>
       </div>
     `;
 
@@ -261,7 +273,9 @@ function loadAdminPDFs() {
   });
 }
 
+// PDF Viewer
 async function openPDF(path, title) {
+  currentPath = path;
   document.getElementById("pdfTitle").innerText = title;
   document.getElementById("pdfModal").style.display = "flex";
 
@@ -301,22 +315,26 @@ async function renderPDF() {
   }
 }
 
-function zoomIn() { currentScale += 0.2; renderPDF(); }
-function zoomOut() { if (currentScale > 0.4) { currentScale -= 0.2; renderPDF(); } }
+function zoomIn(){ currentScale += .2; renderPDF(); }
+function zoomOut(){ if(currentScale>.4){ currentScale -= .2; renderPDF(); } }
 
-function fitToWidth() {
+function fitToWidth(){
   const containerWidth = document.getElementById("pdfContainer").clientWidth;
-  currentPDF.getPage(1).then(page => {
-    const viewport = page.getViewport({ scale: 1 });
+  currentPDF.getPage(1).then(page=>{
+    const viewport = page.getViewport({ scale:1 });
     currentScale = containerWidth / viewport.width;
     renderPDF();
   });
 }
 
-function closePDF() {
-  document.getElementById("pdfContainer").innerHTML = "";
-  document.getElementById("pdfModal").style.display = "none";
-  currentPDF = null;
+function downloadPDF(){
+  window.location.href = currentPath;
+}
+
+function closePDF(){
+  document.getElementById("pdfContainer").innerHTML="";
+  document.getElementById("pdfModal").style.display="none";
+  currentPDF=null;
 }
 
 </script>
