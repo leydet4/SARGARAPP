@@ -4,6 +4,13 @@
     "file": "2026 SAR Forum Agenda.pdf"
   },
   {
+    "name": "Safety Plan",
+    "file": "Safety Plan.pdf"
+  },
+  {
+    "name": "Task Force Assignments",
+    "file": "Task Force Group Assignments.pdf"
+   },
     "name": "2026 SAR Guide",
     "file": "2025 SAR Guide_V3.pdf"
   },
@@ -14,13 +21,5 @@
   {
     "name": "Lat Long Conversion Sheet",
     "file": "VPA_Lat_Long Conversion Sheet.pdf"
-  },
-   {
-    "name": "Safety Plan",
-    "file": "Safety Plan.pdf"
-  },
-   {
-    "name": "Task Force Assignments",
-    "file": "Task Force Group Assignments.pdf"
   }
 ]
