@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-
 <meta name="viewport"
 content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 
@@ -17,6 +16,8 @@ content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
+body { font-family: system-ui, sans-serif; }
+
 #pdfModal {
   position:fixed;
   inset:0;
@@ -66,7 +67,7 @@ canvas {
   <div id="resourceGrid" class="grid md:grid-cols-2 gap-4"></div>
 </section>
 
-<!-- PDF MODAL -->
+<!-- PDF VIEWER MODAL -->
 <div id="pdfModal">
   <div id="pdfHeader">
     <div id="pdfTitle" class="font-bold">Document Viewer</div>
@@ -75,6 +76,7 @@ canvas {
       <button onclick="zoomOut()" class="bg-gray-600 px-3 py-1 rounded font-bold">−</button>
       <button onclick="zoomIn()" class="bg-gray-600 px-3 py-1 rounded font-bold">+</button>
       <button onclick="fitToWidth()" class="bg-blue-600 px-3 py-1 rounded font-bold">Fit</button>
+      <button onclick="downloadPDF()" class="bg-slate-600 px-3 py-1 rounded font-bold">Download</button>
       <button onclick="closePDF()" class="bg-red-600 px-4 py-1 rounded font-bold">Close</button>
     </div>
   </div>
@@ -84,14 +86,15 @@ canvas {
 
 <script>
 
-// PDF.js worker
+// PDF Worker
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 let currentPDF = null;
 let currentScale = 1.2;
 let currentPath = null;
 
+// Load resource list
 async function loadResources() {
   const res = await fetch('/resources/resources.json');
   const files = await res.json();
@@ -111,8 +114,8 @@ async function loadResources() {
 
       <div class="flex gap-3">
         <button onclick="openPDF('${filePath}', '${resource.name}')"
-          class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-lg">
-          View
+        class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-lg">
+        View
         </button>
 
         <a href="${filePath}" download class="flex-1">
@@ -128,11 +131,9 @@ async function loadResources() {
 }
 
 async function openPDF(path, title) {
+  currentPath = path;
   document.getElementById("pdfTitle").innerText = title;
   document.getElementById("pdfModal").style.display = "flex";
-
-  currentPath = path;
-  currentScale = 1.2;
 
   const loadingTask = pdfjsLib.getDocument(path);
   currentPDF = await loadingTask.promise;
@@ -144,16 +145,22 @@ async function renderPDF() {
   const container = document.getElementById("pdfContainer");
   container.innerHTML = "";
 
-  for (let pageNum = 1; pageNum <= currentPDF.numPages; pageNum++) {
+  const dpr = window.devicePixelRatio || 1;
 
-    const page = await currentPDF.getPage(pageNum);
+  for (let i = 1; i <= currentPDF.numPages; i++) {
+    const page = await currentPDF.getPage(i);
     const viewport = page.getViewport({ scale: currentScale });
 
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
 
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+    canvas.width = viewport.width * dpr;
+    canvas.height = viewport.height * dpr;
+
+    canvas.style.width = viewport.width + "px";
+    canvas.style.height = viewport.height + "px";
+
+    context.scale(dpr, dpr);
 
     container.appendChild(canvas);
 
@@ -164,26 +171,20 @@ async function renderPDF() {
   }
 }
 
-function zoomIn() {
-  currentScale += 0.2;
-  renderPDF();
-}
-
-function zoomOut() {
-  if (currentScale > 0.4) {
-    currentScale -= 0.2;
-    renderPDF();
-  }
-}
+function zoomIn() { currentScale += 0.2; renderPDF(); }
+function zoomOut() { if (currentScale > 0.4) { currentScale -= 0.2; renderPDF(); } }
 
 function fitToWidth() {
   const containerWidth = document.getElementById("pdfContainer").clientWidth;
-
   currentPDF.getPage(1).then(page => {
     const viewport = page.getViewport({ scale: 1 });
     currentScale = containerWidth / viewport.width;
     renderPDF();
   });
+}
+
+function downloadPDF() {
+  window.location.href = currentPath;
 }
 
 function closePDF() {
