@@ -27,6 +27,7 @@ body { font-family: system-ui, sans-serif; }
   color:white;
 }
 
+/* Scroll container */
 #sheetContainer {
   width:100%;
   height:85vh;
@@ -34,18 +35,14 @@ body { font-family: system-ui, sans-serif; }
   border-radius:16px;
   background:white;
   box-shadow:0 0 25px rgba(0,0,0,.35);
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Make embedded sheet easier to scroll on mobile */
-#sheetContainer iframe {
-  width:100%;
+/* Make iframe wider than container */
+#sheetFrame {
+  min-width:1200px; /* forces horizontal scroll */
   height:100%;
   border:none;
-}
-
-/* Make Google table readable */
-#sheetContainer table {
-  font-size:14px;
 }
 
 #adminContent { display:none; }
@@ -85,7 +82,7 @@ body { font-family: system-ui, sans-serif; }
   </a>
 </header>
 
-<section class="p-6 max-w-6xl mx-auto space-y-8">
+<section class="p-6 max-w-7xl mx-auto space-y-8">
 
 <div class="card">
 <h2 class="text-xl font-bold mb-4">GAR Submissions</h2>
@@ -122,7 +119,7 @@ function checkPassword() {
   }
 }
 
-// 📊 USE GVIZ HTML OUTPUT (BEST SCROLLING OPTION)
+// 📊 Use GVIZ HTML (clean table output)
 const base =
   "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/gviz/tq?tqx=out:html&gid=";
 
