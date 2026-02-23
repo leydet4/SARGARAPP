@@ -70,10 +70,13 @@ canvas {
 <div id="pdfModal">
   <div id="pdfHeader">
     <div id="pdfTitle" class="font-bold">Document Viewer</div>
-    <button onclick="closePDF()"
-      class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-bold">
-      Close
-    </button>
+
+    <div class="flex gap-2">
+      <button onclick="zoomOut()" class="bg-gray-600 px-3 py-1 rounded font-bold">−</button>
+      <button onclick="zoomIn()" class="bg-gray-600 px-3 py-1 rounded font-bold">+</button>
+      <button onclick="fitToWidth()" class="bg-blue-600 px-3 py-1 rounded font-bold">Fit</button>
+      <button onclick="closePDF()" class="bg-red-600 px-4 py-1 rounded font-bold">Close</button>
+    </div>
   </div>
 
   <div id="pdfContainer"></div>
@@ -81,9 +84,13 @@ canvas {
 
 <script>
 
-// Required worker setup
+// PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let currentPDF = null;
+let currentScale = 1.2;
+let currentPath = null;
 
 async function loadResources() {
   const res = await fetch('/resources/resources.json');
@@ -121,48 +128,68 @@ async function loadResources() {
 }
 
 async function openPDF(path, title) {
-
   document.getElementById("pdfTitle").innerText = title;
   document.getElementById("pdfModal").style.display = "flex";
 
+  currentPath = path;
+  currentScale = 1.2;
+
+  const loadingTask = pdfjsLib.getDocument(path);
+  currentPDF = await loadingTask.promise;
+
+  fitToWidth();
+}
+
+async function renderPDF() {
   const container = document.getElementById("pdfContainer");
   container.innerHTML = "";
 
-  try {
-    const loadingTask = pdfjsLib.getDocument(path);
-    const pdf = await loadingTask.promise;
+  for (let pageNum = 1; pageNum <= currentPDF.numPages; pageNum++) {
 
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await currentPDF.getPage(pageNum);
+    const viewport = page.getViewport({ scale: currentScale });
 
-      const page = await pdf.getPage(pageNum);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
 
-      const scale = 1.2; // adjust default zoom here
-      const viewport = page.getViewport({ scale });
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
 
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
+    container.appendChild(canvas);
 
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      container.appendChild(canvas);
-
-      await page.render({
-        canvasContext: context,
-        viewport: viewport
-      }).promise;
-    }
-
-  } catch (error) {
-    container.innerHTML =
-      "<div class='text-red-600 font-bold p-4'>Unable to load document.</div>";
-    console.error(error);
+    await page.render({
+      canvasContext: context,
+      viewport: viewport
+    }).promise;
   }
+}
+
+function zoomIn() {
+  currentScale += 0.2;
+  renderPDF();
+}
+
+function zoomOut() {
+  if (currentScale > 0.4) {
+    currentScale -= 0.2;
+    renderPDF();
+  }
+}
+
+function fitToWidth() {
+  const containerWidth = document.getElementById("pdfContainer").clientWidth;
+
+  currentPDF.getPage(1).then(page => {
+    const viewport = page.getViewport({ scale: 1 });
+    currentScale = containerWidth / viewport.width;
+    renderPDF();
+  });
 }
 
 function closePDF() {
   document.getElementById("pdfContainer").innerHTML = "";
   document.getElementById("pdfModal").style.display = "none";
+  currentPDF = null;
 }
 
 loadResources();
