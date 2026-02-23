@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Install QR — Todd Dooley SAR Forum</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="SAR.png">
+<meta name="theme-color" content="#0f172a">
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body { font-family: system-ui, sans-serif; }
+.card {
+  background:#1e293b;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 0 25px rgba(0,0,0,.35);
+}
+</style>
+</head>
+
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-6">
+
+<div class="card text-center max-w-md w-full">
+
+<h1 class="text-xl font-black mb-4">
+Install the App
+</h1>
+
+<p class="text-sm text-slate-400 mb-6">
+Scan this QR code to install the Todd Dooley SAR Forum App.
+</p>
+
+<img src="povsargarapp-qr.png"
+class="mx-auto w-64 mb-6 rounded-lg shadow-lg">
+
+<p class="text-xs text-slate-500 mb-6">
+Android: Open in Chrome → Install App<br>
+iPhone: Open in Safari → Share → Add to Home Screen
+</p>
+
+<button onclick="goBack()"
+class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-bold transition">
+Back to Dashboard
+</button>
+
+</div>
+
+<script>
+function goBack() {
+  if (history.length > 1) {
+    history.back();
+  } else {
+    window.location.href = "index.html";
+  }
+}
+</script>
+
+</body>
+</html>
