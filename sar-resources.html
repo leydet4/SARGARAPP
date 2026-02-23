@@ -2,39 +2,75 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
 <title>SAR Forum Resources</title>
 
 <link rel="icon" href="SAR.png">
 <meta name="theme-color" content="#0f172a">
 
 <script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+#pdfModal {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.95);
+  display:none;
+  flex-direction:column;
+  z-index:100;
+}
+
+#pdfHeader {
+  background:#0f172a;
+  padding:14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+#pdfFrame {
+  flex:1;
+  width:100%;
+  height:100%;
+  border:none;
+  background:white;
+  touch-action:auto;
+}
+</style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
 <header class="bg-slate-800 py-4 text-center shadow-xl">
+  <img src="SAR.png" class="mx-auto h-14 mb-2">
+  <h1 class="text-lg font-black">SAR Forum Resources</h1>
 
-<img src="SAR.png" class="mx-auto h-14 mb-2">
-
-<h1 class="text-lg font-black">
-SAR Forum Resources
-</h1>
-
-<div class="mt-3">
-<a href="/index.html"
-class="px-4 py-2 rounded-lg font-bold bg-blue-600 hover:bg-blue-700 text-sm">
-← Back to Dashboard
-</a>
-</div>
-
+  <div class="mt-3">
+    <a href="/index.html"
+       class="px-4 py-2 rounded-lg font-bold bg-blue-600 hover:bg-blue-700 text-sm">
+       ← Back to Dashboard
+    </a>
+  </div>
 </header>
 
 <section class="max-w-4xl mx-auto p-6 space-y-6">
-
-<div id="resourceGrid" class="grid md:grid-cols-2 gap-4"></div>
-
+  <div id="resourceGrid" class="grid md:grid-cols-2 gap-4"></div>
 </section>
+
+<!-- PDF MODAL -->
+<div id="pdfModal">
+  <div id="pdfHeader">
+    <div id="pdfTitle" class="font-bold">Document Viewer</div>
+    <button onclick="closePDF()"
+      class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-bold">
+      Close
+    </button>
+  </div>
+  <iframe id="pdfFrame"></iframe>
+</div>
 
 <script>
 
@@ -56,9 +92,9 @@ async function loadResources() {
       <h3 class="font-bold mb-4">${resource.name}</h3>
 
       <div class="flex gap-3">
-        <button onclick="viewFile('${filePath}')"
-        class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-lg">
-        View
+        <button onclick="openPDF('${filePath}', '${resource.name}')"
+          class="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-2 rounded-lg">
+          View
         </button>
 
         <a href="${filePath}" download class="flex-1">
@@ -73,8 +109,17 @@ async function loadResources() {
   });
 }
 
-function viewFile(relativeUrl) {
-  window.open(relativeUrl, "_blank");
+function openPDF(path, title) {
+  document.getElementById("pdfFrame").src =
+    window.location.origin + path;
+
+  document.getElementById("pdfTitle").innerText = title;
+  document.getElementById("pdfModal").style.display = "flex";
+}
+
+function closePDF() {
+  document.getElementById("pdfFrame").src = "";
+  document.getElementById("pdfModal").style.display = "none";
 }
 
 loadResources();
