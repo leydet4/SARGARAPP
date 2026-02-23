@@ -27,6 +27,7 @@ body { font-family: system-ui, sans-serif; }
   color:white;
 }
 
+/* Sheet scroll container */
 #sheetContainer {
   width:100%;
   height:80vh;
@@ -37,6 +38,7 @@ body { font-family: system-ui, sans-serif; }
   -webkit-overflow-scrolling: touch;
 }
 
+/* Slight zoom-out effect */
 #sheetFrame {
   width:1400px;
   height:100%;
@@ -57,7 +59,7 @@ body { font-family: system-ui, sans-serif; }
   z-index:100;
 }
 
-#pdfModalHeader {
+#pdfHeader {
   background:#0f172a;
   padding:14px;
   display:flex;
@@ -76,7 +78,7 @@ body { font-family: system-ui, sans-serif; }
 
 <body class="bg-slate-900 text-white">
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="loginScreen" class="min-h-screen flex items-center justify-center">
   <div class="card w-full max-w-md text-center">
     <img src="SAR.png" class="mx-auto h-14 mb-4">
@@ -131,7 +133,7 @@ body { font-family: system-ui, sans-serif; }
   </div>
 </div>
 
-<!-- ADMIN ONLY DOCUMENTS -->
+<!-- ADMIN DOCUMENTS -->
 <div class="card">
   <h2 class="text-xl font-bold mb-6">Admin Documents</h2>
   <div id="adminDocs" class="space-y-4"></div>
@@ -142,7 +144,7 @@ body { font-family: system-ui, sans-serif; }
 
 <!-- PDF MODAL -->
 <div id="pdfModal">
-  <div id="pdfModalHeader">
+  <div id="pdfHeader">
     <div id="pdfTitle" class="font-bold">Document Viewer</div>
     <button onclick="closePDF()"
             class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded font-bold">
@@ -154,7 +156,7 @@ body { font-family: system-ui, sans-serif; }
 
 <script>
 
-// 🔐 PASSWORD
+// PASSWORD
 const ADMIN_PASSWORD = "SAR2026";
 
 function checkPassword() {
@@ -168,10 +170,9 @@ function checkPassword() {
   }
 }
 
-// 📊 GAR VIEWER
+// GAR SHEETS
 const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
-const base =
-  `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:html&gid=`;
+const base = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:html&gid=`;
 
 document.getElementById("sheetSelector").addEventListener("change", function() {
   const gid = this.value;
@@ -188,7 +189,7 @@ document.getElementById("sheetSelector").addEventListener("change", function() {
   container.classList.remove("hidden");
 });
 
-// 📁 ADMIN-ONLY PDFs
+// ADMIN PDFs
 const adminPDFs = [
   { name: "SAR Staff Registration", file: "SAR Staff Registration.pdf" },
   { name: "SAR 2026 ICS 203", file: "SAR 2026 ICS 203.pdf" },
@@ -201,19 +202,17 @@ function loadAdminPDFs() {
 
   adminPDFs.forEach(doc => {
     const row = document.createElement("div");
-    row.className =
-      "flex justify-between items-center bg-slate-700 p-4 rounded-lg";
+    row.className = "flex justify-between items-center bg-slate-700 p-4 rounded-lg";
 
     row.innerHTML = `
       <div class="font-semibold">${doc.name}</div>
       <div class="flex gap-3">
         <button onclick="openPDF('resources/${doc.file}', '${doc.name}')"
-                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold">
+          class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold">
           View
         </button>
-        <a href="resources/${doc.file}"
-           download
-           class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-sm font-bold">
+        <a href="resources/${doc.file}" download
+          class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-sm font-bold">
           Download
         </a>
       </div>
@@ -223,9 +222,14 @@ function loadAdminPDFs() {
   });
 }
 
-// 📄 PDF MODAL FUNCTIONS
+// OPEN PDF INSIDE APP
 function openPDF(path, title) {
-  document.getElementById("pdfFrame").src = path;
+  const absoluteURL = window.location.origin + "/" + path;
+  const viewerURL =
+    "https://docs.google.com/gview?embedded=true&url=" +
+    encodeURIComponent(absoluteURL);
+
+  document.getElementById("pdfFrame").src = viewerURL;
   document.getElementById("pdfTitle").innerText = title;
   document.getElementById("pdfModal").style.display = "flex";
 }
