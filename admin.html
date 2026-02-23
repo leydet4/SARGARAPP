@@ -242,15 +242,23 @@ async function renderPDF() {
   const container = document.getElementById("pdfContainer");
   container.innerHTML = "";
 
+  const dpr = window.devicePixelRatio || 1;
+
   for (let i = 1; i <= currentPDF.numPages; i++) {
+
     const page = await currentPDF.getPage(i);
     const viewport = page.getViewport({ scale: currentScale });
 
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
 
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+    canvas.width = viewport.width * dpr;
+    canvas.height = viewport.height * dpr;
+
+    canvas.style.width = viewport.width + "px";
+    canvas.style.height = viewport.height + "px";
+
+    context.scale(dpr, dpr);
 
     container.appendChild(canvas);
 
@@ -261,11 +269,21 @@ async function renderPDF() {
   }
 }
 
-function zoomIn() { currentScale += 0.2; renderPDF(); }
-function zoomOut() { if (currentScale > 0.4) { currentScale -= 0.2; renderPDF(); } }
+function zoomIn() {
+  currentScale += 0.2;
+  renderPDF();
+}
+
+function zoomOut() {
+  if (currentScale > 0.4) {
+    currentScale -= 0.2;
+    renderPDF();
+  }
+}
 
 function fitToWidth() {
   const containerWidth = document.getElementById("pdfContainer").clientWidth;
+
   currentPDF.getPage(1).then(page => {
     const viewport = page.getViewport({ scale: 1 });
     currentScale = containerWidth / viewport.width;
