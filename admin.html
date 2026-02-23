@@ -27,11 +27,25 @@ body { font-family: system-ui, sans-serif; }
   color:white;
 }
 
-iframe {
+#sheetContainer {
   width:100%;
-  height:600px;
+  height:85vh;
+  overflow:auto;
+  border-radius:16px;
+  background:white;
+  box-shadow:0 0 25px rgba(0,0,0,.35);
+}
+
+/* Make embedded sheet easier to scroll on mobile */
+#sheetContainer iframe {
+  width:100%;
+  height:100%;
   border:none;
-  border-radius:12px;
+}
+
+/* Make Google table readable */
+#sheetContainer table {
+  font-size:14px;
 }
 
 #adminContent { display:none; }
@@ -71,13 +85,12 @@ iframe {
   </a>
 </header>
 
-<section class="p-6 max-w-5xl mx-auto space-y-8">
+<section class="p-6 max-w-6xl mx-auto space-y-8">
 
-<!-- GAR VIEWER -->
 <div class="card">
 <h2 class="text-xl font-bold mb-4">GAR Submissions</h2>
 
-<select id="sheetSelector" class="select mb-4">
+<select id="sheetSelector" class="select mb-6">
   <option value="">Select GAR Sheet...</option>
   <option value="TF1">Task Force 1</option>
   <option value="TF2">Task Force 2</option>
@@ -89,8 +102,8 @@ iframe {
 <div id="sheetContainer" class="hidden">
   <iframe id="sheetFrame"></iframe>
 </div>
-</div>
 
+</div>
 </section>
 </div>
 
@@ -109,13 +122,16 @@ function checkPassword() {
   }
 }
 
-// 📊 GAR LINKS
+// 📊 USE GVIZ HTML OUTPUT (BEST SCROLLING OPTION)
+const base =
+  "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/gviz/tq?tqx=out:html&gid=";
+
 const sheetLinks = {
-  TF1: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=462942313&single=true&widget=true&headers=false",
-  TF2: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=653219596&single=true&widget=true&headers=false",
-  TF3: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=1655685068&single=true&widget=true&headers=false",
-  TF4: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=70233464&single=true&widget=true&headers=false",
-  ADMIN: "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/pubhtml?gid=477824279&single=true&widget=true&headers=false"
+  TF1: base + "462942313",
+  TF2: base + "653219596",
+  TF3: base + "1655685068",
+  TF4: base + "70233464",
+  ADMIN: base + "477824279"
 };
 
 document.getElementById("sheetSelector").addEventListener("change", function() {
@@ -137,5 +153,3 @@ document.getElementById("sheetSelector").addEventListener("change", function() {
 
 </body>
 </html>
-
-
