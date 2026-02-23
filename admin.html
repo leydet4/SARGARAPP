@@ -27,22 +27,32 @@ body { font-family: system-ui, sans-serif; }
   color:white;
 }
 
-/* Scroll container */
-#sheetContainer {
-  width:100%;
-  height:85vh;
+#tableWrapper {
+  height:80vh;
   overflow:auto;
-  border-radius:16px;
   background:white;
-  box-shadow:0 0 25px rgba(0,0,0,.35);
-  -webkit-overflow-scrolling: touch;
+  border-radius:16px;
 }
 
-/* Make iframe wider than container */
-#sheetFrame {
-  min-width:1200px; /* forces horizontal scroll */
-  height:100%;
-  border:none;
+table {
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px; /* zoomed out slightly */
+}
+
+th, td {
+  padding:6px 10px;
+  border:1px solid #ddd;
+  text-align:center; /* centered */
+  white-space:nowrap;
+}
+
+th {
+  background:#0f172a;
+  color:white;
+  position:sticky;
+  top:0;
+  z-index:5;
 }
 
 #adminContent { display:none; }
@@ -51,7 +61,7 @@ body { font-family: system-ui, sans-serif; }
 
 <body class="bg-slate-900 text-white">
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="loginScreen" class="min-h-screen flex items-center justify-center">
   <div class="card w-full max-w-md text-center">
     <img src="SAR.png" class="mx-auto h-14 mb-4">
@@ -70,7 +80,7 @@ body { font-family: system-ui, sans-serif; }
   </div>
 </div>
 
-<!-- ADMIN CONTENT -->
+<!-- ADMIN -->
 <div id="adminContent">
 
 <header class="bg-slate-800 py-6 text-center shadow-lg">
@@ -89,15 +99,15 @@ body { font-family: system-ui, sans-serif; }
 
 <select id="sheetSelector" class="select mb-6">
   <option value="">Select GAR Sheet...</option>
-  <option value="TF1">Task Force 1</option>
-  <option value="TF2">Task Force 2</option>
-  <option value="TF3">Task Force 3</option>
-  <option value="TF4">Task Force 4</option>
-  <option value="ADMIN">Admin / Other</option>
+  <option value="462942313">Task Force 1</option>
+  <option value="653219596">Task Force 2</option>
+  <option value="1655685068">Task Force 3</option>
+  <option value="70233464">Task Force 4</option>
+  <option value="477824279">Admin / Other</option>
 </select>
 
-<div id="sheetContainer" class="hidden">
-  <iframe id="sheetFrame"></iframe>
+<div id="tableWrapper" class="hidden">
+  <div id="sheetTable"></div>
 </div>
 
 </div>
@@ -106,7 +116,6 @@ body { font-family: system-ui, sans-serif; }
 
 <script>
 
-// 🔐 PASSWORD
 const ADMIN_PASSWORD = "SAR2026";
 
 function checkPassword() {
@@ -119,32 +128,49 @@ function checkPassword() {
   }
 }
 
-// 📊 Use GVIZ HTML (clean table output)
-const base =
-  "https://docs.google.com/spreadsheets/d/1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg/gviz/tq?tqx=out:html&gid=";
-
-const sheetLinks = {
-  TF1: base + "462942313",
-  TF2: base + "653219596",
-  TF3: base + "1655685068",
-  TF4: base + "70233464",
-  ADMIN: base + "477824279"
-};
+const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
 
 document.getElementById("sheetSelector").addEventListener("change", function() {
-  const selected = this.value;
-  const frame = document.getElementById("sheetFrame");
-  const container = document.getElementById("sheetContainer");
+  const gid = this.value;
+  if (!gid) return;
 
-  if (!selected) {
-    container.classList.add("hidden");
-    frame.src = "";
-    return;
-  }
+  const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?gid=${gid}`;
 
-  frame.src = sheetLinks[selected];
-  container.classList.remove("hidden");
+  fetch(url)
+    .then(res => res.text())
+    .then(text => {
+      const json = JSON.parse(text.substring(47).slice(0, -2));
+      renderTable(json.table);
+      document.getElementById("tableWrapper").classList.remove("hidden");
+    });
 });
+
+function renderTable(tableData) {
+  const container = document.getElementById("sheetTable");
+  container.innerHTML = "";
+
+  const table = document.createElement("table");
+
+  const headerRow = document.createElement("tr");
+  tableData.cols.forEach(col => {
+    const th = document.createElement("th");
+    th.innerText = col.label || "";
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  tableData.rows.forEach(row => {
+    const tr = document.createElement("tr");
+    row.c.forEach(cell => {
+      const td = document.createElement("td");
+      td.innerText = cell ? cell.v : "";
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+
+  container.appendChild(table);
+}
 
 </script>
 
