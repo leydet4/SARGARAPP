@@ -181,7 +181,7 @@ function checkPassword() {
   }
 }
 
-// GAR SHEETS
+// GAR Sheets
 const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
 const base =
 `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:html&gid=`;
@@ -214,14 +214,21 @@ function loadAdminPDFs() {
 
   adminPDFs.forEach(doc => {
     const row = document.createElement("div");
-    row.className = "flex justify-between items-center bg-slate-700 p-4 rounded-lg";
+    row.className =
+      "flex justify-between items-center bg-slate-700 p-4 rounded-lg";
 
     row.innerHTML = `
       <div class="font-semibold">${doc.name}</div>
-      <button onclick="openPDF('/resources/${doc.file}', '${doc.name}')"
-        class="bg-yellow-400 text-black px-4 py-2 rounded font-bold">
-        View
-      </button>
+      <div class="flex gap-3">
+        <button onclick="openPDF('/resources/${doc.file}', '${doc.name}')"
+          class="bg-yellow-400 text-black px-4 py-2 rounded font-bold">
+          View
+        </button>
+        <a href="/resources/${doc.file}" download
+          class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded font-bold">
+          Download
+        </a>
+      </div>
     `;
 
     container.appendChild(row);
@@ -269,21 +276,11 @@ async function renderPDF() {
   }
 }
 
-function zoomIn() {
-  currentScale += 0.2;
-  renderPDF();
-}
-
-function zoomOut() {
-  if (currentScale > 0.4) {
-    currentScale -= 0.2;
-    renderPDF();
-  }
-}
+function zoomIn() { currentScale += 0.2; renderPDF(); }
+function zoomOut() { if (currentScale > 0.4) { currentScale -= 0.2; renderPDF(); } }
 
 function fitToWidth() {
   const containerWidth = document.getElementById("pdfContainer").clientWidth;
-
   currentPDF.getPage(1).then(page => {
     const viewport = page.getViewport({ scale: 1 });
     currentScale = containerWidth / viewport.width;
