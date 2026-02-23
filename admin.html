@@ -109,10 +109,18 @@ canvas {
 <header class="bg-slate-800 py-6 text-center shadow-lg">
   <img src="SAR.png" class="mx-auto h-16 mb-3">
   <h1 class="text-2xl font-black">Admin Dashboard</h1>
-  <a href="index.html"
-     class="inline-block mt-4 px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
-     ← Back to Dashboard
-  </a>
+
+  <div class="mt-4 flex justify-center gap-3">
+    <a href="index.html"
+       class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
+       ← Back to Dashboard
+    </a>
+
+    <button onclick="logout()"
+       class="px-5 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-sm">
+       Logout
+    </button>
+  </div>
 </header>
 
 <section class="p-6 max-w-7xl mx-auto space-y-10">
@@ -162,23 +170,41 @@ canvas {
 
 <script>
 
+// PDF.js Worker
 pdfjsLib.GlobalWorkerOptions.workerSrc =
 "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 let currentPDF = null;
 let currentScale = 1.2;
 
+// Persistent Login
 const ADMIN_PASSWORD = "SAR2026";
+
+window.addEventListener("load", () => {
+  if (localStorage.getItem("sarAdminAuth") === "true") {
+    showAdmin();
+  }
+});
 
 function checkPassword() {
   const input = document.getElementById("adminPassword").value.trim();
   if (input === ADMIN_PASSWORD) {
-    document.getElementById("loginScreen").style.display = "none";
-    document.getElementById("adminContent").style.display = "block";
-    loadAdminPDFs();
+    localStorage.setItem("sarAdminAuth", "true");
+    showAdmin();
   } else {
     document.getElementById("loginError").classList.remove("hidden");
   }
+}
+
+function showAdmin() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("adminContent").style.display = "block";
+  loadAdminPDFs();
+}
+
+function logout() {
+  localStorage.removeItem("sarAdminAuth");
+  location.reload();
 }
 
 // GAR Sheets
@@ -252,7 +278,6 @@ async function renderPDF() {
   const dpr = window.devicePixelRatio || 1;
 
   for (let i = 1; i <= currentPDF.numPages; i++) {
-
     const page = await currentPDF.getPage(i);
     const viewport = page.getViewport({ scale: currentScale });
 
