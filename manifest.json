@@ -1,11 +1,11 @@
 {
-  "name": "Port of Virginia Todd Dooley SAR Forum 2026",
-  "short_name": "POV SAR 2026",
+  "name": "Todd Dooley SAR Forum 2026",
+  "short_name": "SAR Forum",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "icons": [
     {
       "src": "SAR.png",
