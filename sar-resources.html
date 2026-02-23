@@ -18,6 +18,7 @@ content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable
 <style>
 body { font-family: system-ui, sans-serif; }
 
+/* PDF Modal */
 #pdfModal {
   position:fixed;
   inset:0;
@@ -25,14 +26,33 @@ body { font-family: system-ui, sans-serif; }
   display:none;
   flex-direction:column;
   z-index:100;
+  padding-top: env(safe-area-inset-top);
 }
 
 #pdfHeader {
   background:#0f172a;
-  padding:14px;
+  padding:16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
   display:flex;
   justify-content:space-between;
   align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+#pdfTitle {
+  font-weight:bold;
+  font-size:0.9rem;
+  max-width:60%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+#pdfControls {
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
 }
 
 #pdfContainer {
@@ -40,11 +60,19 @@ body { font-family: system-ui, sans-serif; }
   overflow:auto;
   background:#e5e7eb;
   padding:20px;
+  -webkit-overflow-scrolling: touch;
 }
 
 canvas {
   margin-bottom:24px;
   box-shadow:0 10px 25px rgba(0,0,0,.3);
+}
+
+@media (max-width:640px){
+  #pdfTitle{
+    max-width:100%;
+    white-space:normal;
+  }
 }
 </style>
 </head>
@@ -70,9 +98,9 @@ canvas {
 <!-- PDF VIEWER MODAL -->
 <div id="pdfModal">
   <div id="pdfHeader">
-    <div id="pdfTitle" class="font-bold">Document Viewer</div>
+    <div id="pdfTitle">Document Viewer</div>
 
-    <div class="flex gap-2">
+    <div id="pdfControls">
       <button onclick="zoomOut()" class="bg-gray-600 px-3 py-1 rounded font-bold">−</button>
       <button onclick="zoomIn()" class="bg-gray-600 px-3 py-1 rounded font-bold">+</button>
       <button onclick="fitToWidth()" class="bg-blue-600 px-3 py-1 rounded font-bold">Fit</button>
@@ -86,7 +114,7 @@ canvas {
 
 <script>
 
-// PDF Worker
+// PDF worker
 pdfjsLib.GlobalWorkerOptions.workerSrc =
 "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
@@ -94,7 +122,7 @@ let currentPDF = null;
 let currentScale = 1.2;
 let currentPath = null;
 
-// Load resource list
+// Load resources list
 async function loadResources() {
   const res = await fetch('/resources/resources.json');
   const files = await res.json();
@@ -154,6 +182,7 @@ async function renderPDF() {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
 
+    // High DPI sharp rendering
     canvas.width = viewport.width * dpr;
     canvas.height = viewport.height * dpr;
 
@@ -171,8 +200,17 @@ async function renderPDF() {
   }
 }
 
-function zoomIn() { currentScale += 0.2; renderPDF(); }
-function zoomOut() { if (currentScale > 0.4) { currentScale -= 0.2; renderPDF(); } }
+function zoomIn() {
+  currentScale += 0.2;
+  renderPDF();
+}
+
+function zoomOut() {
+  if (currentScale > 0.4) {
+    currentScale -= 0.2;
+    renderPDF();
+  }
+}
 
 function fitToWidth() {
   const containerWidth = document.getElementById("pdfContainer").clientWidth;
