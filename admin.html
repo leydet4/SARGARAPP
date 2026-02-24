@@ -9,6 +9,8 @@ content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable
 
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
@@ -32,11 +34,12 @@ body { font-family: system-ui, sans-serif; }
 
 #sheetContainer {
   width:100%;
-  height:75vh;
+  height:80vh;
   overflow:auto;
   border-radius:16px;
   background:white;
   box-shadow:0 0 25px rgba(0,0,0,.35);
+  -webkit-overflow-scrolling: touch;
 }
 
 #sheetFrame {
@@ -48,6 +51,40 @@ body { font-family: system-ui, sans-serif; }
 }
 
 #adminContent { display:none; }
+
+/* PDF MODAL */
+#pdfModal {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.95);
+  display:none;
+  flex-direction:column;
+  z-index:100;
+  padding-top: env(safe-area-inset-top);
+}
+
+#pdfHeader {
+  background:#0f172a;
+  padding:16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+#pdfContainer {
+  flex:1;
+  overflow:auto;
+  background:#e5e7eb;
+  padding:20px;
+}
+
+canvas {
+  margin-bottom:24px;
+  box-shadow:0 10px 25px rgba(0,0,0,.3);
+}
 </style>
 </head>
 
@@ -61,11 +98,11 @@ body { font-family: system-ui, sans-serif; }
 
     <input type="password"
            id="adminPassword"
-           class="w-full p-3 rounded bg-slate-700 mb-4"
-           placeholder="Enter Admin Password">
+           placeholder="Enter Admin Password"
+           class="w-full p-3 rounded bg-slate-700 mb-4">
 
     <button onclick="checkPassword()"
-      class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
+            class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
       Enter Admin Panel
     </button>
 
@@ -81,14 +118,14 @@ body { font-family: system-ui, sans-serif; }
   <img src="SAR.png" class="mx-auto h-16 mb-3">
   <h1 class="text-2xl font-black">Admin Dashboard</h1>
 
-  <div class="mt-4 flex justify-center gap-3">
+  <div class="mt-4 flex justify-center gap-3 flex-wrap">
     <a href="index.html"
-       class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
+       class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
        ← Back to Dashboard
     </a>
 
     <button onclick="logout()"
-       class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-sm">
+       class="px-5 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-sm">
        Logout
     </button>
   </div>
@@ -96,19 +133,19 @@ body { font-family: system-ui, sans-serif; }
 
 <section class="p-6 max-w-7xl mx-auto space-y-8">
 
-<!-- Smaller Operational Buttons -->
+<!-- 🔥 OPERATIONS LINKS (SMALLER) -->
 <div class="card">
   <h2 class="text-lg font-bold mb-4">Operations</h2>
 
   <div class="flex flex-wrap gap-4">
 
     <a href="harbor-master.html"
-       class="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-lg font-semibold text-sm">
+       class="bg-indigo-600 hover:bg-indigo-700 px-5 py-3 rounded-lg font-semibold text-sm transition">
        Harbor Master
     </a>
 
     <a href="task-force-tracking.html"
-       class="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-lg font-semibold text-sm">
+       class="bg-emerald-600 hover:bg-emerald-700 px-5 py-3 rounded-lg font-semibold text-sm transition">
        Task Force Tracking
     </a>
 
@@ -142,10 +179,35 @@ body { font-family: system-ui, sans-serif; }
 </section>
 </div>
 
+<!-- PDF MODAL -->
+<div id="pdfModal">
+  <div id="pdfHeader">
+    <div id="pdfTitle" class="font-bold">Document Viewer</div>
+
+    <div class="flex gap-2 flex-wrap">
+      <button onclick="zoomOut()" class="bg-gray-600 px-3 py-1 rounded font-bold">−</button>
+      <button onclick="zoomIn()" class="bg-gray-600 px-3 py-1 rounded font-bold">+</button>
+      <button onclick="fitToWidth()" class="bg-blue-600 px-3 py-1 rounded font-bold">Fit</button>
+      <button onclick="downloadPDF()" class="bg-slate-600 px-3 py-1 rounded font-bold">Download</button>
+      <button onclick="closePDF()" class="bg-red-600 px-4 py-1 rounded font-bold">Close</button>
+    </div>
+  </div>
+
+  <div id="pdfContainer"></div>
+</div>
+
 <script>
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let currentPDF = null;
+let currentScale = 1.2;
+let currentPath = null;
 
 const ADMIN_PASSWORD = "SAR2026";
 
+/* AUTH */
 window.addEventListener("load", () => {
   if (localStorage.getItem("sarAdminAuth") === "true") {
     showAdmin();
@@ -173,7 +235,7 @@ function logout() {
   location.reload();
 }
 
-/* GAR Viewer */
+/* GAR SHEETS */
 const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
 const base =
 `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:html&gid=`;
@@ -193,11 +255,13 @@ document.getElementById("sheetSelector").addEventListener("change", function() {
   container.classList.remove("hidden");
 });
 
-/* Admin Documents */
+/* ADMIN DOCUMENTS */
 const adminPDFs = [
   { name: "SAR Staff Registration", file: "SAR Staff Registration.pdf" },
   { name: "SAR 2026 ICS 203", file: "SAR 2026 ICS 203.pdf" },
-  { name: "SAR 2026 ICS 205", file: "SAR 2026 ICS 205.pdf" }
+  { name: "SAR 2026 ICS 205", file: "SAR 2026 ICS 205.pdf" },
+  { name: "ICS 205A", file: "ics form 205a, communications list (v3).pdf" },
+  { name: "EAP", file: "SAR 2026 EAP OPS Period 2.pdf" }
 ];
 
 function loadAdminPDFs() {
@@ -205,24 +269,95 @@ function loadAdminPDFs() {
   container.innerHTML = "";
 
   adminPDFs.forEach(doc => {
+
     const row = document.createElement("div");
-    row.className = "bg-slate-700 p-4 rounded-lg flex justify-between items-center";
+    row.className = "bg-slate-700 p-4 rounded-lg";
 
     row.innerHTML = `
-      <div>${doc.name}</div>
-      <div class="flex gap-3">
-        <a href="/resources/${doc.file}" target="_blank"
-           class="bg-yellow-400 text-black px-4 py-2 rounded font-bold text-sm">
-           View
-        </a>
-        <a href="/resources/${doc.file}" download
-           class="bg-slate-600 px-4 py-2 rounded font-bold text-sm">
-           Download
-        </a>
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="font-semibold break-words">${doc.name}</div>
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <button onclick="openPDF('/resources/${doc.file}', '${doc.name}')"
+            class="w-full sm:w-auto bg-yellow-400 text-black px-4 py-2 rounded font-bold text-center">
+            View
+          </button>
+
+          <a href="/resources/${doc.file}" download
+            class="w-full sm:w-auto">
+            <div class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded font-bold text-center">
+              Download
+            </div>
+          </a>
+        </div>
       </div>
     `;
+
     container.appendChild(row);
   });
+}
+
+/* PDF VIEWER FUNCTIONS */
+async function openPDF(path, title) {
+  currentPath = path;
+  document.getElementById("pdfTitle").innerText = title;
+  document.getElementById("pdfModal").style.display = "flex";
+
+  const loadingTask = pdfjsLib.getDocument(path);
+  currentPDF = await loadingTask.promise;
+
+  fitToWidth();
+}
+
+async function renderPDF() {
+  const container = document.getElementById("pdfContainer");
+  container.innerHTML = "";
+
+  const dpr = window.devicePixelRatio || 1;
+
+  for (let i = 1; i <= currentPDF.numPages; i++) {
+    const page = await currentPDF.getPage(i);
+    const viewport = page.getViewport({ scale: currentScale });
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    canvas.width = viewport.width * dpr;
+    canvas.height = viewport.height * dpr;
+    canvas.style.width = viewport.width + "px";
+    canvas.style.height = viewport.height + "px";
+
+    context.scale(dpr, dpr);
+
+    container.appendChild(canvas);
+
+    await page.render({
+      canvasContext: context,
+      viewport: viewport
+    }).promise;
+  }
+}
+
+function zoomIn(){ currentScale += .2; renderPDF(); }
+function zoomOut(){ if(currentScale>.4){ currentScale -= .2; renderPDF(); } }
+
+function fitToWidth(){
+  const containerWidth = document.getElementById("pdfContainer").clientWidth;
+  currentPDF.getPage(1).then(page=>{
+    const viewport = page.getViewport({ scale:1 });
+    currentScale = containerWidth / viewport.width;
+    renderPDF();
+  });
+}
+
+function downloadPDF(){
+  window.location.href = currentPath;
+}
+
+function closePDF(){
+  document.getElementById("pdfContainer").innerHTML="";
+  document.getElementById("pdfModal").style.display="none";
+  currentPDF=null;
 }
 
 </script>
