@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Task Force 3 Dashboard</title>
+<title>Task Force 3</title>
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
 body { font-family: system-ui, sans-serif; }
 .boatCard { background:#0f172a; border-radius:14px; padding:16px; }
@@ -15,18 +16,36 @@ body { font-family: system-ui, sans-serif; }
 </style>
 </head>
 
-<body class="bg-slate-900 text-white p-6">
+<body class="bg-slate-900 text-white">
 
-<h1 class="text-3xl font-black mb-6 text-center">Task Force 3</h1>
+<header class="bg-slate-800 py-6 text-center shadow-lg">
+  <h1 class="text-3xl font-black">Task Force 3</h1>
 
-<div id="boatGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <div class="mt-4 flex justify-center gap-3 flex-wrap">
+    <a href="admin.html"
+       class="px-5 py-2 bg-blue-600 rounded-lg font-bold text-sm">
+       ← Back to Admin
+    </a>
+
+    <a href="https://forms.gle/oecqWnBxEJERwyhJA"
+       target="_blank"
+       class="px-5 py-2 bg-yellow-400 text-black rounded-lg font-bold text-sm">
+       Submit Update
+    </a>
+  </div>
+</header>
+
+<main class="p-6 max-w-6xl mx-auto">
+  <div id="boatGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+</main>
 
 <script>
+
 const SHEET_ID = "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y";
 
 function statusColor(status){
   if(!status) return "";
-  const s=status.toLowerCase();
+  const s = status.toLowerCase();
   if(s.includes("secure")) return "status-green";
   if(s.includes("underway")) return "status-red";
   if(s.includes("rtb")) return "status-orange";
@@ -47,45 +66,57 @@ async function loadData(){
   const grid = document.getElementById("boatGrid");
   grid.innerHTML = "";
 
-  const latestPerBoat = {};
+  const boats = {};
 
   rows.forEach(row=>{
     const boat = row.c[0]?.v;
     if(!boat) return;
 
-    if(!latestPerBoat[boat]){
-      latestPerBoat[boat] = { persons:"", risk:"", gain:"", status:"", comment:"" };
+    if(!boats[boat]){
+      boats[boat] = {
+        persons: null,
+        risk: "",
+        gain: "",
+        status: "",
+        comment: ""
+      };
     }
 
-    const current = latestPerBoat[boat];
+    // Persons (last non-blank, 0 allowed)
+    if(row.c[1] && row.c[1].v !== "" && row.c[1].v !== null){
+      boats[boat].persons = row.c[1].v;
+    }
 
-    if(row.c[1]?.v) current.persons = row.c[1].v;
-    if(row.c[2]?.v) current.risk = row.c[2].v;
-    if(row.c[3]?.v) current.gain = row.c[3].v;
-    if(row.c[4]?.v) current.status = row.c[4].v;
-    if(row.c[5]?.v) current.comment = row.c[5].v;
+    // Always overwrite with most recent values
+    boats[boat].risk = row.c[2]?.v ?? boats[boat].risk;
+    boats[boat].gain = row.c[3]?.v ?? boats[boat].gain;
+    boats[boat].status = row.c[4]?.v ?? boats[boat].status;
+    boats[boat].comment = row.c[5]?.v ?? boats[boat].comment;
   });
 
-  Object.keys(latestPerBoat).forEach(boat=>{
-    const data = latestPerBoat[boat];
+  Object.keys(boats).forEach(boat=>{
+    const d = boats[boat];
 
     grid.innerHTML += `
       <div class="boatCard">
         <div class="text-lg font-bold">${boat}</div>
-        <div class="text-sm">Persons: ${data.persons || "—"}</div>
-        <div class="text-sm">GAR Risk: ${data.risk || "—"}</div>
-        <div class="text-sm">GAR Gain: ${data.gain || "—"}</div>
-        <div class="font-bold mt-2 ${statusColor(data.status)}">
-          ${data.status || "—"}
+        <div class="text-sm">Persons on Board: ${d.persons !== null ? d.persons : "—"}</div>
+        <div class="text-sm">GAR Risk: ${d.risk || "—"}</div>
+        <div class="text-sm">GAR Gain: ${d.gain || "—"}</div>
+        <div class="font-bold mt-2 ${statusColor(d.status)}">
+          ${d.status || "—"}
         </div>
-        ${data.comment ? `<div class="text-xs text-slate-400 mt-2">${data.comment}</div>` : ""}
+        <div class="text-xs text-slate-400 mt-2">
+          ${d.comment || ""}
+        </div>
       </div>
     `;
   });
 }
 
 loadData();
-setInterval(loadData,30000);
+setInterval(loadData, 30000);
+
 </script>
 
 </body>
