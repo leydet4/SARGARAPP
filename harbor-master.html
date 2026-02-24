@@ -30,6 +30,12 @@ body { font-family: system-ui, sans-serif; }
   align-items:center;
 }
 
+.commentText {
+  font-size:12px;
+  color:#94a3b8;
+  margin-top:2px;
+}
+
 #content { display:none; }
 </style>
 </head>
@@ -90,7 +96,7 @@ function showPage() {
   loadHarborMaster();
 }
 
-/* ===== SHEET CONFIG ===== */
+/* ===== SHEETS ===== */
 
 const sheets = [
   { name: "Task Force 1", id: "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs" },
@@ -98,8 +104,6 @@ const sheets = [
   { name: "Task Force 3", id: "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y" },
   { name: "Task Force 4", id: "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo" }
 ];
-
-/* ===== FETCH ===== */
 
 async function fetchSheetRows(sheetId) {
   const query = encodeURIComponent("select B,F,G");
@@ -116,7 +120,6 @@ async function fetchSheetRows(sheetId) {
 /* ===== STATUS COLOR ===== */
 
 function getStatusClass(status) {
-
   if (!status) return "text-slate-300";
 
   const s = status.toLowerCase();
@@ -176,11 +179,15 @@ async function loadHarborMaster() {
       const data = latestByBoat[boat];
       const statusClass = getStatusClass(data.status);
 
+      const commentHTML = data.comment
+        ? `<div class="commentText">${data.comment}</div>`
+        : "";
+
       tfBox.innerHTML += `
         <div class="boatRow">
           <div>
             <div class="font-semibold">${boat}</div>
-            <div class="text-xs text-slate-400">${data.comment}</div>
+            ${commentHTML}
           </div>
           <div class="font-bold ${statusClass}">
             ${data.status}
@@ -193,7 +200,7 @@ async function loadHarborMaster() {
   }
 }
 
-/* Auto refresh */
+/* Auto Refresh */
 setInterval(loadHarborMaster, 60000);
 
 </script>
