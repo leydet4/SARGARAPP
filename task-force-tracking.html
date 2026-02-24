@@ -40,10 +40,10 @@ body { font-family: system-ui, sans-serif; }
 }
 
 #sheetFrame {
-  width:1600px;
+  width:1400px;
   height:100%;
   border:none;
-  transform:scale(.85);
+  transform:scale(.9);
   transform-origin: top left;
 }
 
@@ -94,22 +94,29 @@ body { font-family: system-ui, sans-serif; }
   </div>
 </header>
 
-<section class="p-6 max-w-7xl mx-auto">
+<section class="p-6 max-w-7xl mx-auto space-y-10">
 
 <div class="card">
-  <h2 class="text-xl font-bold mb-4">Select Task Force Form Responses</h2>
+
+  <h2 class="text-xl font-bold mb-4">SAR Unit Tracking Responses</h2>
 
   <select id="trackingSelector" class="select mb-6">
-    <option value="">Select Tracking Sheet...</option>
-
-    <!-- Replace these GIDs with your new form response sheets -->
-    <option value="111111111">TF1 Personnel Check-In</option>
-    <option value="222222222">TF2 Equipment Tracking</option>
-    <option value="333333333">TF3 Logistics</option>
-    <option value="444444444">TF4 Safety Log</option>
-    <option value="555555555">Medical Tracking</option>
+    <option value="">Select Task Force...</option>
+    <option value="TF1">Task Force 1</option>
+    <option value="TF2">Task Force 2</option>
+    <option value="TF3">Task Force 3</option>
+    <option value="TF4">Task Force 4</option>
   </select>
 
+  <!-- Form Button -->
+  <div id="formButtonContainer" class="hidden mb-6">
+    <a id="formLink" target="_blank"
+       class="inline-block bg-emerald-600 hover:bg-emerald-700 px-5 py-3 rounded-lg font-bold">
+       Open Submission Form
+    </a>
+  </div>
+
+  <!-- Sheet Viewer -->
   <div id="sheetContainer" class="hidden">
     <iframe id="sheetFrame"></iframe>
   </div>
@@ -121,7 +128,6 @@ body { font-family: system-ui, sans-serif; }
 
 <script>
 
-// 🔐 Persistent Login
 const ADMIN_PASSWORD = "SAR2026";
 
 window.addEventListener("load", () => {
@@ -150,23 +156,50 @@ function logout() {
   location.reload();
 }
 
-// 🔗 Google Sheet Base
-const trackingSheetID = "PUT_YOUR_MASTER_SHEET_ID_HERE";
-const base =
-`https://docs.google.com/spreadsheets/d/${trackingSheetID}/gviz/tq?tqx=out:html&gid=`;
+/* =============================
+   TASK FORCE DATA
+============================= */
+
+const taskForceData = {
+  TF1: {
+    form: "https://forms.gle/kdwPNq8T5dT4QjEZ7",
+    sheet: "https://docs.google.com/spreadsheets/d/1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs/gviz/tq?tqx=out:html"
+  },
+  TF2: {
+    form: "https://forms.gle/K9pxiHaSGnCVG1Hs5",
+    sheet: "https://docs.google.com/spreadsheets/d/1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac/gviz/tq?tqx=out:html"
+  },
+  TF3: {
+    form: "https://forms.gle/oecqWnBxEJERwyhJA",
+    sheet: "https://docs.google.com/spreadsheets/d/1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y/gviz/tq?tqx=out:html"
+  },
+  TF4: {
+    form: "https://forms.gle/gAEiQT2TPyRawFdVA",
+    sheet: "https://docs.google.com/spreadsheets/d/1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo/gviz/tq?tqx=out:html"
+  }
+};
 
 document.getElementById("trackingSelector").addEventListener("change", function() {
-  const gid = this.value;
+
+  const value = this.value;
   const frame = document.getElementById("sheetFrame");
   const container = document.getElementById("sheetContainer");
+  const formButton = document.getElementById("formButtonContainer");
+  const formLink = document.getElementById("formLink");
 
-  if (!gid) {
+  if (!value || !taskForceData[value]) {
     container.classList.add("hidden");
+    formButton.classList.add("hidden");
     frame.src = "";
     return;
   }
 
-  frame.src = base + gid;
+  // Set form link
+  formLink.href = taskForceData[value].form;
+  formButton.classList.remove("hidden");
+
+  // Set sheet iframe
+  frame.src = taskForceData[value].sheet;
   container.classList.remove("hidden");
 });
 
