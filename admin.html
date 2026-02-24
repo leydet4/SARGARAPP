@@ -9,6 +9,7 @@ content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable
 
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
@@ -18,6 +19,32 @@ body { font-family: system-ui, sans-serif; }
   border-radius:16px;
   padding:24px;
   box-shadow:0 0 25px rgba(0,0,0,.35);
+}
+
+.select {
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  background:#334155;
+  font-weight:600;
+  color:white;
+}
+
+#sheetContainer {
+  width:100%;
+  height:75vh;
+  overflow:auto;
+  border-radius:16px;
+  background:white;
+  box-shadow:0 0 25px rgba(0,0,0,.35);
+}
+
+#sheetFrame {
+  width:1400px;
+  height:100%;
+  border:none;
+  transform:scale(.9);
+  transform-origin: top left;
 }
 
 #adminContent { display:none; }
@@ -53,37 +80,70 @@ body { font-family: system-ui, sans-serif; }
 <header class="bg-slate-800 py-6 text-center shadow-lg">
   <img src="SAR.png" class="mx-auto h-16 mb-3">
   <h1 class="text-2xl font-black">Admin Dashboard</h1>
+
+  <div class="mt-4 flex justify-center gap-3">
+    <a href="index.html"
+       class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
+       ← Back to Dashboard
+    </a>
+
+    <button onclick="logout()"
+       class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-sm">
+       Logout
+    </button>
+  </div>
 </header>
 
-<section class="p-6 max-w-6xl mx-auto space-y-8">
+<section class="p-6 max-w-7xl mx-auto space-y-8">
 
-<!-- 🚢 Harbor Master Page Link -->
-<div class="card text-center">
-  <h2 class="text-2xl font-black mb-4">Harbor Master Operations</h2>
-  <p class="text-slate-300 mb-6">
-    Live boat identification, status, and latest comments from all Task Forces.
-  </p>
+<!-- Smaller Operational Buttons -->
+<div class="card">
+  <h2 class="text-lg font-bold mb-4">Operations</h2>
 
-  <a href="harbor-master.html"
-     class="inline-block bg-indigo-600 hover:bg-indigo-700 px-10 py-5 rounded-xl font-bold text-xl transition hover:scale-105">
-     Open Harbor Master →
-  </a>
+  <div class="flex flex-wrap gap-4">
+
+    <a href="harbor-master.html"
+       class="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-lg font-semibold text-sm">
+       Harbor Master
+    </a>
+
+    <a href="task-force-tracking.html"
+       class="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-lg font-semibold text-sm">
+       Task Force Tracking
+    </a>
+
+  </div>
 </div>
 
-<!-- Task Force Tracking -->
-<div class="card text-center">
-  <h2 class="text-xl font-bold mb-4">Task Force Tracking Aid</h2>
+<!-- GAR VIEWER -->
+<div class="card">
+  <h2 class="text-xl font-bold mb-4">GAR Submissions</h2>
 
-  <a href="task-force-tracking.html"
-     class="inline-block bg-emerald-600 hover:bg-emerald-700 px-8 py-4 rounded-xl font-bold text-lg transition hover:scale-105">
-     Open Task Force Tracking →
-  </a>
+  <select id="sheetSelector" class="select mb-6">
+    <option value="">Select GAR Sheet...</option>
+    <option value="462942313">Task Force 1</option>
+    <option value="653219596">Task Force 2</option>
+    <option value="1655685068">Task Force 3</option>
+    <option value="70233464">Task Force 4</option>
+    <option value="477824279">Admin / Other</option>
+  </select>
+
+  <div id="sheetContainer" class="hidden">
+    <iframe id="sheetFrame"></iframe>
+  </div>
+</div>
+
+<!-- ADMIN DOCUMENTS -->
+<div class="card">
+  <h2 class="text-xl font-bold mb-6">Admin Documents</h2>
+  <div id="adminDocs" class="space-y-4"></div>
 </div>
 
 </section>
 </div>
 
 <script>
+
 const ADMIN_PASSWORD = "SAR2026";
 
 window.addEventListener("load", () => {
@@ -105,13 +165,66 @@ function checkPassword() {
 function showAdmin() {
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("adminContent").style.display = "block";
+  loadAdminPDFs();
 }
 
 function logout() {
   localStorage.removeItem("sarAdminAuth");
   location.reload();
 }
-</script>
 
+/* GAR Viewer */
+const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
+const base =
+`https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:html&gid=`;
+
+document.getElementById("sheetSelector").addEventListener("change", function() {
+  const gid = this.value;
+  const frame = document.getElementById("sheetFrame");
+  const container = document.getElementById("sheetContainer");
+
+  if (!gid) {
+    container.classList.add("hidden");
+    frame.src = "";
+    return;
+  }
+
+  frame.src = base + gid;
+  container.classList.remove("hidden");
+});
+
+/* Admin Documents */
+const adminPDFs = [
+  { name: "SAR Staff Registration", file: "SAR Staff Registration.pdf" },
+  { name: "SAR 2026 ICS 203", file: "SAR 2026 ICS 203.pdf" },
+  { name: "SAR 2026 ICS 205", file: "SAR 2026 ICS 205.pdf" }
+];
+
+function loadAdminPDFs() {
+  const container = document.getElementById("adminDocs");
+  container.innerHTML = "";
+
+  adminPDFs.forEach(doc => {
+    const row = document.createElement("div");
+    row.className = "bg-slate-700 p-4 rounded-lg flex justify-between items-center";
+
+    row.innerHTML = `
+      <div>${doc.name}</div>
+      <div class="flex gap-3">
+        <a href="/resources/${doc.file}" target="_blank"
+           class="bg-yellow-400 text-black px-4 py-2 rounded font-bold text-sm">
+           View
+        </a>
+        <a href="/resources/${doc.file}" download
+           class="bg-slate-600 px-4 py-2 rounded font-bold text-sm">
+           Download
+        </a>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+</script>
 </body>
 </html>
