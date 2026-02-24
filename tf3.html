@@ -82,16 +82,18 @@ async function loadData(){
       };
     }
 
-    // Persons (last non-blank, 0 allowed)
+    // Persons = last non-blank (0 allowed)
     if(row.c[1] && row.c[1].v !== "" && row.c[1].v !== null){
       boats[boat].persons = row.c[1].v;
     }
 
-    // Always overwrite with most recent values
+    // Always overwrite with latest submission values
     boats[boat].risk = row.c[2]?.v ?? boats[boat].risk;
     boats[boat].gain = row.c[3]?.v ?? boats[boat].gain;
     boats[boat].status = row.c[4]?.v ?? boats[boat].status;
-    boats[boat].comment = row.c[5]?.v ?? boats[boat].comment;
+
+    // IMPORTANT: comment ONLY from most recent row
+    boats[boat].comment = row.c[5]?.v ?? "";
   });
 
   Object.keys(boats).forEach(boat=>{
@@ -106,9 +108,7 @@ async function loadData(){
         <div class="font-bold mt-2 ${statusColor(d.status)}">
           ${d.status || "—"}
         </div>
-        <div class="text-xs text-slate-400 mt-2">
-          ${d.comment || ""}
-        </div>
+        ${d.comment ? `<div class="text-xs text-slate-400 mt-2">${d.comment}</div>` : ""}
       </div>
     `;
   });
@@ -118,6 +118,5 @@ loadData();
 setInterval(loadData, 30000);
 
 </script>
-
 </body>
 </html>
