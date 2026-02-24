@@ -14,22 +14,73 @@
 
 <style>
 body { font-family: system-ui, sans-serif; }
-.card { background:#1e293b; border-radius:18px; padding:22px; box-shadow:0 0 25px rgba(0,0,0,.35); }
+
+.card {
+  background:#1e293b;
+  border-radius:18px;
+  padding:22px;
+  box-shadow:0 0 25px rgba(0,0,0,.35);
+}
+
 .section-title { font-size:15px; font-weight:700; letter-spacing:.5px; }
 .source { color:#94a3b8; font-size:12px; margin-top:6px; }
 .primary-value { font-size:26px; font-weight:900; margin-top:10px; }
 .secondary-value { font-size:14px; color:#cbd5e1; margin-top:4px; }
-.tide-trend { font-size:34px; font-weight:900; display:flex; align-items:center; justify-content:center; gap:12px; margin-top:16px; }
+
+.tide-trend {
+  font-size:34px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-top:16px;
+}
+
 .tide-arrow { font-size:50px; }
 .rising { color:#22c55e; }
 .falling { color:#38bdf8; }
-.countdown { font-size:20px; font-weight:900; margin-top:10px; color:#facc15; }
-.tide-list { font-size:17px; font-weight:700; line-height:1.7; }
-.big-btn { padding:10px 18px; border-radius:12px; font-weight:800; transition:.2s; font-size:14px; }
+
+.countdown {
+  font-size:20px;
+  font-weight:900;
+  margin-top:10px;
+  color:#facc15;
+}
+
+.tide-list {
+  font-size:17px;
+  font-weight:700;
+  line-height:1.7;
+}
+
+.big-btn {
+  padding:10px 18px;
+  border-radius:12px;
+  font-weight:800;
+  transition:.2s;
+  font-size:14px;
+}
+
 .big-btn:hover { transform:scale(1.05); }
+
 .subtitle { font-size:13px; color:#94a3b8; }
-.install-banner { background:#111827; padding:16px; text-align:center; font-size:13px; color:#cbd5e1; border-top:1px solid #1f2937; border-bottom:1px solid #1f2937; }
-.refresh-status { font-size:13px; margin-top:6px; color:#22c55e; }
+
+.install-banner {
+  background:#111827;
+  padding:16px;
+  text-align:center;
+  font-size:13px;
+  color:#cbd5e1;
+  border-top:1px solid #1f2937;
+  border-bottom:1px solid #1f2937;
+}
+
+.refresh-status {
+  font-size:13px;
+  margin-top:6px;
+  color:#22c55e;
+}
 </style>
 </head>
 
@@ -37,105 +88,118 @@ body { font-family: system-ui, sans-serif; }
 
 <header class="bg-slate-800 py-6 text-center shadow-lg">
 
-<img src="SAR.png" class="mx-auto h-20 mb-3">
+  <img src="SAR.png" class="mx-auto h-20 mb-3">
 
-<h1 class="text-2xl font-black">
-Todd Dooley SAR Forum 2026
-</h1>
+  <h1 class="text-2xl font-black">
+    Todd Dooley SAR Forum 2026
+  </h1>
 
-<div class="subtitle mt-1">
-HRBT Marine Operations Dashboard (All Times Eastern)
-</div>
+  <div class="subtitle mt-1">
+    HRBT Marine Operations Dashboard (All Times Eastern)
+  </div>
 
-<div class="flex justify-center gap-3 mt-6 flex-wrap">
+  <div class="flex justify-center gap-3 mt-6 flex-wrap">
 
-<a href="vessel-status.html" class="big-btn bg-emerald-700 hover:bg-emerald-800">
-Vessel Status
-</a>
+    <!-- ✅ NEW BUTTON -->
+    <a href="vessel-status.html" class="big-btn bg-emerald-700 hover:bg-emerald-800">
+      Vessel Status
+    </a>
 
-<a href="gar.html" class="big-btn bg-blue-600 hover:bg-blue-700">Submit GAR</a>
-<a href="sar-resources.html" class="big-btn bg-emerald-600 hover:bg-emerald-700">Resources</a>
-<a href="admin.html" class="big-btn bg-red-700 hover:bg-red-800">Admin</a>
+    <a href="gar.html" class="big-btn bg-blue-600 hover:bg-blue-700">Submit GAR</a>
+    <a href="sar-resources.html" class="big-btn bg-emerald-600 hover:bg-emerald-700">Resources</a>
+    <a href="admin.html" class="big-btn bg-red-700 hover:bg-red-800">Admin</a>
 
-<button id="installBtn" class="big-btn bg-indigo-600 hover:bg-indigo-700 hidden">
-Install App
-</button>
+    <button id="installBtn" class="big-btn bg-indigo-600 hover:bg-indigo-700 hidden">
+      Install App
+    </button>
 
-<a href="install-qr.html" class="big-btn bg-purple-600 hover:bg-purple-700">
-Install QR
-</a>
+    <a href="install-qr.html" class="big-btn bg-purple-600 hover:bg-purple-700">
+      Install QR
+    </a>
 
-<button id="refreshBtn" class="big-btn bg-orange-500 hover:bg-orange-600">
-Refresh Data
-</button>
+    <button id="refreshBtn" class="big-btn bg-orange-500 hover:bg-orange-600">
+      Refresh Data
+    </button>
 
-</div>
+  </div>
 
-<div id="refreshStatus" class="refresh-status"></div>
+  <div id="refreshStatus" class="refresh-status"></div>
+
 </header>
+
+<!-- ✅ KEEP THIS — SCRIPT REQUIRES IT -->
+<section id="installBanner" class="install-banner hidden">
+  <strong>Install This App</strong><br>
+  📱 Android: Tap <strong>Install App</strong> or use browser menu.<br>
+  🍎 iPhone: Open in Safari → Share → Add to Home Screen.
+</section>
 
 <section class="p-5 md:p-8 space-y-8">
 
-<div class="text-center text-sm text-slate-400">
-Last Updated (Eastern): <span id="lastUpdated">--</span>
-</div>
+  <div class="text-center text-sm text-slate-400">
+    Last Updated (Eastern): <span id="lastUpdated">--</span>
+  </div>
 
-<div class="grid md:grid-cols-4 gap-6">
+  <div class="grid md:grid-cols-4 gap-6">
 
-<div class="card text-center">
-<div class="section-title">WIND (Near HRBT)</div>
-<div id="windText" class="primary-value">--</div>
-<div id="windCardinal" class="secondary-value"></div>
-<div id="windGust" class="secondary-value"></div>
-<div id="windSource" class="source">--</div>
-</div>
+    <div class="card text-center">
+      <div class="section-title">WIND (Near HRBT)</div>
+      <div id="windText" class="primary-value">--</div>
+      <div id="windCardinal" class="secondary-value"></div>
+      <div id="windGust" class="secondary-value"></div>
+      <div id="windSource" class="source">--</div>
+    </div>
 
-<div class="card text-center">
-<div class="section-title">WAVE HEIGHT</div>
-<div id="waveHeight" class="primary-value">--</div>
-<div id="waveSource" class="source">--</div>
-</div>
+    <div class="card text-center">
+      <div class="section-title">WAVE HEIGHT</div>
+      <div id="waveHeight" class="primary-value">--</div>
+      <div id="waveSource" class="source">--</div>
+    </div>
 
-<div class="card text-center">
-<div class="section-title">WATER TEMP</div>
-<div id="waterTemp" class="primary-value">--</div>
-<div id="waterSource" class="source">--</div>
-</div>
+    <div class="card text-center">
+      <div class="section-title">WATER TEMP</div>
+      <div id="waterTemp" class="primary-value">--</div>
+      <div id="waterSource" class="source">--</div>
+    </div>
 
-<div class="card text-center">
-<div class="section-title">AIR TEMP</div>
-<div id="airTemp" class="primary-value">--</div>
-<div id="airSource" class="source">--</div>
-</div>
+    <div class="card text-center">
+      <div class="section-title">AIR TEMP</div>
+      <div id="airTemp" class="primary-value">--</div>
+      <div id="airSource" class="source">--</div>
+    </div>
 
-</div>
+  </div>
 
-<div class="card text-center">
+  <div class="card text-center">
 
-<div class="section-title">
-TIDES — Sewells Point (Near HRBT)
-</div>
+    <div class="section-title">
+      TIDES — Sewells Point (Near HRBT)
+    </div>
 
-<div id="tideTrend" class="tide-trend"></div>
-<div id="tideCountdown" class="countdown"></div>
+    <div id="tideTrend" class="tide-trend"></div>
+    <div id="tideCountdown" class="countdown"></div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-<div>
-<div class="font-semibold mb-2 text-lg">Last 2</div>
-<div id="lastTides" class="tide-list"></div>
-</div>
-<div>
-<div class="font-semibold mb-2 text-lg">Next 2</div>
-<div id="nextTides" class="tide-list"></div>
-</div>
-</div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
 
-<div id="tideSource" class="source mt-6"></div>
-</div>
+      <div>
+        <div class="font-semibold mb-2 text-lg">Last 2</div>
+        <div id="lastTides" class="tide-list"></div>
+      </div>
+
+      <div>
+        <div class="font-semibold mb-2 text-lg">Next 2</div>
+        <div id="nextTides" class="tide-list"></div>
+      </div>
+
+    </div>
+
+    <div id="tideSource" class="source mt-6"></div>
+
+  </div>
+
 </section>
 
 <script>
-
 // INSTALL LOGIC
 let deferredPrompt;
 const installBtn = document.getElementById('installBtn');
@@ -146,7 +210,7 @@ function isStandalone() {
          window.navigator.standalone === true;
 }
 
-if (!isStandalone()) installBanner.classList.remove('hidden');
+if (!isStandalone() && installBanner) installBanner.classList.remove('hidden');
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -159,7 +223,7 @@ installBtn.addEventListener('click', async () => {
   deferredPrompt.prompt();
   await deferredPrompt.userChoice;
   installBtn.classList.add('hidden');
-  installBanner.classList.add('hidden');
+  if (installBanner) installBanner.classList.add('hidden');
   deferredPrompt = null;
 });
 
@@ -178,7 +242,7 @@ refreshBtn.addEventListener('click', async () => {
   setTimeout(() => refreshStatus.innerText = "", 3000);
 });
 
-// UTILITIES
+// DATA FUNCTIONS
 function degToCardinal(deg) {
   if (deg == null) return "--";
   const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
@@ -234,8 +298,7 @@ async function loadMarineData() {
   document.getElementById("waveSource").innerText =
     "Wave data from " + buoy.stationName;
 
-  document.getElementById("waterTemp").innerText =
-    buoy.waterTempF + " °F";
+  document.getElementById("waterTemp").innerText = buoy.waterTempF + " °F";
   document.getElementById("waterSource").innerText =
     "Water temperature from " + buoy.stationName;
 
@@ -251,7 +314,9 @@ async function loadMarineData() {
     parsed: parseEastern(t.t)
   })).sort((a,b) => a.parsed - b.parsed);
 
-  const firstFutureIndex = tides.findIndex(t => t.parsed > serverNow);
+  // ✅ FIXED "NEXT 2" LOGIC
+  let firstFutureIndex = tides.findIndex(t => t.parsed > serverNow);
+  if (firstFutureIndex === -1) firstFutureIndex = tides.length; // all in past
 
   const lastTwo = tides.slice(Math.max(0, firstFutureIndex - 2), firstFutureIndex);
   const nextTwo = tides.slice(firstFutureIndex, firstFutureIndex + 2);
