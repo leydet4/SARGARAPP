@@ -131,24 +131,27 @@ canvas {
   </div>
 </header>
 
-<section class="p-6 max-w-7xl mx-auto space-y-8">
+<section class="p-6 max-w-7xl mx-auto space-y-10">
 
-<!-- 🔥 OPERATIONS LINKS (SMALLER) -->
+<!-- ✅ OPERATIONS LINKS (SMALL BUTTONS) -->
 <div class="card">
   <h2 class="text-lg font-bold mb-4">Operations</h2>
 
-  <div class="flex flex-wrap gap-4">
-
+  <div class="flex flex-wrap gap-3">
     <a href="harbor-master.html"
-       class="bg-indigo-600 hover:bg-indigo-700 px-5 py-3 rounded-lg font-semibold text-sm transition">
-       Harbor Master
+       class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-lg font-semibold text-sm">
+      Harbor Master
     </a>
 
     <a href="task-force-tracking.html"
-       class="bg-emerald-600 hover:bg-emerald-700 px-5 py-3 rounded-lg font-semibold text-sm transition">
-       Task Force Tracking
+       class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg font-semibold text-sm">
+      Task Force Tracking
     </a>
 
+    <a href="vessel-contacts.html"
+       class="bg-slate-600 hover:bg-slate-500 text-white px-5 py-3 rounded-lg font-semibold text-sm">
+      Vessel Contacts
+    </a>
   </div>
 </div>
 
@@ -207,7 +210,10 @@ let currentPath = null;
 
 const ADMIN_PASSWORD = "SAR2026";
 
-/* AUTH */
+/* =========================
+   AUTH
+========================= */
+
 window.addEventListener("load", () => {
   if (localStorage.getItem("sarAdminAuth") === "true") {
     showAdmin();
@@ -235,7 +241,10 @@ function logout() {
   location.reload();
 }
 
-/* GAR SHEETS */
+/* =========================
+   GAR SHEETS
+========================= */
+
 const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
 const base =
 `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:html&gid=`;
@@ -255,7 +264,10 @@ document.getElementById("sheetSelector").addEventListener("change", function() {
   container.classList.remove("hidden");
 });
 
-/* ADMIN DOCUMENTS */
+/* =========================
+   ADMIN DOCUMENTS
+========================= */
+
 const adminPDFs = [
   { name: "SAR Staff Registration", file: "SAR Staff Registration.pdf" },
   { name: "SAR 2026 ICS 203", file: "SAR 2026 ICS 203.pdf" },
@@ -283,8 +295,7 @@ function loadAdminPDFs() {
             View
           </button>
 
-          <a href="/resources/${doc.file}" download
-            class="w-full sm:w-auto">
+          <a href="/resources/${doc.file}" download class="w-full sm:w-auto">
             <div class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded font-bold text-center">
               Download
             </div>
@@ -297,7 +308,10 @@ function loadAdminPDFs() {
   });
 }
 
-/* PDF VIEWER FUNCTIONS */
+/* =========================
+   PDF VIEWER
+========================= */
+
 async function openPDF(path, title) {
   currentPath = path;
   document.getElementById("pdfTitle").innerText = title;
