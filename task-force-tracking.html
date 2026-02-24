@@ -96,27 +96,56 @@ body { font-family: system-ui, sans-serif; }
 
 <section class="p-6 max-w-7xl mx-auto space-y-10">
 
+<!-- =========================
+     GOOGLE FORM BUTTONS
+========================= -->
+<div class="card">
+  <h2 class="text-xl font-bold mb-6 text-center">
+    Submit SAR Unit Tracking
+  </h2>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <a href="https://forms.gle/kdwPNq8T5dT4QjEZ7" target="_blank"
+       class="bg-emerald-600 hover:bg-emerald-700 text-white py-5 rounded-xl font-bold text-center text-lg transition transform hover:scale-105">
+       Task Force 1 Form
+    </a>
+
+    <a href="https://forms.gle/K9pxiHaSGnCVG1Hs5" target="_blank"
+       class="bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-xl font-bold text-center text-lg transition transform hover:scale-105">
+       Task Force 2 Form
+    </a>
+
+    <a href="https://forms.gle/oecqWnBxEJERwyhJA" target="_blank"
+       class="bg-yellow-500 hover:bg-yellow-600 text-black py-5 rounded-xl font-bold text-center text-lg transition transform hover:scale-105">
+       Task Force 3 Form
+    </a>
+
+    <a href="https://forms.gle/gAEiQT2TPyRawFdVA" target="_blank"
+       class="bg-red-600 hover:bg-red-700 text-white py-5 rounded-xl font-bold text-center text-lg transition transform hover:scale-105">
+       Task Force 4 Form
+    </a>
+
+  </div>
+</div>
+
+<!-- =========================
+     RESPONSE VIEWER
+========================= -->
 <div class="card">
 
-  <h2 class="text-xl font-bold mb-4">SAR Unit Tracking Responses</h2>
+  <h2 class="text-xl font-bold mb-4">
+    View SAR Unit Tracking Responses
+  </h2>
 
   <select id="trackingSelector" class="select mb-6">
-    <option value="">Select Task Force...</option>
+    <option value="">Select Task Force Responses...</option>
     <option value="TF1">Task Force 1</option>
     <option value="TF2">Task Force 2</option>
     <option value="TF3">Task Force 3</option>
     <option value="TF4">Task Force 4</option>
   </select>
 
-  <!-- Form Button -->
-  <div id="formButtonContainer" class="hidden mb-6">
-    <a id="formLink" target="_blank"
-       class="inline-block bg-emerald-600 hover:bg-emerald-700 px-5 py-3 rounded-lg font-bold">
-       Open Submission Form
-    </a>
-  </div>
-
-  <!-- Sheet Viewer -->
   <div id="sheetContainer" class="hidden">
     <iframe id="sheetFrame"></iframe>
   </div>
@@ -157,26 +186,14 @@ function logout() {
 }
 
 /* =============================
-   TASK FORCE DATA
+   RESPONSE SHEET LINKS
 ============================= */
 
-const taskForceData = {
-  TF1: {
-    form: "https://forms.gle/kdwPNq8T5dT4QjEZ7",
-    sheet: "https://docs.google.com/spreadsheets/d/1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs/gviz/tq?tqx=out:html"
-  },
-  TF2: {
-    form: "https://forms.gle/K9pxiHaSGnCVG1Hs5",
-    sheet: "https://docs.google.com/spreadsheets/d/1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac/gviz/tq?tqx=out:html"
-  },
-  TF3: {
-    form: "https://forms.gle/oecqWnBxEJERwyhJA",
-    sheet: "https://docs.google.com/spreadsheets/d/1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y/gviz/tq?tqx=out:html"
-  },
-  TF4: {
-    form: "https://forms.gle/gAEiQT2TPyRawFdVA",
-    sheet: "https://docs.google.com/spreadsheets/d/1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo/gviz/tq?tqx=out:html"
-  }
+const taskForceSheets = {
+  TF1: "https://docs.google.com/spreadsheets/d/1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs/gviz/tq?tqx=out:html",
+  TF2: "https://docs.google.com/spreadsheets/d/1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac/gviz/tq?tqx=out:html",
+  TF3: "https://docs.google.com/spreadsheets/d/1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y/gviz/tq?tqx=out:html",
+  TF4: "https://docs.google.com/spreadsheets/d/1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo/gviz/tq?tqx=out:html"
 };
 
 document.getElementById("trackingSelector").addEventListener("change", function() {
@@ -184,22 +201,14 @@ document.getElementById("trackingSelector").addEventListener("change", function(
   const value = this.value;
   const frame = document.getElementById("sheetFrame");
   const container = document.getElementById("sheetContainer");
-  const formButton = document.getElementById("formButtonContainer");
-  const formLink = document.getElementById("formLink");
 
-  if (!value || !taskForceData[value]) {
+  if (!value || !taskForceSheets[value]) {
     container.classList.add("hidden");
-    formButton.classList.add("hidden");
     frame.src = "";
     return;
   }
 
-  // Set form link
-  formLink.href = taskForceData[value].form;
-  formButton.classList.remove("hidden");
-
-  // Set sheet iframe
-  frame.src = taskForceData[value].sheet;
+  frame.src = taskForceSheets[value];
   container.classList.remove("hidden");
 });
 
