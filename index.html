@@ -74,12 +74,6 @@ Refresh Data
 <div id="refreshStatus" class="refresh-status"></div>
 </header>
 
-<section id="installBanner" class="install-banner hidden">
-<strong>Install This App</strong><br>
-📱 Android: Tap <strong>Install App</strong> or use browser menu.<br>
-🍎 iPhone: Open in Safari → Share → Add to Home Screen.
-</section>
-
 <section class="p-5 md:p-8 space-y-8">
 
 <div class="text-center text-sm text-slate-400">
@@ -257,11 +251,10 @@ async function loadMarineData() {
     parsed: parseEastern(t.t)
   })).sort((a,b) => a.parsed - b.parsed);
 
-  const past = tides.filter(t => t.parsed <= serverNow);
-  const future = tides.filter(t => t.parsed > serverNow);
+  const firstFutureIndex = tides.findIndex(t => t.parsed > serverNow);
 
-  const lastTwo = past.slice(-2);
-  const nextTwo = future.slice(0,2);
+  const lastTwo = tides.slice(Math.max(0, firstFutureIndex - 2), firstFutureIndex);
+  const nextTwo = tides.slice(firstFutureIndex, firstFutureIndex + 2);
 
   document.getElementById("lastTides").innerHTML =
     lastTwo.length ? lastTwo.map(t => formatTide(t.parsed, t.type, t.v)).join("<br>") : "--";
