@@ -2,206 +2,125 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-
-<title>Harbor Master - POV SAR 2026</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harbor Master</title>
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
-
-.tfBox {
-  background:#0f172a;
-  border-radius:16px;
-  padding:20px;
-  box-shadow:0 0 20px rgba(0,0,0,.4);
-}
-
-.boatRow {
-  background:#1e293b;
-  border-radius:10px;
-  padding:10px 14px;
-  margin-top:10px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.commentText {
-  font-size:12px;
-  color:#94a3b8;
-  margin-top:2px;
-}
-
-#content { display:none; }
+.boatCard { background:#0f172a; border-radius:14px; padding:16px; }
+.status-green { color:#22c55e; }
+.status-red { color:#ef4444; }
+.status-orange { color:#f97316; }
 </style>
 </head>
 
 <body class="bg-slate-900 text-white">
 
-<!-- LOGIN -->
-<div id="loginScreen" class="min-h-screen flex items-center justify-center">
-  <div class="bg-slate-800 p-8 rounded-xl w-full max-w-md text-center">
-    <h2 class="text-xl font-bold mb-4">Admin Access Required</h2>
-    <input type="password" id="adminPassword"
-      class="w-full p-3 rounded bg-slate-700 mb-4"
-      placeholder="Enter Admin Password">
-    <button onclick="checkPassword()"
-      class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
-      Enter Harbor Master
-    </button>
-  </div>
-</div>
-
-<div id="content">
-
 <header class="bg-slate-800 py-6 text-center shadow-lg">
-  <h1 class="text-3xl font-black">🚢 Harbor Master</h1>
-  <a href="admin.html"
-     class="mt-3 inline-block px-4 py-2 bg-blue-600 rounded-lg text-sm font-bold">
-     ← Back to Admin
-  </a>
+  <h1 class="text-3xl font-black">Harbor Master Status</h1>
+
+  <div class="mt-4 flex justify-center gap-3 flex-wrap">
+    <a href="admin.html"
+       class="px-5 py-2 bg-blue-600 rounded-lg font-bold text-sm">
+       ← Back to Admin
+    </a>
+  </div>
 </header>
 
-<section class="p-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6"
-         id="harborGrid">
-</section>
+<main class="p-6 max-w-6xl mx-auto">
 
-</div>
+<div id="tfContainer" class="space-y-10"></div>
+
+</main>
 
 <script>
 
-const ADMIN_PASSWORD = "SAR2026";
+// ======== SHEET IDS ========
 
-window.addEventListener("load", () => {
-  if (localStorage.getItem("sarAdminAuth") === "true") {
-    showPage();
-  }
-});
+const sheets = {
+  "Task Force 1": "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs",
+  "Task Force 2": "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac",
+  "Task Force 3": "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y",
+  "Task Force 4": "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo"
+};
 
-function checkPassword() {
-  const input = document.getElementById("adminPassword").value.trim();
-  if (input === ADMIN_PASSWORD) {
-    localStorage.setItem("sarAdminAuth", "true");
-    showPage();
-  }
+function statusColor(status){
+  if(!status) return "";
+  const s = status.toLowerCase();
+  if(s.includes("secure")) return "status-green";
+  if(s.includes("underway")) return "status-red";
+  if(s.includes("rtb")) return "status-orange";
+  return "";
 }
 
-function showPage() {
-  document.getElementById("loginScreen").style.display = "none";
-  document.getElementById("content").style.display = "block";
-  loadHarborMaster();
-}
-
-/* ===== SHEETS ===== */
-
-const sheets = [
-  { name: "Task Force 1", id: "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs" },
-  { name: "Task Force 2", id: "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac" },
-  { name: "Task Force 3", id: "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y" },
-  { name: "Task Force 4", id: "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo" }
-];
-
-async function fetchSheetRows(sheetId) {
-  const query = encodeURIComponent("select B,F,G");
-  const url =
-    `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tq=${query}`;
-
-  const response = await fetch(url);
-  const text = await response.text();
-  const json = JSON.parse(text.substring(47).slice(0, -2));
-
+async function fetchSheet(sheetId){
+  const query = encodeURIComponent("select B,F");
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tq=${query}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.substring(47).slice(0,-2));
   return json.table.rows || [];
 }
 
-/* ===== STATUS COLOR ===== */
+async function loadData(){
 
-function getStatusClass(status) {
-  if (!status) return "text-slate-300";
+  const container = document.getElementById("tfContainer");
+  container.innerHTML = "";
 
-  const s = status.toLowerCase();
+  for(const tfName in sheets){
 
-  if (s.includes("secure")) return "text-green-400";
-  if (s.includes("underway")) return "text-red-400";
-  if (s.includes("rtb")) return "text-orange-400";
+    const sheetId = sheets[tfName];
+    const rows = await fetchSheet(sheetId);
 
-  return "text-slate-300";
-}
+    const boats = {};
 
-/* ===== MAIN ===== */
+    rows.forEach(row=>{
+      const boat = row.c[0]?.v;
+      if(!boat) return;
 
-async function loadHarborMaster() {
+      if(!boats[boat]){
+        boats[boat] = { status: "" };
+      }
 
-  const grid = document.getElementById("harborGrid");
-  grid.innerHTML = "";
+      const statusCell = row.c[1]?.v;
 
-  for (let sheet of sheets) {
+      // IMPORTANT FIX:
+      // Only update status if it is NOT blank
+      if(statusCell && statusCell.trim() !== ""){
+        boats[boat].status = statusCell;
+      }
+    });
 
-    const rows = await fetchSheetRows(sheet.id);
-
-    const tfBox = document.createElement("div");
-    tfBox.className = "tfBox";
-
-    tfBox.innerHTML = `
-      <div class="text-xl font-bold mb-4">${sheet.name}</div>
+    container.innerHTML += `
+      <div>
+        <h2 class="text-2xl font-bold mb-4">${tfName}</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${
+            Object.keys(boats).length === 0
+            ? `<div class="text-slate-400">No data available</div>`
+            :
+            Object.keys(boats).map(boat=>{
+              const status = boats[boat].status || "—";
+              return `
+                <div class="boatCard">
+                  <div class="text-lg font-bold">${boat}</div>
+                  <div class="font-bold mt-2 ${statusColor(status)}">
+                    ${status}
+                  </div>
+                </div>
+              `;
+            }).join("")
+          }
+        </div>
+      </div>
     `;
-
-    if (!rows.length) {
-      tfBox.innerHTML += `
-        <div class="text-slate-400">
-          No data available
-        </div>
-      `;
-      grid.appendChild(tfBox);
-      continue;
-    }
-
-    const latestByBoat = {};
-
-    rows.forEach(r => {
-      const boat = r.c[0]?.v;
-      const status = r.c[1]?.v;
-      const comment = r.c[2]?.v;
-
-      if (!boat) return;
-
-      latestByBoat[boat] = {
-        status: status || "No Status",
-        comment: comment || ""
-      };
-    });
-
-    Object.keys(latestByBoat).forEach(boat => {
-
-      const data = latestByBoat[boat];
-      const statusClass = getStatusClass(data.status);
-
-      const commentHTML = data.comment
-        ? `<div class="commentText">${data.comment}</div>`
-        : "";
-
-      tfBox.innerHTML += `
-        <div class="boatRow">
-          <div>
-            <div class="font-semibold">${boat}</div>
-            ${commentHTML}
-          </div>
-          <div class="font-bold ${statusClass}">
-            ${data.status}
-          </div>
-        </div>
-      `;
-    });
-
-    grid.appendChild(tfBox);
   }
 }
 
-/* Auto Refresh */
-setInterval(loadHarborMaster, 60000);
+loadData();
+setInterval(loadData,30000);
 
 </script>
 
