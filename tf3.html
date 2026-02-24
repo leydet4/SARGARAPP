@@ -1,13 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-
-<title>Task Force 1 - Dashboard</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Force 3 - Status Board</title>
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -18,7 +14,7 @@ body { font-family: system-ui, sans-serif; }
 .card {
   background:#1e293b;
   border-radius:16px;
-  padding:20px;
+  padding:24px;
   box-shadow:0 0 25px rgba(0,0,0,.35);
 }
 
@@ -36,16 +32,17 @@ body { font-family: system-ui, sans-serif; }
 
 <body class="bg-slate-900 text-white">
 
-<!-- LOGIN -->
 <div id="loginScreen" class="min-h-screen flex items-center justify-center">
   <div class="card w-full max-w-md text-center">
     <h2 class="text-xl font-bold mb-4">Admin Access Required</h2>
+
     <input type="password" id="adminPassword"
       class="w-full p-3 rounded bg-slate-700 mb-4"
       placeholder="Enter Admin Password">
+
     <button onclick="checkPassword()"
       class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
-      Enter Task Force 1
+      Enter Task Force 3
     </button>
   </div>
 </div>
@@ -53,7 +50,7 @@ body { font-family: system-ui, sans-serif; }
 <div id="content">
 
 <header class="bg-slate-800 py-6 text-center shadow-lg">
-  <h1 class="text-3xl font-black">Task Force 1</h1>
+  <h1 class="text-3xl font-black">Task Force 3</h1>
 
   <div class="mt-4 flex justify-center gap-3 flex-wrap">
     <a href="admin.html"
@@ -61,7 +58,7 @@ body { font-family: system-ui, sans-serif; }
        ← Back to Admin
     </a>
 
-    <a href="https://forms.gle/kdwPNq8T5dT4QjEZ7"
+    <a href="https://forms.gle/oecqWnBxEJERwyhJA"
        target="_blank"
        class="px-5 py-2 bg-yellow-400 text-black rounded-lg font-bold text-sm">
        Submit Update
@@ -69,13 +66,11 @@ body { font-family: system-ui, sans-serif; }
   </div>
 </header>
 
-<main class="p-6 max-w-6xl mx-auto space-y-6">
-
+<main class="p-6 max-w-6xl mx-auto">
   <div class="card">
-    <div class="text-xl font-bold mb-4">Live Dashboard</div>
-    <div id="boatGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    <div class="text-xl font-bold mb-6">Current Boat Status</div>
+    <div id="boatGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   </div>
-
 </main>
 
 </div>
@@ -83,16 +78,16 @@ body { font-family: system-ui, sans-serif; }
 <script>
 
 const ADMIN_PASSWORD = "SAR2026";
-
 const SHEET_ID = "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y";
 
 window.addEventListener("load", ()=>{
-  if(localStorage.getItem("sarAdminAuth")==="true") showPage();
+  if(localStorage.getItem("sarAdminAuth")==="true"){
+    showPage();
+  }
 });
 
 function checkPassword(){
-  const input=document.getElementById("adminPassword").value.trim();
-  if(input===ADMIN_PASSWORD){
+  if(document.getElementById("adminPassword").value.trim()===ADMIN_PASSWORD){
     localStorage.setItem("sarAdminAuth","true");
     showPage();
   }
@@ -104,7 +99,7 @@ function showPage(){
   loadData();
 }
 
-function getStatusClass(status){
+function statusColor(status){
   if(!status) return "";
   const s=status.toLowerCase();
   if(s.includes("secure")) return "status-green";
@@ -114,7 +109,7 @@ function getStatusClass(status){
 }
 
 async function fetchSheet(){
-  const query=encodeURIComponent("select B,C,F,G");
+  const query=encodeURIComponent("select B,C,D,E,F,G");
   const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${query}`;
   const res=await fetch(url);
   const text=await res.text();
@@ -134,25 +129,21 @@ async function loadData(){
 
   const latest={};
 
-  rows.forEach(r=>{
-    const boat=r.c[0]?.v;
-    const persons=r.c[1]?.v;
-    const status=r.c[2]?.v;
-    const comment=r.c[3]?.v;
-
+  rows.forEach(row=>{
+    const boat=row.c[0]?.v;
     if(!boat) return;
 
     latest[boat]={
-      persons: persons||0,
-      status: status||"No Status",
-      comment: comment||""
+      persons:row.c[1]?.v||"—",
+      risk:row.c[2]?.v||"—",
+      gain:row.c[3]?.v||"—",
+      status:row.c[4]?.v||"—",
+      comment:row.c[5]?.v||""
     };
   });
 
   Object.keys(latest).forEach(boat=>{
     const data=latest[boat];
-    const statusClass=getStatusClass(data.status);
-
     const commentHTML=data.comment
       ? `<div class="text-sm text-slate-400 mt-2">${data.comment}</div>`
       : "";
@@ -160,12 +151,10 @@ async function loadData(){
     grid.innerHTML+=`
       <div class="boatCard">
         <div class="text-lg font-bold">${boat}</div>
-        <div class="text-sm text-slate-300 mt-1">
-          Persons On Board: ${data.persons}
-        </div>
-        <div class="font-bold mt-2 ${statusClass}">
-          ${data.status}
-        </div>
+        <div class="text-sm text-slate-300">Persons: ${data.persons}</div>
+        <div class="text-sm text-slate-300">GAR Risk: ${data.risk}</div>
+        <div class="text-sm text-slate-300">GAR Gain: ${data.gain}</div>
+        <div class="font-bold mt-2 ${statusColor(data.status)}">${data.status}</div>
         ${commentHTML}
       </div>
     `;
