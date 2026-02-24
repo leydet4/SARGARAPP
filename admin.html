@@ -95,14 +95,17 @@ canvas {
   <div class="card w-full max-w-md text-center">
     <img src="SAR.png" class="mx-auto h-14 mb-4">
     <h2 class="text-xl font-bold mb-4">Admin Access Required</h2>
+
     <input type="password"
            id="adminPassword"
            placeholder="Enter Admin Password"
            class="w-full p-3 rounded bg-slate-700 mb-4">
+
     <button onclick="checkPassword()"
             class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
       Enter Admin Panel
     </button>
+
     <div id="loginError" class="mt-3 text-red-400 font-bold hidden">
       Incorrect password
     </div>
@@ -130,7 +133,7 @@ canvas {
 
 <section class="p-6 max-w-7xl mx-auto space-y-10">
 
-<!-- 🔥 TASK FORCE TRACKING AID LARGE BUTTON -->
+<!-- 🔥 TASK FORCE TRACKING AID -->
 <div class="card text-center">
   <h2 class="text-2xl font-black mb-4">Task Force Tracking Aid</h2>
   <p class="text-slate-300 mb-6">
@@ -170,9 +173,37 @@ canvas {
 </section>
 </div>
 
+<!-- PDF MODAL -->
+<div id="pdfModal">
+  <div id="pdfHeader">
+    <div id="pdfTitle" class="font-bold">Document Viewer</div>
+
+    <div class="flex gap-2 flex-wrap">
+      <button onclick="zoomOut()" class="bg-gray-600 px-3 py-1 rounded font-bold">−</button>
+      <button onclick="zoomIn()" class="bg-gray-600 px-3 py-1 rounded font-bold">+</button>
+      <button onclick="fitToWidth()" class="bg-blue-600 px-3 py-1 rounded font-bold">Fit</button>
+      <button onclick="downloadPDF()" class="bg-slate-600 px-3 py-1 rounded font-bold">Download</button>
+      <button onclick="closePDF()" class="bg-red-600 px-4 py-1 rounded font-bold">Close</button>
+    </div>
+  </div>
+
+  <div id="pdfContainer"></div>
+</div>
+
 <script>
 
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+let currentPDF = null;
+let currentScale = 1.2;
+let currentPath = null;
+
 const ADMIN_PASSWORD = "SAR2026";
+
+/* =========================
+   AUTH
+========================= */
 
 window.addEventListener("load", () => {
   if (localStorage.getItem("sarAdminAuth") === "true") {
@@ -193,12 +224,17 @@ function checkPassword() {
 function showAdmin() {
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("adminContent").style.display = "block";
+  loadAdminPDFs();
 }
 
 function logout() {
   localStorage.removeItem("sarAdminAuth");
   location.reload();
 }
+
+/* =========================
+   GAR SHEETS
+========================= */
 
 const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
 const base =
@@ -218,6 +254,115 @@ document.getElementById("sheetSelector").addEventListener("change", function() {
   frame.src = base + gid;
   container.classList.remove("hidden");
 });
+
+/* =========================
+   ADMIN DOCUMENTS
+========================= */
+
+const adminPDFs = [
+  { name: "SAR Staff Registration", file: "SAR Staff Registration.pdf" },
+  { name: "SAR 2026 ICS 203", file: "SAR 2026 ICS 203.pdf" },
+  { name: "SAR 2026 ICS 205", file: "SAR 2026 ICS 205.pdf" }
+];
+
+function loadAdminPDFs() {
+  const container = document.getElementById("adminDocs");
+  container.innerHTML = "";
+
+  adminPDFs.forEach(doc => {
+
+    const row = document.createElement("div");
+    row.className = "bg-slate-700 p-4 rounded-lg";
+
+    row.innerHTML = `
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="font-semibold break-words">${doc.name}</div>
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <button onclick="openPDF('/resources/${doc.file}', '${doc.name}')"
+            class="w-full sm:w-auto bg-yellow-400 text-black px-4 py-2 rounded font-bold text-center">
+            View
+          </button>
+
+          <a href="/resources/${doc.file}" download
+            class="w-full sm:w-auto">
+            <div class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded font-bold text-center">
+              Download
+            </div>
+          </a>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(row);
+  });
+}
+
+/* =========================
+   PDF VIEWER
+========================= */
+
+async function openPDF(path, title) {
+  currentPath = path;
+  document.getElementById("pdfTitle").innerText = title;
+  document.getElementById("pdfModal").style.display = "flex";
+
+  const loadingTask = pdfjsLib.getDocument(path);
+  currentPDF = await loadingTask.promise;
+
+  fitToWidth();
+}
+
+async function renderPDF() {
+  const container = document.getElementById("pdfContainer");
+  container.innerHTML = "";
+
+  const dpr = window.devicePixelRatio || 1;
+
+  for (let i = 1; i <= currentPDF.numPages; i++) {
+    const page = await currentPDF.getPage(i);
+    const viewport = page.getViewport({ scale: currentScale });
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+
+    canvas.width = viewport.width * dpr;
+    canvas.height = viewport.height * dpr;
+    canvas.style.width = viewport.width + "px";
+    canvas.style.height = viewport.height + "px";
+
+    context.scale(dpr, dpr);
+
+    container.appendChild(canvas);
+
+    await page.render({
+      canvasContext: context,
+      viewport: viewport
+    }).promise;
+  }
+}
+
+function zoomIn(){ currentScale += .2; renderPDF(); }
+function zoomOut(){ if(currentScale>.4){ currentScale -= .2; renderPDF(); } }
+
+function fitToWidth(){
+  const containerWidth = document.getElementById("pdfContainer").clientWidth;
+  currentPDF.getPage(1).then(page=>{
+    const viewport = page.getViewport({ scale:1 });
+    currentScale = containerWidth / viewport.width;
+    renderPDF();
+  });
+}
+
+function downloadPDF(){
+  window.location.href = currentPath;
+}
+
+function closePDF(){
+  document.getElementById("pdfContainer").innerHTML="";
+  document.getElementById("pdfModal").style.display="none";
+  currentPDF=null;
+}
 
 </script>
 </body>
