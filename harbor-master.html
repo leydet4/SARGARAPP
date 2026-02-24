@@ -13,11 +13,21 @@ content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable
 <style>
 body { font-family: system-ui, sans-serif; }
 
-.statusCard {
+.tfBox {
   background:#0f172a;
-  border-radius:14px;
+  border-radius:16px;
   padding:20px;
   box-shadow:0 0 20px rgba(0,0,0,.4);
+}
+
+.boatRow {
+  background:#1e293b;
+  border-radius:10px;
+  padding:10px 14px;
+  margin-top:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
 #content { display:none; }
@@ -50,10 +60,8 @@ body { font-family: system-ui, sans-serif; }
   </a>
 </header>
 
-<section class="p-6 max-w-7xl mx-auto">
-  <div id="harborGrid"
-       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  </div>
+<section class="p-6 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6"
+         id="harborGrid">
 </section>
 
 </div>
@@ -85,13 +93,13 @@ function showPage() {
 /* ===== SHEET CONFIG ===== */
 
 const sheets = [
-  { name: "TF1", id: "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs" },
-  { name: "TF2", id: "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac" },
-  { name: "TF3", id: "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y" },
-  { name: "TF4", id: "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo" }
+  { name: "Task Force 1", id: "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs" },
+  { name: "Task Force 2", id: "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac" },
+  { name: "Task Force 3", id: "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y" },
+  { name: "Task Force 4", id: "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo" }
 ];
 
-/* ===== FETCH DATA ===== */
+/* ===== FETCH ===== */
 
 async function fetchSheetRows(sheetId) {
   const query = encodeURIComponent("select B,F,G");
@@ -105,45 +113,52 @@ async function fetchSheetRows(sheetId) {
   return json.table.rows || [];
 }
 
-/* ===== STATUS COLOR FUNCTION ===== */
+/* ===== STATUS COLOR ===== */
 
 function getStatusClass(status) {
 
   if (!status) return "text-slate-300";
 
-  const normalized = status.toLowerCase();
+  const s = status.toLowerCase();
 
-  if (normalized.includes("secure"))
-    return "text-green-400";
-
-  if (normalized.includes("underway"))
-    return "text-red-400";
-
-  if (normalized.includes("rtb"))
-    return "text-orange-400";
+  if (s.includes("secure")) return "text-green-400";
+  if (s.includes("underway")) return "text-red-400";
+  if (s.includes("rtb")) return "text-orange-400";
 
   return "text-slate-300";
 }
 
-/* ===== MAIN LOGIC ===== */
+/* ===== MAIN ===== */
 
 async function loadHarborMaster() {
 
   const grid = document.getElementById("harborGrid");
   grid.innerHTML = "";
 
-  let totalCards = 0;
-
   for (let sheet of sheets) {
 
     const rows = await fetchSheetRows(sheet.id);
 
-    if (!rows.length) continue;
+    const tfBox = document.createElement("div");
+    tfBox.className = "tfBox";
+
+    tfBox.innerHTML = `
+      <div class="text-xl font-bold mb-4">${sheet.name}</div>
+    `;
+
+    if (!rows.length) {
+      tfBox.innerHTML += `
+        <div class="text-slate-400">
+          No data available
+        </div>
+      `;
+      grid.appendChild(tfBox);
+      continue;
+    }
 
     const latestByBoat = {};
 
     rows.forEach(r => {
-
       const boat = r.c[0]?.v;
       const status = r.c[1]?.v;
       const comment = r.c[2]?.v;
@@ -154,7 +169,6 @@ async function loadHarborMaster() {
         status: status || "No Status",
         comment: comment || ""
       };
-
     });
 
     Object.keys(latestByBoat).forEach(boat => {
@@ -162,37 +176,24 @@ async function loadHarborMaster() {
       const data = latestByBoat[boat];
       const statusClass = getStatusClass(data.status);
 
-      grid.innerHTML += `
-        <div class="statusCard">
-          <div class="text-sm text-slate-400 mb-1">${sheet.name}</div>
-          <div class="text-lg font-bold mb-2">${boat}</div>
-          <div class="text-lg font-semibold ${statusClass}">
-            ${data.status}
+      tfBox.innerHTML += `
+        <div class="boatRow">
+          <div>
+            <div class="font-semibold">${boat}</div>
+            <div class="text-xs text-slate-400">${data.comment}</div>
           </div>
-          <div class="text-sm mt-2 break-words">
-            ${data.comment}
+          <div class="font-bold ${statusClass}">
+            ${data.status}
           </div>
         </div>
       `;
-
-      totalCards++;
-
     });
 
-  }
-
-  if (totalCards === 0) {
-    grid.innerHTML = `
-      <div class="statusCard text-center col-span-full">
-        <div class="text-red-400 font-bold">
-          No data available
-        </div>
-      </div>
-    `;
+    grid.appendChild(tfBox);
   }
 }
 
-/* Auto Refresh every 60 seconds */
+/* Auto refresh */
 setInterval(loadHarborMaster, 60000);
 
 </script>
