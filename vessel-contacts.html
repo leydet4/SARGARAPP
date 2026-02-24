@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+
+<title>Vessel Contacts - POV SAR 2026</title>
+<link rel="icon" href="SAR.png" />
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  body { font-family: system-ui, sans-serif; }
+  #content { display:none; }
+  .card {
+    background:#1e293b;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:0 0 25px rgba(0,0,0,.35);
+  }
+  .row {
+    background:#0f172a;
+    border-radius:12px;
+    padding:12px 14px;
+  }
+</style>
+</head>
+
+<body class="bg-slate-900 text-white">
+
+<!-- LOGIN -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center">
+  <div class="card w-full max-w-md text-center">
+    <img src="SAR.png" class="mx-auto h-14 mb-4" />
+    <h2 class="text-xl font-bold mb-4">Admin Access Required</h2>
+
+    <input type="password" id="adminPassword"
+      class="w-full p-3 rounded bg-slate-700 mb-4"
+      placeholder="Enter Admin Password" />
+
+    <button onclick="checkPassword()"
+      class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
+      Enter Vessel Contacts
+    </button>
+  </div>
+</div>
+
+<div id="content">
+
+<header class="bg-slate-800 py-6 text-center shadow-lg">
+  <img src="SAR.png" class="mx-auto h-16 mb-3" />
+  <h1 class="text-2xl font-black">Vessel Contacts</h1>
+
+  <div class="mt-4 flex justify-center gap-3 flex-wrap">
+    <a href="admin.html"
+       class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
+      ← Back to Admin
+    </a>
+  </div>
+</header>
+
+<main class="p-6 max-w-7xl mx-auto space-y-6">
+
+  <div class="card">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="text-lg font-bold">Search</div>
+        <div class="text-sm text-slate-300">Search by vessel, leader, or phone.</div>
+      </div>
+      <input id="searchBox" type="text" placeholder="Search..."
+        class="w-full md:w-96 p-3 rounded bg-slate-700 outline-none" />
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-2" id="tabs"></div>
+
+  <div class="card">
+    <div id="list" class="space-y-3"></div>
+  </div>
+
+</main>
+
+</div>
+
+<script>
+const ADMIN_PASSWORD = "SAR2026";
+
+/* Same persistent login key */
+window.addEventListener("load", () => {
+  if (localStorage.getItem("sarAdminAuth") === "true") showPage();
+});
+
+function checkPassword(){
+  const input = document.getElementById("adminPassword").value.trim();
+  if (input === ADMIN_PASSWORD) {
+    localStorage.setItem("sarAdminAuth", "true");
+    showPage();
+  }
+}
+
+function showPage(){
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("content").style.display = "block";
+  init();
+}
+
+/* Data from your ICS 204 screenshots */
+const DATA = {
+  "TF1": [
+    { vessel:"VFD Boat 2", leader:"J. Michel", phone:"(757) 739-9112" },
+    { vessel:"VBPD Boat", leader:"J. Hylton", phone:"(757) 409-1134" },
+    { vessel:"CFD 4 Boat", leader:"A. Alphin", phone:"(434) 414-4267" },
+    { vessel:"IOW SO Marine 1", leader:"A. Cornwell", phone:"(757) 357-2151" },
+    { vessel:"Henrico FD Boat 302", leader:"C. Powell", phone:"(804) 573-8911" },
+    { vessel:"PGCPD Marine 1", leader:"C. Santilli", phone:"(804) 720-5852" },
+    { vessel:"PFD Boat", leader:"T. Reel", phone:"(757) 292-6623" },
+    { vessel:"VMRC Boat", leader:"P. Gerhard", phone:"(757) 709-8198" }
+  ],
+  "TF2": [
+    { vessel:"Abingdon FD", leader:"Heard, A", phone:"757-771-7619" },
+    { vessel:"Matthews FD", leader:"Bassett, R", phone:"804-514-4214" },
+    { vessel:"Camp Peary PD", leader:"Dean, D", phone:"804-725-8807" },
+    { vessel:"Prince William PD", leader:"Dean, L", phone:"571-343-0147" },
+    { vessel:"Chesterfield FD", leader:"Covington, R", phone:"804-898-0531" },
+    { vessel:"Smith Point", leader:"Stone, D", phone:"703-402-8032" },
+    { vessel:"King George SO", leader:"Vann, J", phone:"540-538-9424" },
+    { vessel:"DWR 13", leader:"FitzGerald, A", phone:"804-340-9651" }
+  ],
+  "TF3": [
+    { vessel:"Carrollton FD", leader:"J. Brown", phone:"(757) 650-8030" },
+    { vessel:"CPD Marine 2", leader:"C. Conaway", phone:"(757) 287-3710" },
+    { vessel:"HDFR Boat 2", leader:"R. Haynes", phone:"(757) 262-6811" },
+    { vessel:"NPD Marine 1", leader:"C. Perrin", phone:"(757) 971-3744" },
+    { vessel:"NFR Boat 7", leader:"J. Cuci", phone:"(757) 270-9062" },
+    { vessel:"Suffolk FD Boat 1", leader:"L. Hylton", phone:"(540) 520-9338" },
+    { vessel:"Suffolk PD 29", leader:"S. Turnmeyer", phone:"(757) 346-8340" },
+    { vessel:"VB Rescue Boat 3", leader:"K. Ghafourpour", phone:"(510) 962-0846" }
+  ],
+  "TF4": [
+    { vessel:"Chesapeake FD-2", leader:"B. Helms", phone:"252-287-8429" },
+    { vessel:"Hampton FD", leader:"R. Haynes", phone:"757-262-6811" },
+    { vessel:"James City FD", leader:"N. Von Engel", phone:"804-832-2884" },
+    { vessel:"Portsmouth FD", leader:"S. Mongold", phone:"757-477-9462" },
+    { vessel:"Poquoson FD", leader:"T. Diggs", phone:"757-719-4504" },
+    { vessel:"DWR 16", leader:"D. Townsend", phone:"804-418-9979" },
+    { vessel:"York FD", leader:"B. Dunbar", phone:"757-870-3906" },
+    { vessel:"Ocean Craft Marine", leader:"D. Haines", phone:"443-944-3135" }
+  ]
+};
+
+let activeTF = "TF1";
+
+function init(){
+  buildTabs();
+  render();
+  document.getElementById("searchBox").addEventListener("input", render);
+}
+
+function buildTabs(){
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = "";
+  Object.keys(DATA).forEach(tf => {
+    const btn = document.createElement("button");
+    btn.className = "px-4 py-2 rounded-lg font-bold text-sm " + (tf === activeTF ? "bg-emerald-600" : "bg-slate-700 hover:bg-slate-600");
+    btn.textContent = tf;
+    btn.onclick = () => { activeTF = tf; buildTabs(); render(); };
+    tabs.appendChild(btn);
+  });
+}
+
+function telLink(phone){
+  const cleaned = (phone || "").replace(/[^\d+]/g, "");
+  return cleaned ? `tel:${cleaned}` : "#";
+}
+
+function render(){
+  const q = document.getElementById("searchBox").value.trim().toLowerCase();
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  const items = (DATA[activeTF] || []).filter(x => {
+    if (!q) return true;
+    return (
+      (x.vessel || "").toLowerCase().includes(q) ||
+      (x.leader || "").toLowerCase().includes(q) ||
+      (x.phone || "").toLowerCase().includes(q)
+    );
+  });
+
+  if (!items.length){
+    list.innerHTML = `<div class="text-slate-300">No results.</div>`;
+    return;
+  }
+
+  items.forEach(x => {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="min-w-0">
+          <div class="font-bold text-white break-words">${x.vessel || "—"}</div>
+          <div class="text-sm text-slate-300">Leader: ${x.leader || "—"}</div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <a href="${telLink(x.phone)}"
+             class="bg-yellow-400 text-black px-4 py-2 rounded font-bold text-sm">
+             Call ${x.phone || ""}
+          </a>
+        </div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+</script>
+
+</body>
+</html>
