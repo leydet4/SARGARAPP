@@ -3,27 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Task Force 4 - Status Board</title>
+<title>Task Force 4</title>
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
-#content { display:none; }
-
-.card {
-  background:#1e293b;
-  border-radius:16px;
-  padding:24px;
-  box-shadow:0 0 25px rgba(0,0,0,.35);
-}
-
-.boatCard {
-  background:#0f172a;
-  border-radius:14px;
-  padding:16px;
-}
-
+.boatCard { background:#0f172a; border-radius:14px; padding:16px; }
 .status-green { color:#22c55e; }
 .status-red { color:#ef4444; }
 .status-orange { color:#f97316; }
@@ -31,23 +17,6 @@ body { font-family: system-ui, sans-serif; }
 </head>
 
 <body class="bg-slate-900 text-white">
-
-<div id="loginScreen" class="min-h-screen flex items-center justify-center">
-  <div class="card w-full max-w-md text-center">
-    <h2 class="text-xl font-bold mb-4">Admin Access Required</h2>
-
-    <input type="password" id="adminPassword"
-      class="w-full p-3 rounded bg-slate-700 mb-4"
-      placeholder="Enter Admin Password">
-
-    <button onclick="checkPassword()"
-      class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
-      Enter Task Force 4
-    </button>
-  </div>
-</div>
-
-<div id="content">
 
 <header class="bg-slate-800 py-6 text-center shadow-lg">
   <h1 class="text-3xl font-black">Task Force 4</h1>
@@ -67,41 +36,16 @@ body { font-family: system-ui, sans-serif; }
 </header>
 
 <main class="p-6 max-w-6xl mx-auto">
-  <div class="card">
-    <div class="text-xl font-bold mb-6">Current Boat Status</div>
-    <div id="boatGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-  </div>
+  <div id="boatGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 </main>
-
-</div>
 
 <script>
 
-const ADMIN_PASSWORD = "SAR2026";
 const SHEET_ID = "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo";
-
-window.addEventListener("load", ()=>{
-  if(localStorage.getItem("sarAdminAuth")==="true"){
-    showPage();
-  }
-});
-
-function checkPassword(){
-  if(document.getElementById("adminPassword").value.trim()===ADMIN_PASSWORD){
-    localStorage.setItem("sarAdminAuth","true");
-    showPage();
-  }
-}
-
-function showPage(){
-  document.getElementById("loginScreen").style.display="none";
-  document.getElementById("content").style.display="block";
-  loadData();
-}
 
 function statusColor(status){
   if(!status) return "";
-  const s=status.toLowerCase();
+  const s = status.toLowerCase();
   if(s.includes("secure")) return "status-green";
   if(s.includes("underway")) return "status-red";
   if(s.includes("rtb")) return "status-orange";
@@ -109,61 +53,67 @@ function statusColor(status){
 }
 
 async function fetchSheet(){
-  const query=encodeURIComponent("select B,C,D,E,F,G");
-  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${query}`;
-  const res=await fetch(url);
-  const text=await res.text();
-  const json=JSON.parse(text.substring(47).slice(0,-2));
-  return json.table.rows||[];
+  const query = encodeURIComponent("select B,C,D,E,F,G");
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${query}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.substring(47).slice(0,-2));
+  return json.table.rows || [];
 }
 
 async function loadData(){
-  const rows=await fetchSheet();
-  const grid=document.getElementById("boatGrid");
-  grid.innerHTML="";
+  const rows = await fetchSheet();
+  const grid = document.getElementById("boatGrid");
+  grid.innerHTML = "";
 
-  if(!rows.length){
-    grid.innerHTML="<div>No data available</div>";
-    return;
-  }
-
-  const latest={};
+  const boats = {};
 
   rows.forEach(row=>{
-    const boat=row.c[0]?.v;
+    const boat = row.c[0]?.v;
     if(!boat) return;
 
-    latest[boat]={
-      persons:row.c[1]?.v||"—",
-      risk:row.c[2]?.v||"—",
-      gain:row.c[3]?.v||"—",
-      status:row.c[4]?.v||"—",
-      comment:row.c[5]?.v||""
-    };
+    if(!boats[boat]){
+      boats[boat] = {
+        persons: null,
+        risk: "",
+        gain: "",
+        status: "",
+        comment: ""
+      };
+    }
+
+    if(row.c[1] && row.c[1].v !== "" && row.c[1].v !== null){
+      boats[boat].persons = row.c[1].v;
+    }
+
+    boats[boat].risk = row.c[2]?.v ?? boats[boat].risk;
+    boats[boat].gain = row.c[3]?.v ?? boats[boat].gain;
+    boats[boat].status = row.c[4]?.v ?? boats[boat].status;
+
+    boats[boat].comment = row.c[5]?.v ?? "";
   });
 
-  Object.keys(latest).forEach(boat=>{
-    const data=latest[boat];
-    const commentHTML=data.comment
-      ? `<div class="text-sm text-slate-400 mt-2">${data.comment}</div>`
-      : "";
+  Object.keys(boats).forEach(boat=>{
+    const d = boats[boat];
 
-    grid.innerHTML+=`
+    grid.innerHTML += `
       <div class="boatCard">
         <div class="text-lg font-bold">${boat}</div>
-        <div class="text-sm text-slate-300">Persons: ${data.persons}</div>
-        <div class="text-sm text-slate-300">GAR Risk: ${data.risk}</div>
-        <div class="text-sm text-slate-300">GAR Gain: ${data.gain}</div>
-        <div class="font-bold mt-2 ${statusColor(data.status)}">${data.status}</div>
-        ${commentHTML}
+        <div class="text-sm">Persons on Board: ${d.persons !== null ? d.persons : "—"}</div>
+        <div class="text-sm">GAR Risk: ${d.risk || "—"}</div>
+        <div class="text-sm">GAR Gain: ${d.gain || "—"}</div>
+        <div class="font-bold mt-2 ${statusColor(d.status)}">
+          ${d.status || "—"}
+        </div>
+        ${d.comment ? `<div class="text-xs text-slate-400 mt-2">${d.comment}</div>` : ""}
       </div>
     `;
   });
 }
 
-setInterval(loadData,60000);
+loadData();
+setInterval(loadData, 30000);
 
 </script>
-
 </body>
 </html>
