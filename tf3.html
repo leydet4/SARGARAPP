@@ -3,101 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Task Force 3 - Status Board</title>
+<title>Task Force 3 Dashboard</title>
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
-
 <style>
 body { font-family: system-ui, sans-serif; }
-#content { display:none; }
-
-.card {
-  background:#1e293b;
-  border-radius:16px;
-  padding:24px;
-  box-shadow:0 0 25px rgba(0,0,0,.35);
-}
-
-.boatCard {
-  background:#0f172a;
-  border-radius:14px;
-  padding:16px;
-}
-
+.boatCard { background:#0f172a; border-radius:14px; padding:16px; }
 .status-green { color:#22c55e; }
 .status-red { color:#ef4444; }
 .status-orange { color:#f97316; }
 </style>
 </head>
 
-<body class="bg-slate-900 text-white">
+<body class="bg-slate-900 text-white p-6">
 
-<div id="loginScreen" class="min-h-screen flex items-center justify-center">
-  <div class="card w-full max-w-md text-center">
-    <h2 class="text-xl font-bold mb-4">Admin Access Required</h2>
+<h1 class="text-3xl font-black mb-6 text-center">Task Force 3</h1>
 
-    <input type="password" id="adminPassword"
-      class="w-full p-3 rounded bg-slate-700 mb-4"
-      placeholder="Enter Admin Password">
-
-    <button onclick="checkPassword()"
-      class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
-      Enter Task Force 3
-    </button>
-  </div>
-</div>
-
-<div id="content">
-
-<header class="bg-slate-800 py-6 text-center shadow-lg">
-  <h1 class="text-3xl font-black">Task Force 3</h1>
-
-  <div class="mt-4 flex justify-center gap-3 flex-wrap">
-    <a href="admin.html"
-       class="px-5 py-2 bg-blue-600 rounded-lg font-bold text-sm">
-       ← Back to Admin
-    </a>
-
-    <a href="https://forms.gle/oecqWnBxEJERwyhJA"
-       target="_blank"
-       class="px-5 py-2 bg-yellow-400 text-black rounded-lg font-bold text-sm">
-       Submit Update
-    </a>
-  </div>
-</header>
-
-<main class="p-6 max-w-6xl mx-auto">
-  <div class="card">
-    <div class="text-xl font-bold mb-6">Current Boat Status</div>
-    <div id="boatGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-  </div>
-</main>
-
-</div>
+<div id="boatGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
 <script>
-
-const ADMIN_PASSWORD = "SAR2026";
 const SHEET_ID = "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y";
-
-window.addEventListener("load", ()=>{
-  if(localStorage.getItem("sarAdminAuth")==="true"){
-    showPage();
-  }
-});
-
-function checkPassword(){
-  if(document.getElementById("adminPassword").value.trim()===ADMIN_PASSWORD){
-    localStorage.setItem("sarAdminAuth","true");
-    showPage();
-  }
-}
-
-function showPage(){
-  document.getElementById("loginScreen").style.display="none";
-  document.getElementById("content").style.display="block";
-  loadData();
-}
 
 function statusColor(status){
   if(!status) return "";
@@ -109,60 +34,58 @@ function statusColor(status){
 }
 
 async function fetchSheet(){
-  const query=encodeURIComponent("select B,C,D,E,F,G");
-  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${query}`;
-  const res=await fetch(url);
-  const text=await res.text();
-  const json=JSON.parse(text.substring(47).slice(0,-2));
-  return json.table.rows||[];
+  const query = encodeURIComponent("select B,C,D,E,F,G");
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${query}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.substring(47).slice(0,-2));
+  return json.table.rows || [];
 }
 
 async function loadData(){
-  const rows=await fetchSheet();
-  const grid=document.getElementById("boatGrid");
-  grid.innerHTML="";
+  const rows = await fetchSheet();
+  const grid = document.getElementById("boatGrid");
+  grid.innerHTML = "";
 
-  if(!rows.length){
-    grid.innerHTML="<div>No data available</div>";
-    return;
-  }
-
-  const latest={};
+  const latestPerBoat = {};
 
   rows.forEach(row=>{
-    const boat=row.c[0]?.v;
+    const boat = row.c[0]?.v;
     if(!boat) return;
 
-    latest[boat]={
-      persons:row.c[1]?.v||"—",
-      risk:row.c[2]?.v||"—",
-      gain:row.c[3]?.v||"—",
-      status:row.c[4]?.v||"—",
-      comment:row.c[5]?.v||""
-    };
+    if(!latestPerBoat[boat]){
+      latestPerBoat[boat] = { persons:"", risk:"", gain:"", status:"", comment:"" };
+    }
+
+    const current = latestPerBoat[boat];
+
+    if(row.c[1]?.v) current.persons = row.c[1].v;
+    if(row.c[2]?.v) current.risk = row.c[2].v;
+    if(row.c[3]?.v) current.gain = row.c[3].v;
+    if(row.c[4]?.v) current.status = row.c[4].v;
+    if(row.c[5]?.v) current.comment = row.c[5].v;
   });
 
-  Object.keys(latest).forEach(boat=>{
-    const data=latest[boat];
-    const commentHTML=data.comment
-      ? `<div class="text-sm text-slate-400 mt-2">${data.comment}</div>`
-      : "";
+  Object.keys(latestPerBoat).forEach(boat=>{
+    const data = latestPerBoat[boat];
 
-    grid.innerHTML+=`
+    grid.innerHTML += `
       <div class="boatCard">
         <div class="text-lg font-bold">${boat}</div>
-        <div class="text-sm text-slate-300">Persons: ${data.persons}</div>
-        <div class="text-sm text-slate-300">GAR Risk: ${data.risk}</div>
-        <div class="text-sm text-slate-300">GAR Gain: ${data.gain}</div>
-        <div class="font-bold mt-2 ${statusColor(data.status)}">${data.status}</div>
-        ${commentHTML}
+        <div class="text-sm">Persons: ${data.persons || "—"}</div>
+        <div class="text-sm">GAR Risk: ${data.risk || "—"}</div>
+        <div class="text-sm">GAR Gain: ${data.gain || "—"}</div>
+        <div class="font-bold mt-2 ${statusColor(data.status)}">
+          ${data.status || "—"}
+        </div>
+        ${data.comment ? `<div class="text-xs text-slate-400 mt-2">${data.comment}</div>` : ""}
       </div>
     `;
   });
 }
 
-setInterval(loadData,60000);
-
+loadData();
+setInterval(loadData,30000);
 </script>
 
 </body>
