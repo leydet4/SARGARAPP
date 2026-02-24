@@ -98,13 +98,24 @@ function showPage() {
   loadHarborMaster();
 }
 
-/* Sheets */
+/* =========================
+   SHEET CONFIG
+========================= */
+
 const sheets = [
   { name: "Task Force 1", id: "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs" },
   { name: "Task Force 2", id: "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac" },
   { name: "Task Force 3", id: "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y" },
   { name: "Task Force 4", id: "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo" }
 ];
+
+/*
+Column Mapping:
+A = Timestamp
+B = Boat
+F = Status
+G = Comment
+*/
 
 async function fetchLatestRow(sheetId) {
 
@@ -121,6 +132,7 @@ async function fetchLatestRow(sheetId) {
   if (!row) return null;
 
   return {
+    timestamp: row[0]?.v || "N/A",
     boat: row[1]?.v || "N/A",
     status: row[2]?.v || "N/A",
     comment: row[3]?.v || "N/A"
@@ -139,17 +151,52 @@ async function loadHarborMaster() {
     const card = document.createElement("div");
     card.className = "statusCard";
 
-    card.innerHTML = `
-      <div class="text-xl font-bold mb-3">${sheet.name}</div>
-      <div class="mb-2">Boat: <span class="font-semibold">${data?.boat || "—"}</span></div>
-      <div class="mb-2">Status: <span class="text-green-400 font-semibold">${data?.status || "—"}</span></div>
-      <div class="text-sm text-slate-300">${data?.comment || ""}</div>
-    `;
+    if (!data) {
+      card.innerHTML = `
+        <div class="text-xl font-bold mb-3">${sheet.name}</div>
+        <div class="text-red-400 font-semibold">
+          No data available
+        </div>
+      `;
+    } else {
+      card.innerHTML = `
+        <div class="text-xl font-bold mb-3">${sheet.name}</div>
+
+        <div class="text-sm text-slate-400 mb-1">
+          Boat:
+          <span class="font-semibold text-white">
+            ${data.boat}
+          </span>
+        </div>
+
+        <div class="text-sm text-slate-400 mb-1">
+          Status:
+          <span class="font-semibold text-green-400">
+            ${data.status}
+          </span>
+        </div>
+
+        <div class="text-sm text-slate-400 mb-1">
+          Last Updated:
+          <span class="font-semibold text-white">
+            ${data.timestamp}
+          </span>
+        </div>
+
+        <div class="text-sm text-slate-400 mt-2">
+          Comment:
+          <div class="text-white mt-1 text-sm break-words">
+            ${data.comment}
+          </div>
+        </div>
+      `;
+    }
 
     grid.appendChild(card);
   }
 }
 
+/* Auto refresh every 60 seconds */
 setInterval(loadHarborMaster, 60000);
 
 </script>
