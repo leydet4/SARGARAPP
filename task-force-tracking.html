@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
+<title>Task Force Tracking Aid - POV SAR 2026</title>
+
+<link rel="icon" href="SAR.png">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body { font-family: system-ui, sans-serif; }
+
+.card {
+  background:#1e293b;
+  border-radius:16px;
+  padding:24px;
+  box-shadow:0 0 25px rgba(0,0,0,.35);
+}
+
+.select {
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  background:#334155;
+  font-weight:600;
+  color:white;
+}
+
+#sheetContainer {
+  width:100%;
+  height:80vh;
+  overflow:auto;
+  border-radius:16px;
+  background:white;
+  box-shadow:0 0 25px rgba(0,0,0,.35);
+  -webkit-overflow-scrolling: touch;
+}
+
+#sheetFrame {
+  width:1600px;
+  height:100%;
+  border:none;
+  transform:scale(.85);
+  transform-origin: top left;
+}
+
+#content { display:none; }
+</style>
+</head>
+
+<body class="bg-slate-900 text-white">
+
+<!-- LOGIN -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center">
+  <div class="card w-full max-w-md text-center">
+    <img src="SAR.png" class="mx-auto h-14 mb-4">
+    <h2 class="text-xl font-bold mb-4">Admin Access Required</h2>
+
+    <input type="password"
+           id="adminPassword"
+           placeholder="Enter Admin Password"
+           class="w-full p-3 rounded bg-slate-700 mb-4">
+
+    <button onclick="checkPassword()"
+            class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
+      Enter Tracking Aid
+    </button>
+
+    <div id="loginError" class="mt-3 text-red-400 font-bold hidden">
+      Incorrect password
+    </div>
+  </div>
+</div>
+
+<div id="content">
+
+<header class="bg-slate-800 py-6 text-center shadow-lg">
+  <img src="SAR.png" class="mx-auto h-16 mb-3">
+  <h1 class="text-2xl font-black">Task Force Tracking Aid</h1>
+
+  <div class="mt-4 flex justify-center gap-3 flex-wrap">
+    <a href="admin.html"
+       class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
+       ← Back to Admin
+    </a>
+
+    <button onclick="logout()"
+       class="px-5 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-sm">
+       Logout
+    </button>
+  </div>
+</header>
+
+<section class="p-6 max-w-7xl mx-auto">
+
+<div class="card">
+  <h2 class="text-xl font-bold mb-4">Select Task Force Form Responses</h2>
+
+  <select id="trackingSelector" class="select mb-6">
+    <option value="">Select Tracking Sheet...</option>
+
+    <!-- Replace these GIDs with your new form response sheets -->
+    <option value="111111111">TF1 Personnel Check-In</option>
+    <option value="222222222">TF2 Equipment Tracking</option>
+    <option value="333333333">TF3 Logistics</option>
+    <option value="444444444">TF4 Safety Log</option>
+    <option value="555555555">Medical Tracking</option>
+  </select>
+
+  <div id="sheetContainer" class="hidden">
+    <iframe id="sheetFrame"></iframe>
+  </div>
+
+</div>
+
+</section>
+</div>
+
+<script>
+
+// 🔐 Persistent Login
+const ADMIN_PASSWORD = "SAR2026";
+
+window.addEventListener("load", () => {
+  if (localStorage.getItem("sarAdminAuth") === "true") {
+    showContent();
+  }
+});
+
+function checkPassword() {
+  const input = document.getElementById("adminPassword").value.trim();
+  if (input === ADMIN_PASSWORD) {
+    localStorage.setItem("sarAdminAuth", "true");
+    showContent();
+  } else {
+    document.getElementById("loginError").classList.remove("hidden");
+  }
+}
+
+function showContent() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("content").style.display = "block";
+}
+
+function logout() {
+  localStorage.removeItem("sarAdminAuth");
+  location.reload();
+}
+
+// 🔗 Google Sheet Base
+const trackingSheetID = "PUT_YOUR_MASTER_SHEET_ID_HERE";
+const base =
+`https://docs.google.com/spreadsheets/d/${trackingSheetID}/gviz/tq?tqx=out:html&gid=`;
+
+document.getElementById("trackingSelector").addEventListener("change", function() {
+  const gid = this.value;
+  const frame = document.getElementById("sheetFrame");
+  const container = document.getElementById("sheetContainer");
+
+  if (!gid) {
+    container.classList.add("hidden");
+    frame.src = "";
+    return;
+  }
+
+  frame.src = base + gid;
+  container.classList.remove("hidden");
+});
+
+</script>
+
+</body>
+</html>
