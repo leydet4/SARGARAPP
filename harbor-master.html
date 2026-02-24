@@ -2,9 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Harbor Master - POV SAR 2026</title>
 
 <link rel="icon" href="SAR.png">
@@ -12,13 +10,6 @@ content="width=device-width, initial-scale=1.0">
 
 <style>
 body { font-family: system-ui, sans-serif; }
-
-.card {
-  background:#1e293b;
-  border-radius:16px;
-  padding:24px;
-  box-shadow:0 0 25px rgba(0,0,0,.35);
-}
 
 .statusCard {
   background:#0f172a;
@@ -33,17 +24,12 @@ body { font-family: system-ui, sans-serif; }
 
 <body class="bg-slate-900 text-white">
 
-<!-- LOGIN -->
 <div id="loginScreen" class="min-h-screen flex items-center justify-center">
-  <div class="card w-full max-w-md text-center">
-    <img src="SAR.png" class="mx-auto h-14 mb-4">
+  <div class="bg-slate-800 p-8 rounded-xl w-full max-w-md text-center">
     <h2 class="text-xl font-bold mb-4">Admin Access Required</h2>
-
-    <input type="password"
-           id="adminPassword"
-           class="w-full p-3 rounded bg-slate-700 mb-4"
-           placeholder="Enter Admin Password">
-
+    <input type="password" id="adminPassword"
+      class="w-full p-3 rounded bg-slate-700 mb-4"
+      placeholder="Enter Admin Password">
     <button onclick="checkPassword()"
       class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold">
       Enter Harbor Master
@@ -54,24 +40,19 @@ body { font-family: system-ui, sans-serif; }
 <div id="content">
 
 <header class="bg-slate-800 py-6 text-center shadow-lg">
-  <img src="SAR.png" class="mx-auto h-16 mb-3">
   <h1 class="text-3xl font-black">🚢 Harbor Master</h1>
-
-  <div class="mt-4">
-    <a href="admin.html"
-       class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-sm">
-       ← Back to Admin
-    </a>
-  </div>
+  <a href="admin.html"
+     class="mt-3 inline-block px-4 py-2 bg-blue-600 rounded-lg text-sm font-bold">
+     ← Back to Admin
+  </a>
 </header>
 
 <section class="p-6 max-w-7xl mx-auto">
-
-<div id="harborGrid"
-     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-</div>
-
+  <div id="harborGrid"
+       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  </div>
 </section>
+
 </div>
 
 <script>
@@ -98,45 +79,24 @@ function showPage() {
   loadHarborMaster();
 }
 
-/* =========================
-   SHEET CONFIG
-========================= */
-
 const sheets = [
-  { name: "Task Force 1", id: "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs" },
-  { name: "Task Force 2", id: "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac" },
-  { name: "Task Force 3", id: "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y" },
-  { name: "Task Force 4", id: "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo" }
+  { name: "TF1", id: "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs" },
+  { name: "TF2", id: "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac" },
+  { name: "TF3", id: "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y" },
+  { name: "TF4", id: "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo" }
 ];
 
-/*
-Column Mapping:
-A = Timestamp
-B = Boat
-F = Status
-G = Comment
-*/
+async function fetchAllRows(sheetId) {
 
-async function fetchLatestRow(sheetId) {
-
-  const query = encodeURIComponent("select A,B,F,G order by A desc limit 1");
+  const query = encodeURIComponent("select A,B,F,G");
   const url =
     `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tq=${query}`;
 
   const response = await fetch(url);
   const text = await response.text();
-
   const json = JSON.parse(text.substring(47).slice(0, -2));
-  const row = json.table.rows[0]?.c;
 
-  if (!row) return null;
-
-  return {
-    timestamp: row[0]?.v || "N/A",
-    boat: row[1]?.v || "N/A",
-    status: row[2]?.v || "N/A",
-    comment: row[3]?.v || "N/A"
-  };
+  return json.table.rows || [];
 }
 
 async function loadHarborMaster() {
@@ -146,57 +106,57 @@ async function loadHarborMaster() {
 
   for (let sheet of sheets) {
 
-    const data = await fetchLatestRow(sheet.id);
+    const rows = await fetchAllRows(sheet.id);
 
-    const card = document.createElement("div");
-    card.className = "statusCard";
+    if (!rows.length) {
+      grid.innerHTML += `
+        <div class="statusCard">
+          <div class="text-xl font-bold mb-3">${sheet.name}</div>
+          <div class="text-red-400">No data available</div>
+        </div>`;
+      continue;
+    }
 
-    if (!data) {
-      card.innerHTML = `
-        <div class="text-xl font-bold mb-3">${sheet.name}</div>
-        <div class="text-red-400 font-semibold">
-          No data available
-        </div>
-      `;
-    } else {
-      card.innerHTML = `
-        <div class="text-xl font-bold mb-3">${sheet.name}</div>
+    const latestByBoat = {};
 
-        <div class="text-sm text-slate-400 mb-1">
-          Boat:
-          <span class="font-semibold text-white">
-            ${data.boat}
-          </span>
-        </div>
+    rows.forEach(r => {
+      const timestamp = new Date(r.c[0]?.v);
+      const boat = r.c[1]?.v;
+      const status = r.c[2]?.v;
+      const comment = r.c[3]?.v;
 
-        <div class="text-sm text-slate-400 mb-1">
-          Status:
-          <span class="font-semibold text-green-400">
-            ${data.status}
-          </span>
-        </div>
+      if (!boat) return;
 
-        <div class="text-sm text-slate-400 mb-1">
-          Last Updated:
-          <span class="font-semibold text-white">
-            ${data.timestamp}
-          </span>
-        </div>
+      if (!latestByBoat[boat] ||
+          timestamp > latestByBoat[boat].timestamp) {
+        latestByBoat[boat] = {
+          timestamp,
+          status,
+          comment
+        };
+      }
+    });
 
-        <div class="text-sm text-slate-400 mt-2">
-          Comment:
-          <div class="text-white mt-1 text-sm break-words">
-            ${data.comment}
+    Object.keys(latestByBoat).forEach(boat => {
+      const data = latestByBoat[boat];
+
+      grid.innerHTML += `
+        <div class="statusCard">
+          <div class="text-sm text-slate-400 mb-1">${sheet.name}</div>
+          <div class="text-lg font-bold mb-2">${boat}</div>
+          <div class="text-green-400 font-semibold">${data.status}</div>
+          <div class="text-sm text-slate-400 mt-2">
+            ${data.timestamp.toLocaleString()}
+          </div>
+          <div class="text-sm mt-2 break-words">
+            ${data.comment || ""}
           </div>
         </div>
       `;
-    }
-
-    grid.appendChild(card);
+    });
   }
 }
 
-/* Auto refresh every 60 seconds */
 setInterval(loadHarborMaster, 60000);
 
 </script>
