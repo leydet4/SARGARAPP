@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
 <title>Harbor Master - POV SAR 2026</title>
 
 <link rel="icon" href="SAR.png">
@@ -24,6 +26,7 @@ body { font-family: system-ui, sans-serif; }
 
 <body class="bg-slate-900 text-white">
 
+<!-- LOGIN -->
 <div id="loginScreen" class="min-h-screen flex items-center justify-center">
   <div class="bg-slate-800 p-8 rounded-xl w-full max-w-md text-center">
     <h2 class="text-xl font-bold mb-4">Admin Access Required</h2>
@@ -79,6 +82,8 @@ function showPage() {
   loadHarborMaster();
 }
 
+/* ===== SHEET CONFIG ===== */
+
 const sheets = [
   { name: "TF1", id: "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs" },
   { name: "TF2", id: "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac" },
@@ -86,9 +91,10 @@ const sheets = [
   { name: "TF4", id: "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo" }
 ];
 
-async function fetchAllRows(sheetId) {
+/* ===== FETCH DATA ===== */
 
-  const query = encodeURIComponent("select A,B,F,G");
+async function fetchSheetRows(sheetId) {
+  const query = encodeURIComponent("select B,F,G");
   const url =
     `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tq=${query}`;
 
@@ -99,45 +105,42 @@ async function fetchAllRows(sheetId) {
   return json.table.rows || [];
 }
 
+/* ===== MAIN LOGIC ===== */
+
 async function loadHarborMaster() {
 
   const grid = document.getElementById("harborGrid");
   grid.innerHTML = "";
 
+  let totalCards = 0;
+
   for (let sheet of sheets) {
 
-    const rows = await fetchAllRows(sheet.id);
+    const rows = await fetchSheetRows(sheet.id);
 
-    if (!rows.length) {
-      grid.innerHTML += `
-        <div class="statusCard">
-          <div class="text-xl font-bold mb-3">${sheet.name}</div>
-          <div class="text-red-400">No data available</div>
-        </div>`;
-      continue;
-    }
+    if (!rows.length) continue;
 
     const latestByBoat = {};
 
+    // Since Forms append to bottom,
+    // iterate top to bottom and overwrite each boat
     rows.forEach(r => {
-      const timestamp = new Date(r.c[0]?.v);
-      const boat = r.c[1]?.v;
-      const status = r.c[2]?.v;
-      const comment = r.c[3]?.v;
+
+      const boat = r.c[0]?.v;
+      const status = r.c[1]?.v;
+      const comment = r.c[2]?.v;
 
       if (!boat) return;
 
-      if (!latestByBoat[boat] ||
-          timestamp > latestByBoat[boat].timestamp) {
-        latestByBoat[boat] = {
-          timestamp,
-          status,
-          comment
-        };
-      }
+      latestByBoat[boat] = {
+        status: status || "No Status",
+        comment: comment || ""
+      };
+
     });
 
     Object.keys(latestByBoat).forEach(boat => {
+
       const data = latestByBoat[boat];
 
       grid.innerHTML += `
@@ -145,18 +148,30 @@ async function loadHarborMaster() {
           <div class="text-sm text-slate-400 mb-1">${sheet.name}</div>
           <div class="text-lg font-bold mb-2">${boat}</div>
           <div class="text-green-400 font-semibold">${data.status}</div>
-          <div class="text-sm text-slate-400 mt-2">
-            ${data.timestamp.toLocaleString()}
-          </div>
           <div class="text-sm mt-2 break-words">
-            ${data.comment || ""}
+            ${data.comment}
           </div>
         </div>
       `;
+
+      totalCards++;
+
     });
+
+  }
+
+  if (totalCards === 0) {
+    grid.innerHTML = `
+      <div class="statusCard text-center col-span-full">
+        <div class="text-red-400 font-bold">
+          No data available
+        </div>
+      </div>
+    `;
   }
 }
 
+/* Auto Refresh every 60 seconds */
 setInterval(loadHarborMaster, 60000);
 
 </script>
