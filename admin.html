@@ -60,13 +60,11 @@ body { font-family: system-ui, sans-serif; }
   display:none;
   flex-direction:column;
   z-index:100;
-  padding-top: env(safe-area-inset-top);
 }
 
 #pdfHeader {
   background:#0f172a;
   padding:16px;
-  padding-top: calc(16px + env(safe-area-inset-top));
   display:flex;
   justify-content:space-between;
   align-items:center;
@@ -106,7 +104,8 @@ canvas {
       Enter Admin Panel
     </button>
 
-    <div id="loginError" class="mt-3 text-red-400 font-bold hidden">
+    <div id="loginError"
+         class="mt-3 text-red-400 font-bold hidden">
       Incorrect password
     </div>
   </div>
@@ -133,29 +132,52 @@ canvas {
 
 <section class="p-6 max-w-7xl mx-auto space-y-10">
 
-<!-- ✅ OPERATIONS LINKS (SMALL BUTTONS) -->
+<!-- ========================= -->
+<!-- OPERATIONS SECTION -->
+<!-- ========================= -->
+
 <div class="card">
   <h2 class="text-lg font-bold mb-4">Operations</h2>
 
   <div class="flex flex-wrap gap-3">
+
     <a href="harbor-master.html"
        class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-lg font-semibold text-sm">
       Harbor Master
-    </a>
-
-    <a href="task-force-tracking.html"
-       class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg font-semibold text-sm">
-      Task Force Tracking
     </a>
 
     <a href="vessel-contacts.html"
        class="bg-slate-600 hover:bg-slate-500 text-white px-5 py-3 rounded-lg font-semibold text-sm">
       Vessel Contacts
     </a>
+
+    <a href="tf1.html"
+       class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg font-semibold text-sm">
+      Task Force 1
+    </a>
+
+    <a href="tf2.html"
+       class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg font-semibold text-sm">
+      Task Force 2
+    </a>
+
+    <a href="tf3.html"
+       class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg font-semibold text-sm">
+      Task Force 3
+    </a>
+
+    <a href="tf4.html"
+       class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg font-semibold text-sm">
+      Task Force 4
+    </a>
+
   </div>
 </div>
 
+<!-- ========================= -->
 <!-- GAR VIEWER -->
+<!-- ========================= -->
+
 <div class="card">
   <h2 class="text-xl font-bold mb-4">GAR Submissions</h2>
 
@@ -173,7 +195,10 @@ canvas {
   </div>
 </div>
 
+<!-- ========================= -->
 <!-- ADMIN DOCUMENTS -->
+<!-- ========================= -->
+
 <div class="card">
   <h2 class="text-xl font-bold mb-6">Admin Documents</h2>
   <div id="adminDocs" class="space-y-4"></div>
@@ -182,7 +207,10 @@ canvas {
 </section>
 </div>
 
+<!-- ========================= -->
 <!-- PDF MODAL -->
+<!-- ========================= -->
+
 <div id="pdfModal">
   <div id="pdfHeader">
     <div id="pdfTitle" class="font-bold">Document Viewer</div>
@@ -210,9 +238,7 @@ let currentPath = null;
 
 const ADMIN_PASSWORD = "SAR2026";
 
-/* =========================
-   AUTH
-========================= */
+/* AUTH */
 
 window.addEventListener("load", () => {
   if (localStorage.getItem("sarAdminAuth") === "true") {
@@ -241,9 +267,7 @@ function logout() {
   location.reload();
 }
 
-/* =========================
-   GAR SHEETS
-========================= */
+/* GAR VIEWER */
 
 const sheetID = "1xfMcENDbVbWkwuexGOFjfz9MGp8aD5eFxslVIaeDDdg";
 const base =
@@ -264,9 +288,7 @@ document.getElementById("sheetSelector").addEventListener("change", function() {
   container.classList.remove("hidden");
 });
 
-/* =========================
-   ADMIN DOCUMENTS
-========================= */
+/* ADMIN DOCUMENTS */
 
 const adminPDFs = [
   { name: "SAR Staff Registration", file: "SAR Staff Registration.pdf" },
@@ -289,16 +311,15 @@ function loadAdminPDFs() {
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div class="font-semibold break-words">${doc.name}</div>
 
-        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+        <div class="flex gap-3">
           <button onclick="openPDF('/resources/${doc.file}', '${doc.name}')"
-            class="w-full sm:w-auto bg-yellow-400 text-black px-4 py-2 rounded font-bold text-center">
+            class="bg-yellow-400 text-black px-4 py-2 rounded font-bold text-sm">
             View
           </button>
 
-          <a href="/resources/${doc.file}" download class="w-full sm:w-auto">
-            <div class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded font-bold text-center">
-              Download
-            </div>
+          <a href="/resources/${doc.file}" download
+             class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded font-bold text-sm">
+             Download
           </a>
         </div>
       </div>
@@ -308,9 +329,7 @@ function loadAdminPDFs() {
   });
 }
 
-/* =========================
-   PDF VIEWER
-========================= */
+/* PDF VIEWER */
 
 async function openPDF(path, title) {
   currentPath = path;
@@ -319,7 +338,6 @@ async function openPDF(path, title) {
 
   const loadingTask = pdfjsLib.getDocument(path);
   currentPDF = await loadingTask.promise;
-
   fitToWidth();
 }
 
