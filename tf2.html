@@ -13,6 +13,23 @@ body { font-family: system-ui, sans-serif; }
 .status-green { color:#22c55e; }
 .status-red { color:#ef4444; }
 .status-orange { color:#f97316; }
+
+.sheetWrap {
+  width:100%;
+  height:70vh;
+  overflow:auto;
+  border-radius:16px;
+  background:white;
+  box-shadow:0 0 25px rgba(0,0,0,.35);
+  -webkit-overflow-scrolling: touch;
+}
+.sheetFrame {
+  width:1400px;
+  height:100%;
+  border:none;
+  transform:scale(.9);
+  transform-origin: top left;
+}
 </style>
 </head>
 
@@ -22,37 +39,44 @@ body { font-family: system-ui, sans-serif; }
   <h1 class="text-3xl font-black">Task Force 2</h1>
 
   <div class="mt-4 flex justify-center gap-3 flex-wrap">
-    <a href="admin.html"
-       class="px-5 py-2 bg-blue-600 rounded-lg font-bold text-sm">
-       ← Back to Admin
-    </a>
-
-    <a href="https://forms.gle/K9pxiHaSGnCVG1Hs5"
-       target="_blank"
-       class="px-5 py-2 bg-yellow-400 text-black rounded-lg font-bold text-sm">
-       Submit Update
-    </a>
+    <a href="admin.html" class="px-5 py-2 bg-blue-600 rounded-lg font-bold text-sm">← Back to Admin</a>
+    <a href="https://forms.gle/K9pxiHaSGnCVG1Hs5" target="_blank"
+       class="px-5 py-2 bg-yellow-400 text-black rounded-lg font-bold text-sm">Submit Update</a>
   </div>
 </header>
 
-<main class="p-6 max-w-6xl mx-auto">
-  <div id="boatGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+<main class="p-6 max-w-7xl mx-auto space-y-10">
+
+  <section>
+    <h2 class="text-xl font-bold mb-4">Live Dashboard</h2>
+    <div id="boatGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </section>
+
+  <section>
+    <h2 class="text-xl font-bold mb-4">Full Sheet View</h2>
+    <div class="sheetWrap">
+      <iframe class="sheetFrame" id="sheetFrame"></iframe>
+    </div>
+  </section>
+
 </main>
 
 <script>
-
 const SHEET_ID = "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac";
+const SHEET_EMBED = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:html`;
+
+function isPresent(v){ return v !== null && v !== undefined && v !== ""; }
 
 function statusColor(status){
   if(!status) return "";
-  const s = status.toLowerCase();
+  const s = String(status).toLowerCase();
   if(s.includes("secure")) return "status-green";
   if(s.includes("underway")) return "status-red";
   if(s.includes("rtb")) return "status-orange";
   return "";
 }
 
-async function fetchSheet(){
+async function fetchSheetRows(){
   const query = encodeURIComponent("select B,C,D,E,F,G");
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${query}`;
   const res = await fetch(url);
@@ -61,8 +85,8 @@ async function fetchSheet(){
   return json.table.rows || [];
 }
 
-async function loadData(){
-  const rows = await fetchSheet();
+async function loadDashboard(){
+  const rows = await fetchSheetRows();
   const grid = document.getElementById("boatGrid");
   grid.innerHTML = "";
 
@@ -73,47 +97,44 @@ async function loadData(){
     if(!boat) return;
 
     if(!boats[boat]){
-      boats[boat] = {
-        persons: null,
-        risk: "",
-        gain: "",
-        status: "",
-        comment: ""
-      };
+      boats[boat] = { persons:null, risk:"", gain:"", status:"", comment:"" };
     }
 
-    if(row.c[1] && row.c[1].v !== "" && row.c[1].v !== null){
-      boats[boat].persons = row.c[1].v;
-    }
+    const personsCell = row.c[1]?.v;
+    if(isPresent(personsCell)) boats[boat].persons = personsCell;
 
-    boats[boat].risk = row.c[2]?.v ?? boats[boat].risk;
-    boats[boat].gain = row.c[3]?.v ?? boats[boat].gain;
-    boats[boat].status = row.c[4]?.v ?? boats[boat].status;
+    const riskCell = row.c[2]?.v;
+    const gainCell = row.c[3]?.v;
+    if(isPresent(riskCell)) boats[boat].risk = riskCell;
+    if(isPresent(gainCell)) boats[boat].gain = gainCell;
 
-    boats[boat].comment = row.c[5]?.v ?? "";
+    const statusCell = row.c[4]?.v;
+    if(isPresent(statusCell) && String(statusCell).trim() !== "") boats[boat].status = statusCell;
+
+    const commentCell = row.c[5]?.v;
+    boats[boat].comment = isPresent(commentCell) ? commentCell : "";
   });
 
   Object.keys(boats).forEach(boat=>{
     const d = boats[boat];
-
     grid.innerHTML += `
       <div class="boatCard">
         <div class="text-lg font-bold">${boat}</div>
         <div class="text-sm">Persons on Board: ${d.persons !== null ? d.persons : "—"}</div>
-        <div class="text-sm">GAR Risk: ${d.risk || "—"}</div>
-        <div class="text-sm">GAR Gain: ${d.gain || "—"}</div>
-        <div class="font-bold mt-2 ${statusColor(d.status)}">
-          ${d.status || "—"}
-        </div>
+        <div class="text-sm">GAR Risk: ${isPresent(d.risk) ? d.risk : "—"}</div>
+        <div class="text-sm">GAR Gain: ${isPresent(d.gain) ? d.gain : "—"}</div>
+        <div class="font-bold mt-2 ${statusColor(d.status)}">${isPresent(d.status) ? d.status : "—"}</div>
         ${d.comment ? `<div class="text-xs text-slate-400 mt-2">${d.comment}</div>` : ""}
       </div>
     `;
   });
 }
 
-loadData();
-setInterval(loadData, 30000);
+document.getElementById("sheetFrame").src = SHEET_EMBED;
 
+loadDashboard();
+setInterval(loadDashboard, 30000);
 </script>
+
 </body>
 </html>
