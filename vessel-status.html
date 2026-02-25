@@ -34,9 +34,7 @@ body { font-family: system-ui, sans-serif; }
 </main>
 
 <script>
-
 // ===== SHEET IDS =====
-
 const sheets = {
   "Task Force 1": "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs",
   "Task Force 2": "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac",
@@ -44,18 +42,19 @@ const sheets = {
   "Task Force 4": "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo"
 };
 
-// ===== STATUS COLOR =====
+// Treat 0 as valid; only ""/null/undefined are blank.
+function isPresent(v){
+  return v !== null && v !== undefined && v !== "";
+}
 
 function statusColor(status){
   if(!status) return "";
-  const s = status.toLowerCase();
+  const s = String(status).toLowerCase();
   if(s.includes("secure")) return "status-green";
   if(s.includes("underway")) return "status-red";
   if(s.includes("rtb")) return "status-orange";
   return "";
 }
-
-// ===== FETCH SHEET =====
 
 async function fetchSheet(sheetId){
   const query = encodeURIComponent("select B,C,D,E,F,G");
@@ -66,22 +65,17 @@ async function fetchSheet(sheetId){
   return json.table.rows || [];
 }
 
-// ===== LOAD DATA =====
-
 async function loadData(){
-
   const container = document.getElementById("tfContainer");
   container.innerHTML = "";
 
   for(const tfName in sheets){
-
     const sheetId = sheets[tfName];
     const rows = await fetchSheet(sheetId);
 
     const boats = {};
 
     rows.forEach(row => {
-
       const boat = row.c[0]?.v;
       if(!boat) return;
 
@@ -97,23 +91,28 @@ async function loadData(){
 
       const current = boats[boat];
 
-      // PERSONS: last non-blank (0 allowed)
-      if(row.c[1] && row.c[1].v !== "" && row.c[1].v !== null){
-        current.persons = row.c[1].v;
+      // --- PERSONS: last non-blank (0 allowed)
+      const personsCell = row.c[1]?.v;
+      if(isPresent(personsCell)){
+        current.persons = personsCell;
       }
 
-      // GAR Risk/Gain: always most recent
-      current.risk = row.c[2]?.v ?? current.risk;
-      current.gain = row.c[3]?.v ?? current.gain;
+      // --- GAR: last GAR submitted (ignore blank overwrites, 0 allowed)
+      const riskCell = row.c[2]?.v;
+      const gainCell = row.c[3]?.v;
+      if(isPresent(riskCell)) current.risk = riskCell;
+      if(isPresent(gainCell)) current.gain = gainCell;
 
-      // STATUS: only update if NOT blank
+      // --- STATUS: most recent non-blank (ignore blank overwrites)
       const statusCell = row.c[4]?.v;
-      if(statusCell && statusCell.trim() !== ""){
+      if(isPresent(statusCell) && String(statusCell).trim() !== ""){
         current.status = statusCell;
       }
 
-      // COMMENT: only from most recent row (no carry forward)
-      current.comment = row.c[5]?.v ?? "";
+      // --- COMMENT: ONLY from most recent row (no carry forward)
+      // If latest row has blank comment, show nothing.
+      const commentCell = row.c[5]?.v;
+      current.comment = isPresent(commentCell) ? commentCell : "";
     });
 
     container.innerHTML += `
@@ -126,17 +125,15 @@ async function loadData(){
             ? `<div class="text-slate-400">No data available</div>`
             :
             Object.keys(boats).map(boat => {
-
               const d = boats[boat];
-
               return `
                 <div class="boatCard">
                   <div class="text-lg font-bold">${boat}</div>
                   <div class="text-sm">Persons on Board: ${d.persons !== null ? d.persons : "—"}</div>
-                  <div class="text-sm">GAR Risk: ${d.risk || "—"}</div>
-                  <div class="text-sm">GAR Gain: ${d.gain || "—"}</div>
+                  <div class="text-sm">GAR Risk: ${isPresent(d.risk) ? d.risk : "—"}</div>
+                  <div class="text-sm">GAR Gain: ${isPresent(d.gain) ? d.gain : "—"}</div>
                   <div class="font-bold mt-2 ${statusColor(d.status)}">
-                    ${d.status || "—"}
+                    ${isPresent(d.status) ? d.status : "—"}
                   </div>
                   ${d.comment ? `<div class="text-xs text-slate-400 mt-2">${d.comment}</div>` : ""}
                 </div>
@@ -151,7 +148,6 @@ async function loadData(){
 
 loadData();
 setInterval(loadData, 30000);
-
 </script>
 
 </body>
