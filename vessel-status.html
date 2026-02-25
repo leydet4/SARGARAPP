@@ -3,26 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vessel Status - POV SAR 2026</title>
+<title>Vessel Status</title>
 <link rel="icon" href="SAR.png">
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
 body { font-family: system-ui, sans-serif; }
-
-.sectionCard {
-  background:#1e293b;
-  border-radius:16px;
-  padding:24px;
-  box-shadow:0 0 25px rgba(0,0,0,.35);
-}
-
-.boatCard {
-  background:#0f172a;
-  border-radius:14px;
-  padding:16px;
-}
-
+.boatCard { background:#0f172a; border-radius:14px; padding:16px; }
 .status-green { color:#22c55e; }
 .status-red { color:#ef4444; }
 .status-orange { color:#f97316; }
@@ -32,45 +19,43 @@ body { font-family: system-ui, sans-serif; }
 <body class="bg-slate-900 text-white">
 
 <header class="bg-slate-800 py-6 text-center shadow-lg">
-  <h1 class="text-3xl font-black">🚢 Vessel Status</h1>
-  <p class="text-slate-400 text-sm mt-2">
-    Live Operational Status Board
-  </p>
+  <h1 class="text-3xl font-black">Vessel Status Overview</h1>
 
-  <div class="mt-4">
+  <div class="mt-4 flex justify-center gap-3 flex-wrap">
     <a href="index.html"
        class="px-5 py-2 bg-blue-600 rounded-lg font-bold text-sm">
-       ← Back
+       ← Back to Dashboard
     </a>
   </div>
 </header>
 
-<main class="p-6 max-w-7xl mx-auto space-y-8">
-
-  <div id="lastUpdated" class="text-center text-slate-400 text-sm"></div>
-
-  <div id="statusContainer" class="space-y-8"></div>
-
+<main class="p-6 max-w-7xl mx-auto space-y-12">
+  <div id="tfContainer"></div>
 </main>
 
 <script>
 
-// All Task Force Sheets
-const sheets = [
-  { name: "Task Force 1", id: "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs" },
-  { name: "Task Force 2", id: "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac" },
-  { name: "Task Force 3", id: "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y" },
-  { name: "Task Force 4", id: "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo" }
-];
+// ===== SHEET IDS =====
+
+const sheets = {
+  "Task Force 1": "1blTaHa4BTR8YGB7hL_kqWBE1qXkl9Ee2LEe_zLKbQGs",
+  "Task Force 2": "1xv_jyreJSBH2_WgwrnwNFOH7MDRXGsLGf_vJNSB-lac",
+  "Task Force 3": "1Zd7SiEV9OOr20oWRB51Y6wUFCAhsM_H2YlqWD_FQW6Y",
+  "Task Force 4": "1_hrJRv0WLPdBWciRJrjr-y9WdNFoAbvJR22SZSQKUjo"
+};
+
+// ===== STATUS COLOR =====
 
 function statusColor(status){
   if(!status) return "";
-  const s=status.toLowerCase();
+  const s = status.toLowerCase();
   if(s.includes("secure")) return "status-green";
   if(s.includes("underway")) return "status-red";
   if(s.includes("rtb")) return "status-orange";
   return "";
 }
+
+// ===== FETCH SHEET =====
 
 async function fetchSheet(sheetId){
   const query = encodeURIComponent("select B,C,D,E,F,G");
@@ -81,80 +66,91 @@ async function fetchSheet(sheetId){
   return json.table.rows || [];
 }
 
-async function loadVesselStatus(){
+// ===== LOAD DATA =====
 
-  document.getElementById("lastUpdated").innerText =
-    "Last Updated: " + new Date().toLocaleTimeString();
+async function loadData(){
 
-  const container = document.getElementById("statusContainer");
+  const container = document.getElementById("tfContainer");
   container.innerHTML = "";
 
-  for(const sheet of sheets){
+  for(const tfName in sheets){
 
-    const rows = await fetchSheet(sheet.id);
+    const sheetId = sheets[tfName];
+    const rows = await fetchSheet(sheetId);
 
-    if(!rows.length){
-      continue;
-    }
+    const boats = {};
 
-    const latestPerBoat = {};
+    rows.forEach(row => {
 
-    rows.forEach(row=>{
-      const boat=row.c[0]?.v;
+      const boat = row.c[0]?.v;
       if(!boat) return;
 
-      latestPerBoat[boat]={
-        persons:row.c[1]?.v || "—",
-        risk:row.c[2]?.v || "—",
-        gain:row.c[3]?.v || "—",
-        status:row.c[4]?.v || "—",
-        comment:row.c[5]?.v || ""
-      };
-    });
+      if(!boats[boat]){
+        boats[boat] = {
+          persons: null,
+          risk: "",
+          gain: "",
+          status: "",
+          comment: ""
+        };
+      }
 
-    const boats = Object.keys(latestPerBoat);
+      const current = boats[boat];
 
-    if(!boats.length) continue;
+      // PERSONS: last non-blank (0 allowed)
+      if(row.c[1] && row.c[1].v !== "" && row.c[1].v !== null){
+        current.persons = row.c[1].v;
+      }
 
-    let boatHTML = "";
+      // GAR Risk/Gain: always most recent
+      current.risk = row.c[2]?.v ?? current.risk;
+      current.gain = row.c[3]?.v ?? current.gain;
 
-    boats.forEach(boat=>{
-      const data = latestPerBoat[boat];
+      // STATUS: only update if NOT blank
+      const statusCell = row.c[4]?.v;
+      if(statusCell && statusCell.trim() !== ""){
+        current.status = statusCell;
+      }
 
-      const commentHTML = data.comment
-        ? `<div class="text-sm text-slate-400 mt-2">${data.comment}</div>`
-        : "";
-
-      boatHTML += `
-        <div class="boatCard">
-          <div class="text-lg font-bold">${boat}</div>
-          <div class="text-sm text-slate-300">Persons: ${data.persons}</div>
-          <div class="text-sm text-slate-300">GAR Risk: ${data.risk}</div>
-          <div class="text-sm text-slate-300">GAR Gain: ${data.gain}</div>
-          <div class="font-bold mt-2 ${statusColor(data.status)}">
-            ${data.status}
-          </div>
-          ${commentHTML}
-        </div>
-      `;
+      // COMMENT: only from most recent row (no carry forward)
+      current.comment = row.c[5]?.v ?? "";
     });
 
     container.innerHTML += `
-      <div class="sectionCard">
-        <div class="text-2xl font-bold mb-6">${sheet.name}</div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          ${boatHTML}
+      <div>
+        <h2 class="text-2xl font-bold mb-4">${tfName}</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${
+            Object.keys(boats).length === 0
+            ? `<div class="text-slate-400">No data available</div>`
+            :
+            Object.keys(boats).map(boat => {
+
+              const d = boats[boat];
+
+              return `
+                <div class="boatCard">
+                  <div class="text-lg font-bold">${boat}</div>
+                  <div class="text-sm">Persons on Board: ${d.persons !== null ? d.persons : "—"}</div>
+                  <div class="text-sm">GAR Risk: ${d.risk || "—"}</div>
+                  <div class="text-sm">GAR Gain: ${d.gain || "—"}</div>
+                  <div class="font-bold mt-2 ${statusColor(d.status)}">
+                    ${d.status || "—"}
+                  </div>
+                  ${d.comment ? `<div class="text-xs text-slate-400 mt-2">${d.comment}</div>` : ""}
+                </div>
+              `;
+            }).join("")
+          }
         </div>
       </div>
     `;
   }
 }
 
-// Initial Load
-loadVesselStatus();
-
-// Auto Refresh every 30 seconds
-setInterval(loadVesselStatus, 30000);
+loadData();
+setInterval(loadData, 30000);
 
 </script>
 
